@@ -96,3 +96,4 @@ The Xabuteo Team
                         st.experimental_rerun()
                 else:
                     st.warning("Please fill in all required fields.")
+show()
