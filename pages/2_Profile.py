@@ -109,3 +109,4 @@ def show():
     finally:
         cursor.close()
         conn.close()
+show()
