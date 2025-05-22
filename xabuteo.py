@@ -11,8 +11,6 @@ def show():
         st.info("🔓 You are already registered and logged in.")
         return
 
-    st.title("📝 User Registration")
-
     def insert_registration(data):
         conn = get_snowflake_connection()
         cursor = conn.cursor()
@@ -23,7 +21,7 @@ def show():
                 return False
 
             cursor.execute("""
-                INSERT INTO registrations (id, first_name, last_name, date_of_birth, gender, email, password)
+                INSERT INTO registrations (first_name, last_name, date_of_birth, gender, email, password)
                 VALUES (%s, %s, %s, %s, %s, %s)
             """, (
                 data['first_name'],
