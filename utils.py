@@ -1,6 +1,8 @@
 import os
 import snowflake.connector
 import bcrypt
+import smtplib
+from email.message import EmailMessage
 
 SNOWFLAKE_CONFIG = {
     'user': os.environ.get('user'),
@@ -10,6 +12,18 @@ SNOWFLAKE_CONFIG = {
     'database': os.environ.get('database'),
     'schema': os.environ.get('schema')
 }
+
+def send_email(to_email, subject, message):
+    msg = EmailMessage()
+    msg.set_content(message)
+    msg["Subject"] = subject
+    msg["From"] = "no-reply@xabuteo.com"  # Replace with your sender
+    msg["To"] = to_email
+
+    # Example using Gmail SMTP (replace with your SMTP server config)
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login("your-email@gmail.com", "your-password")  # Secure this properly!
+        smtp.send_message(msg)
 
 def get_snowflake_connection():
     return snowflake.connector.connect(
