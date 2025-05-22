@@ -1,6 +1,6 @@
 import streamlit as st
-from utils import get_snowflake_connection, hash_password, send_email  # Make sure send_email is implemented
 import smtplib
+from utils import get_snowflake_connection, hash_password, check_password, send_email
 
 st.set_page_config(page_title="Xabuteo", layout="wide", initial_sidebar_state="expanded")
 
