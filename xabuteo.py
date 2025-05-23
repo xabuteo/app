@@ -4,7 +4,7 @@ from datetime import date
 from utils import get_snowflake_connection, hash_password, check_password, send_email
 
 # ⬅️ Center content layout
-st.set_page_config(page_title="Xabuteo", layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Xabuteo", layout="centered", initial_sidebar_state="collapsed")
 
 st.title("🏠 Welcome to Xabuteo")
 st.markdown("Welcome to the world's premier table football online application!")
