@@ -67,7 +67,7 @@ with st.expander("📋 Register for an account"):
             first_name = st.text_input("First Name")
         with col2:
             last_name = st.text_input("Last Name")
-
+        
         col1, col2 = st.columns(2)
         with col1:
             date_of_birth = st.date_input("Date of Birth", min_value=date(1900, 1, 1), max_value=date.today())
