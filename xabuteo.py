@@ -1,5 +1,7 @@
 import streamlit as st
+import re
 from utils import get_snowflake_connection, hash_password, check_password, send_email
+from datetime import date
 
 st.set_page_config(page_title="Xabuteo", layout="wide", initial_sidebar_state="expanded")
 
@@ -60,12 +62,23 @@ with st.expander("📋 Register for an account"):
         with col2:
             last_name = st.text_input("Last Name")
         with col1:
-            date_of_birth = st.date_input("Date of Birth")
+            date_of_birth = st.date_input("Date of Birth", min_value=date(1900, 1, 1), max_value=date.today())
         with col2:
             gender = st.selectbox("Gender", ["M", "F", "Other"])
         reg_email = st.text_input("Email Address")
         reg_password = st.text_input("Password", type="password")
 
+        # Real-time validation messages
+        if email and not is_valid_email(email):
+            st.error("❌ Invalid email format.")
+        if password and len(password) < 8:
+            st.error("🔒 Password must be at least 8 characters long.")
+    
+        # Check overall validity
+        all_fields_valid = all([first_name, last_name, email, password]) \
+                           and is_valid_email(email) \
+                           and len(password) >= 8
+        
         def insert_registration(data):
             conn = get_snowflake_connection()
             cursor = conn.cursor()
