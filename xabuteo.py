@@ -69,9 +69,9 @@ with st.expander("📋 Register for an account"):
         reg_password = st.text_input("Password", type="password")
 
         # Real-time validation messages
-        if email and not is_valid_email(email):
+        if reg_email and not is_valid_email(reg_email):
             st.error("❌ Invalid email format.")
-        if password and len(password) < 8:
+        if reg_password and len(reg_password) < 8:
             st.error("🔒 Password must be at least 8 characters long.")
     
         # Check overall validity
