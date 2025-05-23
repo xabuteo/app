@@ -3,7 +3,7 @@ import re
 from datetime import date
 from utils import get_snowflake_connection, hash_password, check_password, send_email
 
-st.set_page_config(page_title="Xabuteo", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Xabuteo", layout="narrow", initial_sidebar_state="expanded")
 
 st.title("🏠 Welcome to Xabuteo")
 st.markdown("Welcome to the world's premier table football online application!")
