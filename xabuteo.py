@@ -76,8 +76,8 @@ with st.expander("📋 Register for an account"):
     
         # Check overall validity
         all_fields_valid = all([first_name, last_name, email, password]) \
-                           and is_valid_email(email) \
-                           and len(password) >= 8
+                           and is_valid_email(reg_email) \
+                           and len(reg_password) >= 8
         
         def insert_registration(data):
             conn = get_snowflake_connection()
