@@ -10,6 +10,10 @@ st.markdown("Welcome to the world's premier table football online application!")
 if st.session_state.get("user_email"):
     st.success(f"🔓 Logged in as {st.session_state['user_name']}")
     st.info("You can now access the app pages from the sidebar.")
+    if st.button("Log out"):
+        st.session_state.clear()
+        st.success("🔒 You have been logged out.")
+        st.rerun()
     st.stop()
 
 # 🔐 Login Section
