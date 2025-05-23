@@ -54,10 +54,15 @@ st.markdown("---")
 with st.expander("📋 Register for an account"):
     with st.form("registration_form"):
         st.subheader("Enter your details:")
-        first_name = st.text_input("First Name")
-        last_name = st.text_input("Last Name")
-        date_of_birth = st.date_input("Date of Birth")
-        gender = st.selectbox("Gender", ["M", "F", "Other"])
+        col1, col2 = st.columns(2)
+        with col1:
+            first_name = st.text_input("First Name")
+        with col2:
+            last_name = st.text_input("Last Name")
+        with col1:
+            date_of_birth = st.date_input("Date of Birth")
+        with col2:
+            gender = st.selectbox("Gender", ["M", "F", "Other"])
         reg_email = st.text_input("Email Address")
         reg_password = st.text_input("Password", type="password")
 
