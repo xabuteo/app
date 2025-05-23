@@ -3,6 +3,9 @@ import snowflake.connector
 import bcrypt
 import smtplib
 from email.message import EmailMessage
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import streamlit as st
 
 SNOWFLAKE_CONFIG = {
     'user': os.environ.get('user'),
@@ -14,16 +17,33 @@ SNOWFLAKE_CONFIG = {
 }
 
 def send_email(to_email, subject, message):
-    msg = EmailMessage()
-    msg.set_content(message)
-    msg["Subject"] = subject
-    msg["From"] = "no-reply@xabuteo.com"  # Replace with your sender
-    msg["To"] = to_email
+    try:
+        email_config = st.secrets["email"]
 
-    # Example using Gmail SMTP (replace with your SMTP server config)
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login("your-email@gmail.com", "your-password")  # Secure this properly!
-        smtp.send_message(msg)
+        from_email = email_config["from_email"]
+        password = email_config["password"]
+        smtp_server = email_config.get("smtp_server", "smtp.gmail.com")
+        smtp_port = email_config.get("smtp_port", 587)
+
+        # Create MIME message
+        msg = MIMEMultipart()
+        msg["From"] = from_email
+        msg["To"] = to_email
+        msg["Subject"] = subject
+
+        msg.attach(MIMEText(message, "plain"))
+
+        # Send email
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(from_email, password)
+            server.send_message(msg)
+
+        return True
+
+    except Exception as e:
+        st.error(f"Failed to send email: {e}")
+        return False
 
 def get_snowflake_connection():
     return snowflake.connector.connect(
