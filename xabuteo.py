@@ -62,60 +62,62 @@ with st.expander("📋 Register for an account"):
     st.markdown("### ✍️ Create Your Account")
 
     # Centered layout using columns
-    with st.form("registration_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            first_name = st.text_input("First Name")
-        with col2:
-            last_name = st.text_input("Last Name")
+    col_center = st.columns(1)
+    with col_center:
+        with st.form("registration_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                first_name = st.text_input("First Name")
+            with col2:
+                last_name = st.text_input("Last Name")
 
-        col1, col2 = st.columns(2)
-        with col1:
-            date_of_birth = st.date_input("Date of Birth", min_value=date(1900, 1, 1), max_value=date.today())
-        with col2:
-            gender = st.selectbox("Gender", ["M", "F", "Other"])
+            col1, col2 = st.columns(2)
+            with col1:
+                date_of_birth = st.date_input("Date of Birth", min_value=date(1900, 1, 1), max_value=date.today())
+            with col2:
+                gender = st.selectbox("Gender", ["M", "F", "Other"])
 
-        reg_email = st.text_input("Email Address")
-        reg_password = st.text_input("Password", type="password")
+            reg_email = st.text_input("Email Address")
+            reg_password = st.text_input("Password", type="password")
 
-        # Real-time validation
-        if reg_email and not is_valid_email(reg_email):
-            st.error("❌ Invalid email format.")
-        if reg_password and len(reg_password) < 8:
-            st.error("🔒 Password must be at least 8 characters long.")
+            # Real-time validation
+            if reg_email and not is_valid_email(reg_email):
+                st.error("❌ Invalid email format.")
+            if reg_password and len(reg_password) < 8:
+                st.error("🔒 Password must be at least 8 characters long.")
 
-        def insert_registration(data):
-            conn = get_snowflake_connection()
-            cursor = conn.cursor()
-            try:
-                cursor.execute("SELECT COUNT(*) FROM registrations WHERE email = %s", (data['email'],))
-                if cursor.fetchone()[0] > 0:
-                    st.warning("🚫 This email is already registered.")
+            def insert_registration(data):
+                conn = get_snowflake_connection()
+                cursor = conn.cursor()
+                try:
+                    cursor.execute("SELECT COUNT(*) FROM registrations WHERE email = %s", (data['email'],))
+                    if cursor.fetchone()[0] > 0:
+                        st.warning("🚫 This email is already registered.")
+                        return False
+
+                    cursor.execute("""
+                        INSERT INTO registrations (first_name, last_name, date_of_birth, gender, email, password)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (
+                        data['first_name'],
+                        data['last_name'],
+                        data['date_of_birth'].strftime('%Y-%m-%d'),
+                        data['gender'],
+                        data['email'],
+                        hash_password(data['password'])
+                    ))
+                    conn.commit()
+                    return True
+                except Exception as e:
+                    st.error(f"Error saving to Snowflake: {e}")
                     return False
+                finally:
+                    cursor.close()
+                    conn.close()
 
-                cursor.execute("""
-                    INSERT INTO registrations (first_name, last_name, date_of_birth, gender, email, password)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (
-                    data['first_name'],
-                    data['last_name'],
-                    data['date_of_birth'].strftime('%Y-%m-%d'),
-                    data['gender'],
-                    data['email'],
-                    hash_password(data['password'])
-                ))
-                conn.commit()
-                return True
-            except Exception as e:
-                st.error(f"Error saving to Snowflake: {e}")
-                return False
-            finally:
-                cursor.close()
-                conn.close()
-
-        def send_welcome_email(to_email, first_name):
-            subject = "🎉 Welcome to Xabuteo!"
-            message = f"""\
+            def send_welcome_email(to_email, first_name):
+                subject = "🎉 Welcome to Xabuteo!"
+                message = f"""\
 Hello {first_name},
 
 Welcome to Xabuteo – the world's premier table football platform!
