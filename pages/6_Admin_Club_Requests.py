@@ -1,27 +1,57 @@
 import streamlit as st
+from datetime import date
 from utils import get_snowflake_connection
 
 def show():
     st.title("🗂️ Club Requests")
 
+    if "user_email" not in st.session_state:
+        st.warning("🔒 Please log in to access this page.")
+        return
+
     conn = get_snowflake_connection()
     cursor = conn.cursor()
 
     try:
+        # Get user ID
         cursor.execute("""
+            SELECT id FROM xabuteo.public.registrations WHERE email = %s
+        """, (st.session_state["user_email"],))
+        user_row = cursor.fetchone()
+        if not user_row:
+            st.error("❌ User not found.")
+            return
+        user_id = user_row[0]
+
+        # Get list of active clubs this user administers
+        cursor.execute("""
+            SELECT club_id FROM xabuteo.public.club_user_admin 
+            WHERE user_id = %s AND %s BETWEEN valid_from AND valid_to
+        """, (user_id, date.today()))
+        admin_club_rows = cursor.fetchall()
+        admin_club_ids = [row[0] for row in admin_club_rows]
+
+        if not admin_club_ids:
+            st.warning("⛔ You are not currently an active club admin.")
+            return
+
+        # Fetch pending player club requests only for the admin's clubs
+        format_ids = ",".join(["%s"] * len(admin_club_ids))
+        query = f"""
             SELECT pc.id, r.first_name || ' ' || r.last_name AS player_name, 
                    c.club_name, pc.valid_from, pc.valid_to, pc.player_status
             FROM xabuteo.public.player_club pc
             JOIN xabuteo.public.registrations r ON pc.player_id = r.id
             JOIN xabuteo.public.clubs c ON pc.club_id = c.id
-            WHERE pc.player_status = 'Pending'
+            WHERE pc.player_status = 'Pending' AND pc.club_id IN ({format_ids})
             ORDER BY pc.valid_from DESC
-        """)
+        """
+        cursor.execute(query, tuple(admin_club_ids))
         rows = cursor.fetchall()
         cols = [desc[0].lower() for desc in cursor.description]
 
         if not rows:
-            st.info("✅ No pending club requests.")
+            st.info("✅ No pending club requests for your clubs.")
             return
 
         for row in rows:
@@ -50,7 +80,7 @@ def show():
                             WHERE id = %s
                         """, (request["id"],))
                         conn.commit()
-                        st.success(f"Approved {request['club_name']} for {request['player_name']}")
+                        st.success(f"✅ Approved {request['club_name']} for {request['player_name']}")
                         st.rerun()
 
                 with col2:
@@ -61,7 +91,7 @@ def show():
                             WHERE id = %s
                         """, (request["id"],))
                         conn.commit()
-                        st.warning(f"Rejected {request['club_name']} for {request['player_name']}")
+                        st.warning(f"❌ Rejected {request['club_name']} for {request['player_name']}")
                         st.rerun()
 
     except Exception as e:
@@ -69,4 +99,7 @@ def show():
     finally:
         cursor.close()
         conn.close()
-show()        
+
+# For multipage apps
+if __name__ == "__main__":
+    show()
