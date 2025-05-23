@@ -75,7 +75,7 @@ with st.expander("📋 Register for an account"):
             st.error("🔒 Password must be at least 8 characters long.")
     
         # Check overall validity
-        all_fields_valid = all([first_name, last_name, email, password]) \
+        all_fields_valid = all([first_name, last_name, reg_email, reg_password]) \
                            and is_valid_email(reg_email) \
                            and len(reg_password) >= 8
         
