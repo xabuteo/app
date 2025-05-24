@@ -1,43 +1,43 @@
+# xabuteo.py
+
 import streamlit as st
-from auth import login
+from auth import get_login_url, login_callback
 from utils import get_snowflake_connection
-from datetime import date
 
 st.set_page_config(page_title="Xabuteo", layout="centered")
-st.title("🏓 Welcome to Xabuteo")
+st.title("🏓 Xabuteo – Login")
 
-auth0_response = login()
-
-if auth0_response:
-    user = auth0_response["user"]
-    email = user["email"]
-    name = user.get("name", email.split("@")[0])
-    sub = user["sub"]
-
-    st.session_state["user_email"] = email
-    st.session_state["user_name"] = name
-    st.session_state["auth0_sub"] = sub
-
-    st.success(f"✅ Logged in as {name}")
-
-    # Track user registration in DB
-    conn = get_snowflake_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT COUNT(*) FROM XABUTEO.PUBLIC.REGISTRATIONS WHERE email = %s", (email,))
-        if cursor.fetchone()[0] == 0:
-            first_name, *last_parts = name.split()
-            last_name = " ".join(last_parts) if last_parts else ""
+# Check login state
+if "user_info" not in st.session_state:
+    user_info = login_callback()
+    if user_info:
+        st.session_state.user_info = user_info
+        st.success(f"✅ Logged in as {user_info['email']}")
+        # Insert to your DB here
+        conn = get_snowflake_connection()
+        cursor = conn.cursor()
+        try:
             cursor.execute("""
-                INSERT INTO XABUTEO.PUBLIC.REGISTRATIONS (first_name, last_name, email, date_registered, auth0_id)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (first_name, last_name, email, date.today(), sub))
+                MERGE INTO xabuteo.public.registrations tgt
+                USING (SELECT %s AS email, %s AS first_name, %s AS last_name) src
+                ON tgt.email = src.email
+                WHEN NOT MATCHED THEN INSERT (email, first_name, last_name)
+                VALUES (src.email, src.first_name, src.last_name)
+            """, (
+                user_info["email"],
+                user_info.get("given_name", ""),
+                user_info.get("family_name", "")
+            ))
             conn.commit()
-            st.info("🆕 Registered in Xabuteo!")
-    except Exception as e:
-        st.error(f"❌ DB Error: {e}")
-    finally:
-        cursor.close()
-        conn.close()
-else:
-    st.info("🔐 Please log in to access the app.")
+        finally:
+            cursor.close()
+            conn.close()
+
+    else:
+        st.markdown("🔐 You are not logged in.")
+        st.markdown(f"[Click here to log in]({get_login_url()})")
+        st.stop()
+
+# Authenticated area
+st.success(f"Welcome, {st.session_state.user_info['email']}")
+st.markdown("You can now use the app.")
