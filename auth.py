@@ -1,71 +1,48 @@
-# auth.py - Auth0 + Streamlit integration
+# auth.py
 
 import streamlit as st
+from urllib.parse import urlencode
 import requests
-from urllib.parse import urlencode, urlparse, parse_qs
-from streamlit_auth0 import login_button
+import uuid
 
-AUTH0_CLIENT_ID = st.secrets["auth0"]["client_id"]
-AUTH0_CLIENT_SECRET = st.secrets["auth0"]["client_secret"]
 AUTH0_DOMAIN = st.secrets["auth0"]["domain"]
-REDIRECT_URI = f"https://{st.runtime.scriptrunner.script_run_context.get_script_run_ctx().runtime.scriptrunner.script_run_context.app_url}"
+CLIENT_ID = st.secrets["auth0"]["client_id"]
+CLIENT_SECRET = st.secrets["auth0"]["client_secret"]
+REDIRECT_URI = st.secrets["auth0"]["redirect_uri"]
 
-def login():
-    return login_button(
-        client_id=st.secrets["AUTH0_CLIENT_ID"],
-        domain=st.secrets["AUTH0_DOMAIN"],
-        client_secret=st.secrets["AUTH0_CLIENT_SECRET"],
-    )
-
-def build_auth_url():
-    query = urlencode({
-        "client_id": AUTH0_CLIENT_ID,
-        "response_type": "code",
+def get_login_url():
+    params = {
+        "client_id": CLIENT_ID,
         "redirect_uri": REDIRECT_URI,
+        "response_type": "code",
         "scope": "openid profile email",
-    })
-    return f"https://{AUTH0_DOMAIN}/authorize?{query}"
+        "state": str(uuid.uuid4())
+    }
+    return f"https://{AUTH0_DOMAIN}/authorize?{urlencode(params)}"
 
-def get_token(code):
-    url = f"https://{AUTH0_DOMAIN}/oauth/token"
+def login_callback():
+    query_params = st.query_params
+    if "code" not in query_params:
+        return None
+
+    code = query_params["code"]
+    token_url = f"https://{AUTH0_DOMAIN}/oauth/token"
     payload = {
         "grant_type": "authorization_code",
-        "client_id": AUTH0_CLIENT_ID,
-        "client_secret": AUTH0_CLIENT_SECRET,
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
         "code": code,
         "redirect_uri": REDIRECT_URI
     }
-    res = requests.post(url, json=payload)
-    res.raise_for_status()
-    return res.json()
 
-def get_user_info(token):
-    res = requests.get(
+    res = requests.post(token_url, json=payload)
+    res.raise_for_status()
+    tokens = res.json()
+
+    # Fetch user info
+    userinfo_res = requests.get(
         f"https://{AUTH0_DOMAIN}/userinfo",
-        headers={"Authorization": f"Bearer {token}"}
+        headers={"Authorization": f"Bearer {tokens['access_token']}"}
     )
-    res.raise_for_status()
-    return res.json()
-
-def login():
-    query_params = st.experimental_get_query_params()
-    code = query_params.get("code", [None])[0]
-
-    if code:
-        token_data = get_token(code)
-        user = get_user_info(token_data["access_token"])
-
-        st.session_state["user_email"] = user["email"]
-        st.session_state["user_name"] = user.get("name") or user["email"].split("@")[0]
-
-        return user
-    else:
-        st.markdown(f"[Login with Auth0]({build_auth_url()})")
-        return None
-
-def logout_button():
-    logout_url = f"https://{AUTH0_DOMAIN}/v2/logout?client_id={AUTH0_CLIENT_ID}&returnTo={REDIRECT_URI}"
-    if st.button("Logout"):
-        st.session_state.clear()
-        st.experimental_set_query_params()
-        st.markdown(f"[Click here to logout]({logout_url})")
+    userinfo_res.raise_for_status()
+    return userinfo_res.json()
