@@ -3,11 +3,19 @@
 import streamlit as st
 import requests
 from urllib.parse import urlencode, urlparse, parse_qs
+from streamlit_auth0 import login_button
 
 AUTH0_CLIENT_ID = st.secrets["auth0"]["client_id"]
 AUTH0_CLIENT_SECRET = st.secrets["auth0"]["client_secret"]
 AUTH0_DOMAIN = st.secrets["auth0"]["domain"]
 REDIRECT_URI = f"https://{st.runtime.scriptrunner.script_run_context.get_script_run_ctx().runtime.scriptrunner.script_run_context.app_url}"
+
+def login():
+    return login_button(
+        client_id=st.secrets["AUTH0_CLIENT_ID"],
+        domain=st.secrets["AUTH0_DOMAIN"],
+        client_secret=st.secrets["AUTH0_CLIENT_SECRET"],
+    )
 
 def build_auth_url():
     query = urlencode({
