@@ -3,4 +3,5 @@ snowflake-connector-python
 streamlit
 bcrypt
 streamlit-auth0
-streamlit==1.25.0
+streamlit>=1.25
+requests
