@@ -2,3 +2,4 @@
 snowflake-connector-python
 streamlit
 bcrypt
+streamlit-auth0
