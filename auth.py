@@ -19,7 +19,7 @@ def logout_button():
 
     logout_url = (
         f"https://{domain}/v2/logout?"
-        + urllib.parse.urlencode({
+        + urlencode.urlencode({
             "client_id": client_id,
             "returnTo": return_to
         })
