@@ -41,3 +41,8 @@ if "user_info" not in st.session_state:
 # Authenticated area
 st.success(f"Welcome, {st.session_state.user_info['email']}")
 st.markdown("You can now use the app.")
+from auth import logout_button
+
+if "user_email" in st.session_state:
+    st.success(f"Logged in as {st.session_state['user_email']}")
+    logout_button()
