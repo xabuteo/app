@@ -1,24 +1,52 @@
-# auth.py snippet
+# xabuteo.py
 
 import streamlit as st
-import urllib.parse
+from auth import get_login_url, login_callback, logout_button
+from utils import get_snowflake_connection
 
-def logout_button():
-    domain = st.secrets["auth0"]["domain"]
-    client_id = st.secrets["auth0"]["client_id"]
-    return_to = st.secrets["auth0"]["redirect_uri"]
+st.set_page_config(page_title="Xabuteo", layout="centered")
+st.title("🏓 Xabuteo – Login")
 
-    logout_url = (
-        f"https://{domain}/v2/logout?"
-        + urllib.parse.urlencode({
-            "client_id": client_id,
-            "returnTo": return_to
-        })
-    )
+# 1️⃣ If not yet in session_state, attempt Auth0 callback
+if "user_info" not in st.session_state:
+    user_info = login_callback()
+    if user_info:
+        # Successful login: store user_info and user_email
+        st.session_state.user_info = user_info
+        st.session_state.user_email = user_info.get("email", "")
+        st.success(f"✅ Logged in as {st.session_state.user_email}")
 
-    if st.button("🚪 Logout"):
-        st.session_state.clear()
-        st.markdown(
-            f'<meta http-equiv="refresh" content="0;URL=\'{logout_url}\'" />',
-            unsafe_allow_html=True,
-        )
+        # Insert into Snowflake (if new)
+        conn = get_snowflake_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """
+                MERGE INTO xabuteo.public.registrations tgt
+                USING (SELECT %s AS email, %s AS first_name, %s AS last_name) src
+                ON tgt.email = src.email
+                WHEN NOT MATCHED THEN INSERT (email, first_name, last_name)
+                VALUES (src.email, src.first_name, src.last_name)
+                """,
+                (
+                    st.session_state.user_email,
+                    user_info.get("given_name", ""),
+                    user_info.get("family_name", ""),
+                ),
+            )
+            conn.commit()
+        finally:
+            cursor.close()
+            conn.close()
+    else:
+        # Not yet logged in: show login link and stop
+        st.markdown("🔐 You are not logged in.")
+        st.markdown(f"[Click here to log in]({get_login_url()})")
+        st.stop()
+
+# 2️⃣ Authenticated area
+st.success(f"Welcome, {st.session_state.user_email}!")
+st.markdown("You can now use the app’s features.")
+
+# 3️⃣ Show Logout button (via Auth0)
+logout_button()
