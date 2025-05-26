@@ -35,7 +35,7 @@ if "user_info" not in st.session_state:
                 ) AS src
                 ON tgt.email = src.email
                 WHEN NOT MATCHED THEN
-                    INSERT (email, first_name, last_name, auth_id, date_registered, updated_at, updated_by)
+                    INSERT (email, first_name, last_name, auth0_id, date_registered, updated_at, updated_by)
                     VALUES (src.email, src.first_name, src.last_name, src.auth_id, src.date_registered, src.updated_at, src.updated_by)
                 """,
                 (
