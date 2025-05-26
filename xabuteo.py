@@ -2,7 +2,7 @@
 
 import streamlit as st
 from auth import get_login_url, login_callback, logout_button
-from utils import get_snowflake_connection
+from utils import get_snowflake_connection, ensure_profile_complete
 
 st.set_page_config(page_title="Xabuteo", layout="centered")
 st.title("🏓 Xabuteo – Login")
@@ -11,7 +11,6 @@ st.title("🏓 Xabuteo – Login")
 if "user_info" not in st.session_state:
     user_info = login_callback()
     if user_info:
-        # Successful login: store user_info and user_email
         st.session_state.user_info = user_info
         st.session_state.user_email = user_info.get("email", "")
         st.success(f"✅ Logged in as {st.session_state.user_email}")
@@ -42,7 +41,7 @@ if "user_info" not in st.session_state:
                     st.session_state.user_email,
                     user_info.get("given_name", ""),
                     user_info.get("family_name", ""),
-                    user_info.get("sub", ""),  # Auth0's unique user ID
+                    user_info.get("sub", ""),
                     user_info.get("email", "")
                 ),
             )
@@ -51,14 +50,13 @@ if "user_info" not in st.session_state:
             cursor.close()
             conn.close()
     else:
-        # Not yet logged in: show login link and stop
         st.markdown("🔐 You are not logged in.")
         st.markdown(f"[Click here to log in]({get_login_url()})")
         st.stop()
 
-# 2️⃣ Authenticated area
+# 2️⃣ Ensure profile is complete
+ensure_profile_complete()
+
+# 3️⃣ Authenticated area
 st.success(f"Welcome, {st.session_state.user_email}!")
 st.markdown("You can now use the app’s features.")
-
-# 3️⃣ Show Logout button (via Auth0)
-logout_button()
