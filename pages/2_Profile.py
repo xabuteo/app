@@ -2,6 +2,8 @@ import streamlit as st
 from utils import get_snowflake_connection
 
 def get_initials(first, last):
+    if not first or not last:
+        return "?"
     return f"{first[0].upper()}{last[0].upper()}"
 
 def show():
