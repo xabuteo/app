@@ -42,6 +42,11 @@ if "user_info" not in st.session_state:
         # Not yet logged in: show login link and stop
         st.markdown("🔐 You are not logged in.")
         st.markdown(f"[Click here to log in]({get_login_url()})")
+        login_url = get_login_url()
+        st.markdown(
+            f'<a href="{login_url}" target="_self">🔐 Click here to log in</a>',
+            unsafe_allow_html=True
+        )
         st.stop()
 
 # 2️⃣ Authenticated area
