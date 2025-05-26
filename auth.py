@@ -102,16 +102,3 @@ def get_userinfo(access_token):
     except Exception as e:
         st.error(f"❌ Error getting user info: {e}")
         return None
-
-def check_auth():
-    """Silently check if the user is logged in and store their info."""
-    if "user_info" not in st.session_state:
-        user_info = login_callback()
-        if user_info:
-            st.session_state.user_info = user_info
-            st.session_state.user_email = user_info.get("email", "")
-        else:
-            st.markdown("🔐 You are not logged in.")
-            st.markdown(f"[Click here to log in]({get_login_url()})")
-            st.stop()
-
