@@ -78,7 +78,9 @@ def show():
                 new_first = st.text_input("First Name", value=first_name)
                 new_last = st.text_input("Last Name", value=last_name)
                 new_dob = st.date_input("Date of Birth", value=dob)
-                new_gender = st.selectbox("Gender", ["M", "F", "Other"], index=["M", "F", "Other"].index(gender))
+                gender_options = ["M", "F", "Other"]
+                index = gender_options.index(gender) if gender in gender_options else 0
+                new_gender = st.selectbox("Gender", gender_options, index=index)
 
                 submitted = st.form_submit_button("Update")
 
