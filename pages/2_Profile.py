@@ -1,36 +1,124 @@
-# --- Update Profile Form ---
-with st.expander("✏️ Update Profile"):
-    with st.form("update_profile_form"):
-        new_first = st.text_input("First Name", db_first)
-        new_last = st.text_input("Last Name", db_last)
-        new_dob = st.date_input("Date of Birth", dob)
-        new_gender = st.selectbox("Gender", ["M", "F", "Other"], index=["M", "F", "Other"].index(gender))
+import streamlit as st
+import pandas as pd
+from utils import get_snowflake_connection
 
-        # Email shown but disabled since it's tied to login
-        st.text_input("Email", email, disabled=True)
+def get_initials(first, last):
+    return f"{first[0].upper()}{last[0].upper()}" if first and last else "?"
 
-        submitted = st.form_submit_button("Update")
-        if submitted:
-            try:
-                cursor.execute("""
-                    UPDATE registrations
-                    SET first_name = %s,
-                        last_name = %s,
-                        date_of_birth = %s,
-                        gender = %s,
-                        updated_at = CURRENT_TIMESTAMP,
-                        updated_by = %s
-                    WHERE email = %s
-                """, (
-                    new_first, new_last, new_dob.strftime('%Y-%m-%d'),
-                    new_gender, current_email, current_email
-                ))
-                conn.commit()
+def show():
+    st.set_page_config(page_title="My Profile")
+    st.title("🙋 My Profile")
 
-                # Update session state (name fields only)
-                st.session_state["user_info"]["given_name"] = new_first
-                st.session_state["user_info"]["family_name"] = new_last
+    # Auth0 access control
+    if "user_info" not in st.session_state:
+        st.warning("🔐 Please log in to view your profile.")
+        st.stop()
 
-                st.success("✅ Profile updated successfully. Please refresh the page.")
-            except Exception as e:
-                st.error(f"❌ Failed to update profile: {e}")
+    user_info = st.session_state["user_info"]
+    current_email = user_info.get("email", "")
+    first_name = user_info.get("given_name", "")
+    last_name = user_info.get("family_name", "")
+
+    try:
+        conn = get_snowflake_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT first_name, last_name, date_of_birth, gender, email
+            FROM registrations
+            WHERE email = %s
+        """, (current_email,))
+        row = cursor.fetchone()
+
+        if not row:
+            st.error("⚠️ No profile found for this user.")
+            return
+
+        db_first, db_last, dob, gender, email = row
+        initials = get_initials(db_first, db_last)
+
+        # --- Avatar ---
+        st.markdown(
+            f"""
+            <div style="text-align: center;">
+                <div style="
+                    width: 100px;
+                    height: 100px;
+                    border-radius: 50%;
+                    background-color: #3dc2d4;
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 36px;
+                    margin: 10px auto 20px auto;
+                ">{initials}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # --- Profile table ---
+        st.markdown("""
+        <style>
+        .profile-row { display: flex; margin-bottom: 0.5rem; }
+        .profile-label { width: 140px; font-weight: bold; }
+        </style>
+        """, unsafe_allow_html=True)
+
+        def profile_row(label, value):
+            st.markdown(
+                f'<div class="profile-row"><div class="profile-label">{label}:</div><div>{value}</div></div>',
+                unsafe_allow_html=True
+            )
+
+        profile_row("First Name", db_first)
+        profile_row("Last Name", db_last)
+        profile_row("Date of Birth", dob)
+        profile_row("Gender", gender)
+        profile_row("Email", email)
+
+        # --- Update Profile Form ---
+        with st.expander("✏️ Update Profile"):
+            with st.form("update_profile_form"):
+                new_first = st.text_input("First Name", db_first)
+                new_last = st.text_input("Last Name", db_last)
+                new_dob = st.date_input("Date of Birth", dob)
+                new_gender = st.selectbox("Gender", ["M", "F", "Other"], index=["M", "F", "Other"].index(gender))
+        
+                # Email shown but disabled since it's tied to login
+                st.text_input("Email", email, disabled=True)
+        
+                submitted = st.form_submit_button("Update")
+                if submitted:
+                    try:
+                        cursor.execute("""
+                            UPDATE registrations
+                            SET first_name = %s,
+                                last_name = %s,
+                                date_of_birth = %s,
+                                gender = %s,
+                                updated_at = CURRENT_TIMESTAMP,
+                                updated_by = %s
+                            WHERE email = %s
+                        """, (
+                            new_first, new_last, new_dob.strftime('%Y-%m-%d'),
+                            new_gender, current_email, current_email
+                        ))
+                        conn.commit()
+        
+                        # Update session state (name fields only)
+                        st.session_state["user_info"]["given_name"] = new_first
+                        st.session_state["user_info"]["family_name"] = new_last
+        
+                        st.success("✅ Profile updated successfully. Please refresh the page.")
+                    except Exception as e:
+                        st.error(f"❌ Failed to update profile: {e}")
+    
+    except Exception as e:
+        st.error(f"❌ Error retrieving profile: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+show()
