@@ -1,17 +1,17 @@
 import streamlit as st
 import pandas as pd
+from utils import get_snowflake_connection
 from datetime import date
-from utils import get_snowflake_connection, ensure_profile_complete  # ✅ include this
+from auth import check_auth
 
 def show():
+    check_auth()  # Ensure user is authenticated
+
     st.title("🏟️ My Clubs")
 
     if "user_email" not in st.session_state:
         st.warning("🔒 Please log in to view your clubs.")
         return
-
-    # ✅ Require complete profile before continuing
-    ensure_profile_complete()
 
     conn = get_snowflake_connection()
     cursor = conn.cursor()
