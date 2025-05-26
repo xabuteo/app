@@ -101,7 +101,6 @@ def show():
                                 last_name = %s,
                                 date_of_birth = %s,
                                 gender = %s,
-                                email = %s,
                                 updated_at = CURRENT_TIMESTAMP(),
                                 updated_by = %s
                             WHERE email = %s
@@ -110,12 +109,10 @@ def show():
                             new_last,
                             new_dob.strftime('%Y-%m-%d'),  # 👈 convert date to string
                             new_gender,
-                            new_email,
                             st.session_state.get("user_email", ""),  # updated_by
                             current_email
                         ))
                         conn.commit()
-                        st.session_state["user_email"] = new_email
                         st.success("✅ Profile updated successfully. Please refresh the page.")
                     except Exception as e:
                         st.error(f"❌ Failed to update profile: {e}")
