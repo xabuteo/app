@@ -6,6 +6,7 @@ from email.message import EmailMessage
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import streamlit as st
+from utils import get_snowflake_connection
 
 SNOWFLAKE_CONFIG = {
     'user': os.environ.get('user'),
