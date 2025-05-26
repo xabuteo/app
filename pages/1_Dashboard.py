@@ -2,9 +2,16 @@ import streamlit as st
 
 st.set_page_config(page_title="Dashboard")
 
-if "user_email" not in st.session_state:
-    st.warning("🔐 Please log in first.")
+# Access control
+if "user_info" not in st.session_state:
+    st.warning("🔐 Please log in to access the dashboard.")
     st.stop()
 
+# Extract user info
+user_info = st.session_state["user_info"]
+user_email = user_info.get("email", "Unknown")
+user_name = user_info.get("name") or f"{user_info.get('given_name', '')} {user_info.get('family_name', '')}".strip() or user_email
+
+# Page content
 st.title("📊 Dashboard")
-st.success(f"Welcome, {st.session_state['user_name']}!")
+st.success(f"Welcome, {user_name}!")
