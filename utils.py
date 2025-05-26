@@ -80,7 +80,7 @@ def ensure_profile_complete():
 
         if not row or not all(row):
             st.warning("⚠️ Your profile is incomplete. Please complete it before continuing.")
-            st.markdown("➡️ [Go to your profile page](./2_Profile)")
+            #st.markdown("➡️ [Go to your profile page](./2_Profile)")
             st.stop()
     except Exception as e:
         st.error(f"❌ Failed to verify profile: {e}")
