@@ -53,7 +53,7 @@ def login_callback():
             return user_info
 
     # 2. Attempt silent login from URL params
-    query_params = st.experimental_get_query_params()
+    query_params = st.query_params()
 
     if "code" in query_params:
         code = query_params["code"][0]
