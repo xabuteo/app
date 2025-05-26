@@ -60,3 +60,31 @@ def hash_password(password: str) -> str:
 
 def check_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
+def ensure_profile_complete():
+    """Check that the current user's profile is complete in the registrations table."""
+    if "user_email" not in st.session_state:
+        st.warning("🔐 You are not logged in.")
+        st.stop()
+
+    conn = get_snowflake_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT first_name, last_name, date_of_birth, gender
+            FROM xabuteo.public.registrations
+            WHERE email = %s
+        """, (st.session_state.user_email,))
+        row = cursor.fetchone()
+
+        if not row or not all(row):
+            st.warning("⚠️ Your profile is incomplete. Please complete it before continuing.")
+            st.markdown("➡️ [Go to your profile page](./2_Profile)")
+            st.stop()
+    except Exception as e:
+        st.error(f"❌ Failed to verify profile: {e}")
+        st.stop()
+    finally:
+        cursor.close()
+        conn.close()
