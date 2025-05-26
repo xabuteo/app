@@ -22,16 +22,28 @@ if "user_info" not in st.session_state:
         try:
             cursor.execute(
                 """
-                MERGE INTO xabuteo.public.registrations tgt
-                USING (SELECT %s AS email, %s AS first_name, %s AS last_name) src
+                MERGE INTO xabuteo.public.registrations AS tgt
+                USING (
+                    SELECT 
+                        %s AS email,
+                        %s AS first_name,
+                        %s AS last_name,
+                        %s AS auth_id,
+                        CURRENT_TIMESTAMP() AS date_registered,
+                        CURRENT_TIMESTAMP() AS updated_at,
+                        %s AS updated_by
+                ) AS src
                 ON tgt.email = src.email
-                WHEN NOT MATCHED THEN INSERT (email, first_name, last_name)
-                VALUES (src.email, src.first_name, src.last_name)
+                WHEN NOT MATCHED THEN
+                    INSERT (email, first_name, last_name, auth_id, date_registered, updated_at, updated_by)
+                    VALUES (src.email, src.first_name, src.last_name, src.auth_id, src.date_registered, src.updated_at, src.updated_by)
                 """,
                 (
                     st.session_state.user_email,
                     user_info.get("given_name", ""),
                     user_info.get("family_name", ""),
+                    user_info.get("sub", ""),  # Auth0's unique user ID
+                    user_info.get("email", "")
                 ),
             )
             conn.commit()
