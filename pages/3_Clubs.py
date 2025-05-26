@@ -2,6 +2,17 @@ import streamlit as st
 import pandas as pd
 from utils import get_snowflake_connection
 from datetime import date
+from auth import login_callback, get_login_url
+
+user_info = login_callback()
+if not user_info:
+    st.warning("🔐 You are not logged in.")
+    st.markdown(f"[Click here to log in]({get_login_url()})")
+    st.stop()
+else:
+    st.session_state.user_info = user_info
+    st.session_state.user_email = user_info.get("email", "")
+
 
 def show():
     st.title("🏟️ My Clubs")
