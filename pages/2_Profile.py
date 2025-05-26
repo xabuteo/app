@@ -95,33 +95,31 @@ def show():
                 submitted = st.form_submit_button("Update")
                 if submitted:
                     try:
-                        updated_at = pd.Timestamp.utcnow()
-                        updated_by = current_email  # or st.session_state.get("user_email")
-        
                         cursor.execute("""
                             UPDATE registrations
                             SET first_name = %s,
                                 last_name = %s,
                                 date_of_birth = %s,
                                 gender = %s,
-                                updated_at = %s,
+                                email = %s,
+                                updated_at = CURRENT_TIMESTAMP(),
                                 updated_by = %s
                             WHERE email = %s
                         """, (
                             new_first,
                             new_last,
-                            new_dob.strftime('%Y-%m-%d'),
+                            new_dob.strftime('%Y-%m-%d'),  # 👈 convert date to string
                             new_gender,
-                            updated_at,
-                            updated_by,
+                            new_email,
+                            st.session_state.get("user_email", ""),  # updated_by
                             current_email
                         ))
                         conn.commit()
+                        st.session_state["user_email"] = new_email
                         st.success("✅ Profile updated successfully. Please refresh the page.")
                     except Exception as e:
                         st.error(f"❌ Failed to update profile: {e}")
 
-    
     except Exception as e:
         st.error(f"❌ Error retrieving profile: {e}")
     finally:
