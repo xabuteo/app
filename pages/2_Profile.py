@@ -1,23 +1,17 @@
 import streamlit as st
-import pandas as pd
 from utils import get_snowflake_connection
 
 def get_initials(first, last):
-    return f"{first[0].upper()}{last[0].upper()}" if first and last else "?"
+    return f"{first[0].upper()}{last[0].upper()}"
 
 def show():
-    st.set_page_config(page_title="My Profile")
     st.title("🙋 My Profile")
 
-    # Auth0 access control
-    if "user_info" not in st.session_state:
-        st.warning("🔐 Please log in to view your profile.")
-        st.stop()
+    if "user_email" not in st.session_state or not st.session_state["user_email"]:
+        st.warning("🔒 Please log in to view your profile.")
+        return
 
-    user_info = st.session_state["user_info"]
-    current_email = user_info.get("email", "")
-    first_name = user_info.get("given_name", "")
-    last_name = user_info.get("family_name", "")
+    current_email = st.session_state["user_email"]
 
     try:
         conn = get_snowflake_connection()
@@ -34,8 +28,8 @@ def show():
             st.error("⚠️ No profile found for this user.")
             return
 
-        db_first, db_last, dob, gender, email = row
-        initials = get_initials(db_first, db_last)
+        first_name, last_name, dob, gender, email = row
+        initials = get_initials(first_name, last_name)
 
         # --- Avatar ---
         st.markdown(
@@ -58,7 +52,7 @@ def show():
             unsafe_allow_html=True
         )
 
-        # --- Profile table ---
+        # --- Profile table without headers ---
         st.markdown("""
         <style>
         .profile-row { display: flex; margin-bottom: 0.5rem; }
@@ -72,50 +66,48 @@ def show():
                 unsafe_allow_html=True
             )
 
-        profile_row("First Name", db_first)
-        profile_row("Last Name", db_last)
+        profile_row("First Name", first_name)
+        profile_row("Last Name", last_name)
         profile_row("Date of Birth", dob)
         profile_row("Gender", gender)
         profile_row("Email", email)
 
         # --- Update Profile Form ---
         with st.expander("✏️ Update Profile"):
-            with st.form("update_profile_form"):
-                new_first = st.text_input("First Name", first_name)
-                new_last = st.text_input("Last Name", last_name)
-                new_dob = st.date_input("Date of Birth", dob)
-        
-                gender_options = ["M", "F", "Other"]
-                default_gender = gender if gender in gender_options else "Other"
-                new_gender = st.selectbox("Gender", gender_options, index=gender_options.index(default_gender))
-        
-                # Optional: disable email change field
-                st.text_input("Email", email, disabled=True)
-        
+            with st.form("update_profile_form", clear_on_submit=False):
+                new_first = st.text_input("First Name", value=first_name)
+                new_last = st.text_input("Last Name", value=last_name)
+                new_dob = st.date_input("Date of Birth", value=dob)
+                new_gender = st.selectbox("Gender", ["M", "F", "Other"], index=["M", "F", "Other"].index(gender))
+
                 submitted = st.form_submit_button("Update")
+
                 if submitted:
-                    try:
-                        cursor.execute("""
-                            UPDATE registrations
-                            SET first_name = %s,
-                                last_name = %s,
-                                date_of_birth = %s,
-                                gender = %s,
-                                updated_at = CURRENT_TIMESTAMP(),
-                                updated_by = %s
-                            WHERE email = %s
-                        """, (
-                            new_first,
-                            new_last,
-                            new_dob.strftime('%Y-%m-%d'),  # 👈 convert date to string
-                            new_gender,
-                            st.session_state.get("user_email", ""),  # updated_by
-                            current_email
-                        ))
-                        conn.commit()
-                        st.success("✅ Profile updated successfully. Please refresh the page.")
-                    except Exception as e:
-                        st.error(f"❌ Failed to update profile: {e}")
+                    if not new_first or not new_last or not new_dob or not new_gender:
+                        st.error("⚠️ All fields are required.")
+                    else:
+                        try:
+                            cursor.execute("""
+                                UPDATE registrations
+                                SET first_name = %s,
+                                    last_name = %s,
+                                    date_of_birth = %s,
+                                    gender = %s,
+                                    updated_at = CURRENT_TIMESTAMP(),
+                                    updated_by = %s
+                                WHERE email = %s
+                            """, (
+                                new_first,
+                                new_last,
+                                new_dob.strftime('%Y-%m-%d'),
+                                new_gender,
+                                current_email,  # updated_by
+                                current_email
+                            ))
+                            conn.commit()
+                            st.success("✅ Profile updated successfully. Please refresh the page.")
+                        except Exception as e:
+                            st.error(f"❌ Failed to update profile: {e}")
 
     except Exception as e:
         st.error(f"❌ Error retrieving profile: {e}")
