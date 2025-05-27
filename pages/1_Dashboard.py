@@ -14,11 +14,12 @@ from auth import initialize_session, check_auth
 st.title("📊 Dashboard")
 # Access control
 #if "user_info" not in st.session_state:
-   if st.button(
-       "✨ Sign up to the Xabuteo site",
-       type="primary",
-       key="checkout-button",
-       use_container_width=True,
-   ):
-      st.login("auth0")
+if st.button(
+    "✨ Sign up to the DataFan Store",
+    type="primary",
+    key="checkout-button",
+    use_container_width=True,
+):
+    # st.login("google")
+    st.login("auth0")
 #st.success(f"Welcome, {user_name}!")
