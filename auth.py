@@ -78,6 +78,7 @@ def login_callback():
             token_data = response.json()
 
             if "error" in token_data:
+                st.write("Redirect URI used:", REDIRECT_URI)
                 st.error(f"Auth0 error: {token_data.get('error_description', token_data['error'])}")
                 st.write(token_data)
                 return None
