@@ -92,6 +92,7 @@ def login_callback():
                 user_info = get_userinfo(access_token)
                 return user_info
             else:
+                st.write("Redirect URI used:", REDIRECT_URI)
                 st.error("❌ Failed to get access token.")
                 st.write(token_data)
                 return None
