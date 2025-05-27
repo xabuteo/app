@@ -7,16 +7,11 @@ from utils import get_snowflake_connection, ensure_profile_complete
 st.set_page_config(
     page_title="Xabuteo",
     page_icon="✨",
-    initial_sidebar_state="collapsed",
+    #initial_sidebar_state="collapsed",
     layout="centered",
 )
 
-# Define app pages
-login_page = st.Page("./pages/1_Dashboard.py", title="Dashboard", icon=":material/home:")
-profile_page = st.Page("./pages/2_Profile.py", title="Profile", icon=":material/play_arrow:")
-club_page = st.Page("./pages/3_Clubs.py", title="Club", icon=":material/admin_panel_settings:")
-
-# 1️⃣ Handle authentication callback and silent login
+# 1️⃣ Handle authentication callback
 user_info = login_callback()
 
 if user_info:
@@ -60,27 +55,10 @@ if user_info:
         conn.close()
 else:
     # Not yet logged in: show login link and stop
-    #st.markdown("🔐 You are not logged in.")
-    #st.markdown(f"[Click here to log in]({get_login_url()})")
-    #st.stop()
-    #pg = st.navigation(
-    #    [login_page],
-    #    position="hidden",
-    #)
-    #pg.run()
     if st.button(
         "✨ Sign up to the Xabuteo site",
         type="primary",
         key="checkout-button",
         use_container_width=True,
     ):
-        # st.login("google")
         st.login("auth0")
-
-# 2️⃣ Ensure user profile is complete
-ensure_profile_complete()
-
-# 3️⃣ Authenticated and complete profile area
-st.success(f"Welcome, {st.session_state.user_email}!")
-st.markdown("You can now use the app’s features.")
-query_params = st.query_params
