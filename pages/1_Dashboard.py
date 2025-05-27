@@ -4,7 +4,7 @@ from auth import initialize_session, check_auth
 #initialize_session()
 #check_auth()
 
-st.set_page_config(page_title="Dashboard")
+#st.set_page_config(page_title="Dashboard")
 
 if st.button(
     "✨ Sign up to the Xabuteo site",
