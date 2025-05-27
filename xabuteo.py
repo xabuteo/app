@@ -61,21 +61,20 @@ if user_info:
         conn.close()
 else:
     # 🚪 User not logged in: show login screen
-    st.warning("🔐 You are not logged in.")
-    login_url = get_login_url()
-    st.markdown(f"[Click here to log in]({login_url})", unsafe_allow_html=True)
-    st.stop()
+    # st.warning("🔐 You are not logged in.")
+    # login_url = get_login_url()
+    # st.markdown(f"[Click here to log in]({login_url})", unsafe_allow_html=True)
+    # st.stop()
+    # 🎉 Main app navigation
+    pg = st.navigation(
+        [login_page, profile_page, club_page],
+        title="Xabuteo",
+        title_icon="✨",
+    )
+    pg.run()
 
 # ✅ Check profile completeness
 ensure_profile_complete()
-
-# 🎉 Main app navigation
-pg = st.navigation(
-    [login_page, profile_page, club_page],
-    title="Xabuteo",
-    title_icon="✨",
-)
-pg.run()
 
 # Optional: Logout button
 logout_button()
