@@ -89,7 +89,7 @@ def login_callback():
             
                 # ✅ Clear query parameters to prevent invalid_grant on refresh
                 st.query_params.clear()
-            
+                st.sidebar.write("Session state:", dict(st.session_state))
                 return user_info
 
             else:
