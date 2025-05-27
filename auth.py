@@ -86,7 +86,12 @@ def login_callback():
                 user_info = get_userinfo(access_token)
                 st.session_state["user_info"] = user_info
                 st.session_state["user_email"] = user_info.get("email", "")
+            
+                # ✅ Clear query parameters to prevent invalid_grant on refresh
+                st.query_params.clear()
+            
                 return user_info
+
             else:
                 st.error("❌ Failed to get access token.")
                 st.write(token_data)
