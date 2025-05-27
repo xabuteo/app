@@ -4,7 +4,6 @@ import streamlit as st
 from auth import get_login_url, login_callback, logout_button
 from utils import get_snowflake_connection, ensure_profile_complete
 
-# Set page configuration
 st.set_page_config(
     page_title="Xabuteo",
     page_icon="✨",
@@ -14,10 +13,10 @@ st.set_page_config(
 
 # Define app pages
 login_page = st.Page("./pages/1_Dashboard.py", title="Dashboard", icon=":material/home:")
-profile_page = st.Page("./pages/2_Profile.py", title="Profile", icon=":material/person:")
-club_page = st.Page("./pages/3_Clubs.py", title="Clubs", icon=":material/groups:")
+profile_page = st.Page("./pages/2_Profile.py", title="Profile", icon=":material/play_arrow:")
+club_page = st.Page("./pages/3_Clubs.py", title="Club", icon=":material/admin_panel_settings:")
 
-# 🔐 Handle Auth0 login callback or silent login
+# 1️⃣ Handle authentication callback and silent login
 user_info = login_callback()
 
 if user_info:
@@ -25,7 +24,7 @@ if user_info:
     st.session_state.user_email = user_info.get("email", "")
     st.success(f"✅ Logged in as {st.session_state.user_email}")
 
-    # 📥 Save to Snowflake if user is new
+    # Insert into Snowflake (if new)
     conn = get_snowflake_connection()
     cursor = conn.cursor()
     try:
@@ -60,21 +59,20 @@ if user_info:
         cursor.close()
         conn.close()
 else:
-    # 🚪 User not logged in: show login screen
-    # st.warning("🔐 You are not logged in.")
-    # login_url = get_login_url()
-    # st.markdown(f"[Click here to log in]({login_url})", unsafe_allow_html=True)
-    # st.stop()
-    # 🎉 Main app navigation
+    # Not yet logged in: show login link and stop
+    # st.markdown("🔐 You are not logged in.")
+    # st.markdown(f"[Click here to log in]({get_login_url()})")
+    #st.stop()
     pg = st.navigation(
-        [login_page, profile_page, club_page],
-        title="Xabuteo",
-        title_icon="✨",
+        [login_page],
+        position="hidden",
     )
     pg.run()
 
-# ✅ Check profile completeness
+# 2️⃣ Ensure user profile is complete
 ensure_profile_complete()
 
-# Optional: Logout button
-logout_button()
+# 3️⃣ Authenticated and complete profile area
+st.success(f"Welcome, {st.session_state.user_email}!")
+st.markdown("You can now use the app’s features.")
+query_params = st.query_params
