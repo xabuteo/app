@@ -5,7 +5,6 @@ initialize_session()
 check_auth()
 
 st.set_page_config(page_title="Dashboard")
-st.sidebar.write("Session state:", dict(st.session_state))
 
 # Access control
 if "user_info" not in st.session_state:
@@ -20,3 +19,4 @@ user_name = user_info.get("name") or f"{user_info.get('given_name', '')} {user_i
 # Page content
 st.title("📊 Dashboard")
 st.success(f"Welcome, {user_name}!")
+st.write("Session state:", dict(st.session_state))
