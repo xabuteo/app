@@ -5,16 +5,7 @@ from auth import initialize_session, check_auth
 #check_auth()
 
 #st.set_page_config(page_title="Dashboard")
-
-if st.button(
-    "✨ Sign up to the Xabuteo site",
-    type="primary",
-    key="checkout-button",
-    use_container_width=True,
-):
-    # st.login("google")
-    st.login("auth0")
-    
+   
 # Access control
 if "user_info" not in st.session_state:
     st.warning("🔐 Please log in to access the dashboard.")
@@ -27,4 +18,12 @@ user_name = user_info.get("name") or f"{user_info.get('given_name', '')} {user_i
 
 # Page content
 st.title("📊 Dashboard")
+if st.button(
+    "✨ Sign up to the Xabuteo site",
+    type="primary",
+    key="checkout-button",
+    use_container_width=True,
+):
+    # st.login("google")
+    st.login("auth0")
 st.success(f"Welcome, {user_name}!")
