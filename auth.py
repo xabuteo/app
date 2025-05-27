@@ -46,20 +46,24 @@ def get_login_url():
     return f"https://{AUTH0_DOMAIN}/authorize?{urlencode(params)}"
    
 def login_callback():
-    # 1. Check if access token is already stored
+    # 1. Check if access token is already stored in session state
     if "access_token" in st.session_state:
         user_info = get_userinfo(st.session_state["access_token"])
         if user_info:
             return user_info
 
-    # 2. Attempt silent login from URL params
+    # 2. Get query params (code, state, etc.)
     query_params = st.query_params
 
     if "code" in query_params:
         code = query_params.get("code", [None])[0]
 
-        # 3. Exchange code for access token
+        if not code:
+            st.error("No authorization code found in URL.")
+            return None
+
         try:
+            # 3. Exchange authorization code for access token
             response = requests.post(
                 TOKEN_URL,
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -72,21 +76,33 @@ def login_callback():
                 }),
             )
             token_data = response.json()
-            access_token = token_data.get("access_token")
 
+            if "error" in token_data:
+                st.error(f"Auth0 error: {token_data.get('error_description', token_data['error'])}")
+                st.write(token_data)
+                return None
+
+            access_token = token_data.get("access_token")
             if access_token:
                 st.session_state["access_token"] = access_token
+
+                # Clear query params so code is not reused on refresh
+                st.experimental_set_query_params()
+
                 user_info = get_userinfo(access_token)
                 return user_info
             else:
                 st.error("❌ Failed to get access token.")
                 st.write(token_data)
+                return None
 
         except Exception as e:
             st.error(f"❌ Auth0 token exchange failed: {e}")
+            return None
 
-    # 4. No login possible
+    # 4. No login possible (no code, no token)
     return None
+
 
 def get_userinfo(access_token):
     try:
