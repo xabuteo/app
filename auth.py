@@ -89,6 +89,7 @@ def login_callback():
             
                 # ✅ Clear query parameters to prevent invalid_grant on refresh
                 #st.query_params.clear()
+                st.query_params.to_dict()
             
                 return user_info
 
