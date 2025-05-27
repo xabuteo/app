@@ -23,3 +23,4 @@ if st.button(
     # st.login("google")
     st.login("auth0")
 #st.success(f"Welcome, {user_name}!")
+st.write("Session state:", dict(st.session_state))
