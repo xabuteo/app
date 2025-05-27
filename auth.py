@@ -5,10 +5,10 @@ from urllib.parse import urlencode
 import requests
 import uuid
 
-AUTH0_DOMAIN = st.secrets["auth0"]["domain"]
-CLIENT_ID = st.secrets["auth0"]["client_id"]
-CLIENT_SECRET = st.secrets["auth0"]["client_secret"]
-REDIRECT_URI = st.secrets["auth0"]["redirect_uri"]
+AUTH0_DOMAIN = st.secrets["auth.auth0"]["domain"]
+CLIENT_ID = st.secrets["auth.auth0"]["client_id"]
+CLIENT_SECRET = st.secrets["auth.auth0"]["client_secret"]
+REDIRECT_URI = st.secrets["auth.auth0"]["redirect_uri"]
 
 # auth.py snippet
 
