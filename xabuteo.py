@@ -9,6 +9,8 @@ st.title("🏓 Xabuteo – Login")
 
 # 1️⃣ Handle authentication callback and silent login
 user_info = login_callback()
+st.experimental_set_query_params()
+
 if user_info:
     st.session_state.user_info = user_info
     st.session_state.user_email = user_info.get("email", "")
