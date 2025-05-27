@@ -1,8 +1,8 @@
 import streamlit as st
 from auth import initialize_session, check_auth
 
-initialize_session()
-check_auth()
+#initialize_session()
+#check_auth()
 
 st.set_page_config(page_title="Dashboard")
 
