@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 
 AUTH0_DOMAIN = st.secrets["auth0"]["domain"]
 CLIENT_ID = st.secrets["auth0"]["client_id"]
+CLIENT_SECRET = st.secrets["auth0"]["client_secret"]
 REDIRECT_URI = st.secrets["auth0"]["redirect_uri"]
 
 TOKEN_URL = f"https://{AUTH0_DOMAIN}/oauth/token"
