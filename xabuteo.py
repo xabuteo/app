@@ -62,8 +62,3 @@ ensure_profile_complete()
 st.success(f"Welcome, {st.session_state.user_email}!")
 st.markdown("You can now use the app’s features.")
 query_params = st.query_params
-
-# Write them to the sidebar
-st.sidebar.header("Query Parameters")
-for key, value in query_params.items():
-    st.sidebar.write(f"**{key}**: {value}")
