@@ -43,28 +43,33 @@ def get_login_url():
     return f"https://{AUTH0_DOMAIN}/authorize?{urlencode(params)}"
 
 def login_callback():
-    query_params = st.query_params
-    if "code" not in query_params:
+    try:
+        query_params = st.query_params
+        if "code" not in query_params:
+            return None
+
+        code = query_params["code"]
+        token_url = f"https://{AUTH0_DOMAIN}/oauth/token"
+        payload = {
+            "grant_type": "authorization_code",
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "code": code,
+            "redirect_uri": REDIRECT_URI
+        }
+
+        res = requests.post(token_url, data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        res.raise_for_status()
+        tokens = res.json()
+
+        userinfo_res = requests.get(
+            f"https://{AUTH0_DOMAIN}/userinfo",
+            headers={"Authorization": f"Bearer {tokens['access_token']}"}
+        )
+        userinfo_res.raise_for_status()
+        return userinfo_res.json()
+
+    except requests.exceptions.HTTPError as e:
+        st.error(f"❌ Token exchange failed: {e}")
+        st.json(res.json())  # Print response from Auth0
         return None
-
-    code = query_params["code"]
-    token_url = f"https://{AUTH0_DOMAIN}/oauth/token"
-    payload = {
-        "grant_type": "authorization_code",
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "code": code,
-        "redirect_uri": REDIRECT_URI
-    }
-
-    res = requests.post(token_url, json=payload)
-    res.raise_for_status()
-    tokens = res.json()
-
-    # Fetch user info
-    userinfo_res = requests.get(
-        f"https://{AUTH0_DOMAIN}/userinfo",
-        headers={"Authorization": f"Bearer {tokens['access_token']}"}
-    )
-    userinfo_res.raise_for_status()
-    return userinfo_res.json()
