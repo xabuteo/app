@@ -20,4 +20,4 @@ user_name = user_info.get("name") or f"{user_info.get('given_name', '')} {user_i
 st.title("📊 Dashboard")
 st.success(f"Welcome, {user_name}!")
 st.write("Session state:", dict(st.session_state))
-st.json(st.experimental_user)
+st.json(st.user)
