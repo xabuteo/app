@@ -121,3 +121,39 @@ def get_userinfo(access_token):
     except Exception as e:
         st.error(f"❌ Error getting user info: {e}")
         return None
+
+
+# Keys used in session state
+SESSION_KEYS = ["user_email", "access_token", "user_info"]
+
+def initialize_session():
+    """Initialize expected session keys."""
+    st.session_state.setdefault("user_email", None)
+    st.session_state.setdefault("access_token", None)
+    st.session_state.setdefault("user_info", {})
+
+def is_logged_in():
+    """Returns True if user_info is in session and has an email."""
+    return (
+        "user_info" in st.session_state and
+        isinstance(st.session_state.user_info, dict) and
+        st.session_state.user_info.get("email")
+    )
+
+def check_auth():
+    """Ensure user is authenticated; otherwise, try login or stop app."""
+    if not is_logged_in():
+        user_info = login_callback()
+        if user_info:
+            st.session_state["user_info"] = user_info
+            st.session_state["user_email"] = user_info.get("email", "")
+            # access_token should already be set inside login_callback
+        else:
+            st.warning("🔐 You are not logged in.")
+            st.markdown("[Click here to log in](/)")
+            st.stop()
+
+def logout():
+    """Clear all session keys on logout."""
+    for key in SESSION_KEYS:
+        st.session_state.pop(key, None)
