@@ -88,8 +88,7 @@ def login_callback():
                 st.session_state["user_email"] = user_info.get("email", "")
             
                 # ✅ Clear query parameters to prevent invalid_grant on refresh
-                #st.query_params.clear()
-                st.query_params.to_dict()
+                st.query_params.clear()
             
                 return user_info
 
