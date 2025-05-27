@@ -13,8 +13,8 @@ st.set_page_config(
 
 # Define app pages
 login_page = st.Page("./pages/01_Dashboard.py", title="Dashboard", icon=":material/home:")
-profile_page = st.Page("./pages/02_profile.py", title="Profile", icon=":material/play_arrow:")
-club_page = st.Page("./pages/03_clubs.py.py", title="Club", icon=":material/admin_panel_settings:")
+profile_page = st.Page("./pages/02_Profile.py", title="Profile", icon=":material/play_arrow:")
+club_page = st.Page("./pages/03_Clubs.py.py", title="Club", icon=":material/admin_panel_settings:")
 
 # 1️⃣ Handle authentication callback and silent login
 user_info = login_callback()
