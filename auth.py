@@ -49,13 +49,19 @@ def login_callback():
             return None
 
         code = query_params["code"]
+        code_verifier = st.session_state.get("code_verifier")
+
+        if not code_verifier:
+            st.error("Missing PKCE code_verifier in session.")
+            return None
+
         token_url = f"https://{AUTH0_DOMAIN}/oauth/token"
         payload = {
             "grant_type": "authorization_code",
             "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
             "code": code,
-            "redirect_uri": REDIRECT_URI
+            "redirect_uri": REDIRECT_URI,
+            "code_verifier": code_verifier
         }
 
         res = requests.post(token_url, data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"})
@@ -71,5 +77,5 @@ def login_callback():
 
     except requests.exceptions.HTTPError as e:
         st.error(f"❌ Token exchange failed: {e}")
-        st.json(res.json())  # Print response from Auth0
+        st.json(res.json())
         return None
