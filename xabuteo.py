@@ -6,6 +6,7 @@ from utils import get_snowflake_connection, ensure_profile_complete
 
 st.set_page_config(page_title="Xabuteo", layout="centered")
 st.title("🏓 Xabuteo – Login")
+st.sidebar.write("Session state:", dict(st.session_state))
 
 # 1️⃣ Handle authentication callback and silent login
 user_info = login_callback()
