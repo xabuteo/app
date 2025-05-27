@@ -20,5 +20,5 @@ if "user_info" not in st.session_state:
        key="checkout-button",
        use_container_width=True,
    ):
-   st.login("auth0")
+      st.login("auth0")
 st.success(f"Welcome, {user_name}!")
