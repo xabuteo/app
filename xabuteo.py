@@ -55,6 +55,9 @@ if user_info:
         conn.close()
 else:
     # Not yet logged in: show login link and stop
+    st.markdown("🔐 You are not logged in.")
+    st.markdown(f"[Click here to log in]({get_login_url()})")
+    #st.stop()
     if st.button(
         "✨ Sign up to the Xabuteo site",
         type="primary",
