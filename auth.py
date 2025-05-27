@@ -46,24 +46,25 @@ def get_login_url():
     return f"https://{AUTH0_DOMAIN}/authorize?{urlencode(params)}"
    
 def login_callback():
-    # 1. Check if access token is already stored in session state
-    if "access_token" in st.session_state:
-        user_info = get_userinfo(st.session_state["access_token"])
-        if user_info:
-            return user_info
+    import requests
+    from urllib.parse import urlencode
+    import streamlit as st
 
-    # 2. Get query params (code, state, etc.)
+    if "access_token" in st.session_state:
+        return st.session_state.get("user_info")
+
     query_params = st.query_params
 
-    if "code" in query_params:
-        code = query_params.get("code", [None])[0]
+    # Prevent reusing the same code by checking session
+    if "auth_code_used" in st.session_state:
+        return None
 
-        if not code:
-            st.error("No authorization code found in URL.")
-            return None
+    if "code" in query_params:
+        code = query_params["code"]
+        if isinstance(code, list):
+            code = code[0]
 
         try:
-            # 3. Exchange authorization code for access token
             response = requests.post(
                 TOKEN_URL,
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -75,36 +76,24 @@ def login_callback():
                     "redirect_uri": REDIRECT_URI
                 }),
             )
+
             token_data = response.json()
-
-            if "error" in token_data:
-                st.write("Redirect URI used:", REDIRECT_URI)
-                st.error(f"Auth0 error: {token_data.get('error_description', token_data['error'])}")
-                st.write(token_data)
-                return None
-
             access_token = token_data.get("access_token")
+
             if access_token:
                 st.session_state["access_token"] = access_token
-
-                # Clear query params so code is not reused on refresh
-                st.experimental_set_query_params()
-
+                st.session_state["auth_code_used"] = True
                 user_info = get_userinfo(access_token)
+                st.session_state["user_info"] = user_info
+                st.session_state["user_email"] = user_info.get("email", "")
                 return user_info
             else:
-                st.write("Redirect URI used:", REDIRECT_URI)
                 st.error("❌ Failed to get access token.")
                 st.write(token_data)
-                return None
 
         except Exception as e:
-            st.error(f"❌ Auth0 token exchange failed: {e}")
-            return None
-
-    # 4. No login possible (no code, no token)
+            st.error(f"❌ Token exchange failed: {e}")
     return None
-
 
 def get_userinfo(access_token):
     try:
