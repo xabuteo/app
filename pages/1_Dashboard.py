@@ -1,10 +1,11 @@
 import streamlit as st
-from session import initialize_session, check_auth
+from auth import initialize_session, check_auth
 
 initialize_session()
 check_auth()
 
 st.set_page_config(page_title="Dashboard")
+st.sidebar.write("Session state:", dict(st.session_state))
 
 # Access control
 if "user_info" not in st.session_state:
