@@ -61,3 +61,4 @@ ensure_profile_complete()
 # 3️⃣ Authenticated and complete profile area
 st.success(f"Welcome, {st.session_state.user_email}!")
 st.markdown("You can now use the app’s features.")
+st.query_params.to_dict()
