@@ -4,8 +4,17 @@ import streamlit as st
 from auth import get_login_url, login_callback, logout_button
 from utils import get_snowflake_connection, ensure_profile_complete
 
-st.set_page_config(page_title="Xabuteo", layout="centered")
-st.title("🏓 Xabuteo – Login")
+st.set_page_config(
+    page_title="Xabuteo",
+    page_icon="✨",
+    initial_sidebar_state="collapsed",
+    layout="centered",
+)
+
+# Define app pages
+login_page = st.Page("./pages/01_Dashboard.py", title="Dashboard", icon=":material/home:")
+profile_page = st.Page("./pages/02_profile.py", title="Profile", icon=":material/play_arrow:")
+club_page = st.Page("./pages/03_clubs.py.py", title="Club", icon=":material/admin_panel_settings:")
 
 # 1️⃣ Handle authentication callback and silent login
 user_info = login_callback()
