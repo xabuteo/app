@@ -63,11 +63,19 @@ else:
     #st.markdown("🔐 You are not logged in.")
     #st.markdown(f"[Click here to log in]({get_login_url()})")
     #st.stop()
-    pg = st.navigation(
-        [login_page],
-        position="hidden",
-    )
-    pg.run()
+    #pg = st.navigation(
+    #    [login_page],
+    #    position="hidden",
+    #)
+    #pg.run()
+    if st.button(
+        "✨ Sign up to the Xabuteo site",
+        type="primary",
+        key="checkout-button",
+        use_container_width=True,
+    ):
+        # st.login("google")
+        st.login("auth0")
 
 # 2️⃣ Ensure user profile is complete
 ensure_profile_complete()
