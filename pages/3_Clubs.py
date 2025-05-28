@@ -2,22 +2,11 @@ import streamlit as st
 import pandas as pd
 from utils import get_snowflake_connection
 from datetime import date
-from auth import login_callback, get_login_url
-
-user_info = login_callback()
-if not user_info:
-    st.warning("🔐 You are not logged in.")
-    st.markdown(f"[Click here to log in]({get_login_url()})")
-    st.stop()
-else:
-    st.session_state.user_info = user_info
-    st.session_state.user_email = user_info.get("email", "")
-
 
 def show():
     st.title("🏟️ My Clubs")
 
-    if "user_email" not in st.session_state:
+    if not st.user.is_logged_in:
         st.warning("🔒 Please log in to view your clubs.")
         return
 
@@ -28,7 +17,7 @@ def show():
         # Get Player ID for logged-in user
         cursor.execute(
             "SELECT ID FROM XABUTEO.PUBLIC.REGISTRATIONS WHERE EMAIL = %s", 
-            (st.session_state["user_email"],)
+            (st.user.email,)
         )
         player_row = cursor.fetchone()
         if not player_row:
@@ -39,7 +28,7 @@ def show():
         # --- Display PLAYER_CLUB_V view ---
         cursor.execute(
             "SELECT * FROM XABUTEO.PUBLIC.PLAYER_CLUB_V WHERE EMAIL = %s", 
-            (st.session_state["user_email"],)
+            (st.user.email,)
         )
         rows = cursor.fetchall()
         columns = [desc[0].lower() for desc in cursor.description]
