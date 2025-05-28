@@ -47,8 +47,8 @@ else:
             """,
             (
                 st.user.email,
-                user_info.get("given_name", ""),
-                user_info.get("family_name", ""),
+                st.user.given_name,
+                st.user.family_name,
                 st.user.sub,
                 st.user.email
             ),
