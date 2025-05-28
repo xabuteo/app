@@ -5,7 +5,7 @@ from utils import get_snowflake_connection
 def show():
     st.title("🗂️ Club Requests")
 
-    if "user_email" not in st.session_state:
+    if not st.user.is_logged_in:
         st.warning("🔒 Please log in to access this page.")
         return
 
@@ -16,7 +16,7 @@ def show():
         # Get user ID
         cursor.execute("""
             SELECT id FROM xabuteo.public.registrations WHERE email = %s
-        """, (st.session_state["user_email"],))
+        """, (st.user.email,))
         user_row = cursor.fetchone()
         if not user_row:
             st.error("❌ User not found.")
