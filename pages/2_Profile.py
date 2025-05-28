@@ -9,11 +9,11 @@ def get_initials(first, last):
 def show():
     st.title("🙋 My Profile")
 
-    if "user_email" not in st.session_state or not st.session_state["user_email"]:
+    if not st.user.is_logged_in:
         st.warning("🔒 Please log in to view your profile.")
         return
 
-    current_email = st.session_state["user_email"]
+    current_email = st.user.email
 
     try:
         conn = get_snowflake_connection()
