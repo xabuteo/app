@@ -23,6 +23,9 @@ if not st.user.is_logged_in:
     # Head to first page of navigation
     pg.run()
 else:
+    email = getattr(st.user, "email", None)
+    auth_id = getattr(st.user, "sub", None)
+    
     # Insert into Snowflake (if new)
     conn = get_snowflake_connection()
     cursor = conn.cursor()
@@ -43,7 +46,7 @@ else:
                 INSERT (email, auth0_id, date_registered, updated_at, updated_by)
                 VALUES (src.email, src.auth0_id, src.date_registered, src.updated_at, src.updated_by)
             """,
-            (st.user.email, st.user.sub, st.user.email),
+            (email, auth_id, email),
         )
         conn.commit()
     finally:
