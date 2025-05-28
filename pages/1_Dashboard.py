@@ -13,6 +13,9 @@ if not st.user.is_logged_in:
         st.login("auth0")
 else:
     st.success(f"Welcome, {st.user.email}!")
+    st.success(f"Welcome, {st.user.given_name}!")
+    st.success(f"Welcome, {st.user.family_name}!")
+    st.success(f"Welcome, {st.user.sub}!")
     if st.button(
         "✨ Log out",
         type="primary",
