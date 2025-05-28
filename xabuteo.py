@@ -1,7 +1,6 @@
 # xabuteo.py
 
 import streamlit as st
-from auth import get_login_url, login_callback, logout_button
 from utils import get_snowflake_connection, ensure_profile_complete
 
 st.set_page_config(
@@ -10,9 +9,6 @@ st.set_page_config(
     #initial_sidebar_state="collapsed",
     layout="centered",
 )
-
-# 1️⃣ Handle authentication callback
-user_info = login_callback()
 
 if user_info:
     st.session_state.user_info = user_info
@@ -56,8 +52,6 @@ if user_info:
 else:
     # Not yet logged in: show login link and stop
     st.markdown("🔐 You are not logged in.")
-    st.markdown(f"[Click here to log in]({get_login_url()})")
-    #st.stop()
     if st.button(
         "✨ Sign up to the Xabuteo site",
         type="primary",
