@@ -59,3 +59,5 @@ else:
         [dashboard_page],
         position="hidden",
     )
+# Head to first page of navigation
+pg.run()
