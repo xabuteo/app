@@ -23,39 +23,6 @@ if not st.user.is_logged_in:
     # Head to first page of navigation
     pg.run()
 else:
-    first_name = getattr(st.user, "given_name", "") or ""
-    last_name = getattr(st.user, "family_name", "") or ""
-    email = getattr(st.user, "email", None)
-    auth_id = getattr(st.user, "sub", None)
-    
-    # Insert into Snowflake (if new)
-    conn = get_snowflake_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            """
-            MERGE INTO xabuteo.public.registrations AS tgt
-            USING (
-                SELECT 
-                    %s AS email,
-                    %s AS first_name,
-                    %s AS last_name,
-                    %s AS auth0_id,
-                    CURRENT_TIMESTAMP() AS date_registered,
-                    CURRENT_TIMESTAMP() AS updated_at,
-                    %s AS updated_by
-            ) AS src
-            ON tgt.email = src.email
-            WHEN NOT MATCHED THEN
-                INSERT (email, first_name, last_name, auth0_id, date_registered, updated_at, updated_by)
-                VALUES (src.email, src.first_name, src.last_name, src.auth0_id, src.date_registered, src.updated_at, src.updated_by)
-            """,
-            (email, first_name, last_name, auth_id, email),
-        )
-        conn.commit()
-    finally:
-        cursor.close()
-        conn.close()    
     pg = st.navigation(
         [dashboard_page],
         position="hidden",
