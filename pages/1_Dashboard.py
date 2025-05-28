@@ -5,7 +5,7 @@ st.title("📊 Dashboard")
 # Access control
 #if "user_info" not in st.session_state:
 if st.button(
-    "✨ Sign up to the DataFan Store",
+    "✨ Sign up to the Xabuteo site",
     type="primary",
     key="checkout-button",
     use_container_width=True,
