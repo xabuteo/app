@@ -12,4 +12,4 @@ if not st.user.is_logged_in:
     ):
         st.login("auth0")
 else:
-    st.success(f"Welcome, {user_name}!")
+    st.success(f"Welcome, {st.user.email}!")
