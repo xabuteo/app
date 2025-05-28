@@ -51,11 +51,7 @@ if st.user.is_logged_in:
         conn.close()
 else:
     # Not yet logged in: show login link and stop
-    st.markdown("🔐 You are not logged in.")
-    if st.button(
-        "✨ Sign up to the Xabuteo site",
-        type="primary",
-        key="checkout-button",
-        use_container_width=True,
-    ):
-        st.login("auth0")
+    pg = st.navigation(
+        [landing_page],
+        position="hidden",
+    )
