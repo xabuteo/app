@@ -6,22 +6,26 @@ from utils import get_snowflake_connection, ensure_profile_complete
 st.set_page_config(
     page_title="Xabuteo",
     page_icon="✨",
-    #initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
     layout="centered",
 )
 
-dashboard_page = st.Page("./pages/1_Dashboard.py", title="Dashboard", icon=":material/home:")
-profile_page = st.Page("./pages/2_Profile.py", title="Profile", icon=":material/play_arrow:")
-club_page = st.Page("./pages/3_Clubs.py", title="Clubs", icon=":material/admin_panel_settings:")
+# Page content
+st.title("Xabuteo")
+
+#dashboard_page = st.Page("./pages/1_Dashboard.py", title="Dashboard", icon=":material/home:")
+#profile_page = st.Page("./pages/2_Profile.py", title="Profile", icon=":material/play_arrow:")
+#club_page = st.Page("./pages/3_Clubs.py", title="Clubs", icon=":material/admin_panel_settings:")
 
 if not st.user.is_logged_in:
     # Not yet logged in: show login link and stop
-    pg = st.navigation(
-        [dashboard_page],
-        position="hidden",
-    )
-    # Head to first page of navigation
-    pg.run()
+    if st.button(
+        "✨ Login or Sign up to the Xabuteo site",
+        type="primary",
+        key="checkout-button",
+        use_container_width=True,
+    ):
+        st.login("auth0")
 else:
     email = getattr(st.user, "email", None)
     auth_id = getattr(st.user, "sub", None)
@@ -52,11 +56,13 @@ else:
     finally:
         cursor.close()
         conn.close()    
-    pg = st.navigation(
-        [dashboard_page],
-        position="hidden",
-    )
-    # Head to first page of navigation
-    pg.run()
-    #st.json(st.user)
 
+    st.success(f"Welcome, {st.user.email}!")
+    st.json(st.user.to_dict())
+    if st.button(
+        "✨ Log out",
+        type="primary",
+        key="checkout-button",
+        use_container_width=True,
+    ):
+        st.logout()
