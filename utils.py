@@ -1,10 +1,6 @@
 import os
 import snowflake.connector
 import bcrypt
-import smtplib
-from email.message import EmailMessage
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import streamlit as st
 
 SNOWFLAKE_CONFIG = {
@@ -15,35 +11,6 @@ SNOWFLAKE_CONFIG = {
     'database': os.environ.get('database'),
     'schema': os.environ.get('schema')
 }
-
-def send_email(to_email, subject, message):
-    try:
-        email_config = st.secrets["email"]
-
-        from_email = email_config["from_email"]
-        password = email_config["password"]
-        smtp_server = email_config.get("smtp_server", "smtp.gmail.com")
-        smtp_port = email_config.get("smtp_port", 587)
-
-        # Create MIME message
-        msg = MIMEMultipart()
-        msg["From"] = from_email
-        msg["To"] = to_email
-        msg["Subject"] = subject
-
-        msg.attach(MIMEText(message, "plain"))
-
-        # Send email
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()
-            server.login(from_email, password)
-            server.send_message(msg)
-
-        return True
-
-    except Exception as e:
-        st.error(f"Failed to send email: {e}")
-        return False
 
 def get_snowflake_connection():
     return snowflake.connector.connect(
@@ -63,7 +30,7 @@ def check_password(plain_password: str, hashed_password: str) -> bool:
 
 def ensure_profile_complete():
     """Check that the current user's profile is complete in the registrations table."""
-    if "user_email" not in st.session_state:
+    if not st.user.is_logged_in:
         st.warning("🔐 You are not logged in.")
         st.stop()
 
@@ -75,7 +42,7 @@ def ensure_profile_complete():
             SELECT first_name, last_name, date_of_birth, gender
             FROM xabuteo.public.registrations
             WHERE email = %s
-        """, (st.session_state.user_email,))
+        """, (st.user.email,))
         row = cursor.fetchone()
 
         if not row or not all(row):
