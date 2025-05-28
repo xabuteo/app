@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered",
 )
 
-if user_info:
+if st.user.is_logged_in:
     st.session_state.user_info = user_info
     st.session_state.user_email = user_info.get("email", "")
     st.success(f"✅ Logged in as {st.session_state.user_email}")
