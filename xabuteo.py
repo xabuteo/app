@@ -10,6 +10,10 @@ st.set_page_config(
     layout="centered",
 )
 
+dashboard_page = st.Page("./pages/1_Dashboard.py", title="Dashboard", icon=":material/home:")
+profile_page = st.Page("./pages/2_Profile.py", title="Profile", icon=":material/play_arrow:")
+club_page = st.Page("./pages/3_Clubs.py", title="Clubs", icon=":material/admin_panel_settings:")
+
 if st.user.is_logged_in:
     st.session_state.user_info = user_info
     st.session_state.user_email = user_info.get("email", "")
@@ -52,6 +56,6 @@ if st.user.is_logged_in:
 else:
     # Not yet logged in: show login link and stop
     pg = st.navigation(
-        [landing_page],
+        [dashboard_page],
         position="hidden",
     )
