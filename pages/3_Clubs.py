@@ -6,9 +6,7 @@ from datetime import date
 def show():
     st.title("🏟️ My Clubs")
 
-    if not st.user.is_logged_in:
-        st.warning("🔒 Please log in to view your clubs.")
-        return
+    ensure_profile_complete()
 
     conn = get_snowflake_connection()
     cursor = conn.cursor()
