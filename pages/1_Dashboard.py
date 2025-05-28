@@ -13,4 +13,10 @@ if not st.user.is_logged_in:
         st.login("auth0")
 else:
     st.success(f"Welcome, {st.user.email}!")
-    st.logout()
+    if st.button(
+        "✨ Log out",
+        type="primary",
+        key="checkout-button",
+        use_container_width=True,
+    ):
+        st.logout()
