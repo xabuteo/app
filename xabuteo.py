@@ -5,8 +5,8 @@ from utils import get_snowflake_connection, ensure_profile_complete
 
 st.set_page_config(
     page_title="Xabuteo",
-    page_icon="✨",
-    initial_sidebar_state="expanded",
+    page_icon="☝️",
+    initial_sidebar_state="auto",
     layout="centered",
 )
 
