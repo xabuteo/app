@@ -68,37 +68,14 @@ def show():
     df_display = df[display_cols]
 
     st.markdown("### 📋 Event List")
-
-    st.markdown("### 📋 Event List")
-
+    
     # Convert date columns to string if needed for display
     for col in ["EVENT_START_DATE", "EVENT_END_DATE", "REG_OPEN_DATE", "REG_CLOSE_DATE"]:
         if col in df_display.columns:
             df_display[col] = df_display[col].astype(str)
     
     st.dataframe(df_display, use_container_width=True)
-    """
-    for _, row in df_display.iterrows():
-        with st.expander(f"{row['EVENT_TITLE']} ({row['EVENT_TYPE']}) – {row['EVENT_START_DATE']} to {row['EVENT_END_DATE']}"):
-            st.write(f"**Location:** {row.get('EVENT_LOCATION', 'N/A')}")
-            st.write(f"**Contact Email:** {row.get('EVENT_EMAIL', 'N/A')}")
-            st.write(f"**Registration Open:** {row.get('REG_OPEN_DATE', 'N/A')}")
-            st.write(f"**Registration Close:** {row.get('REG_CLOSE_DATE', 'N/A')}")
-            st.write(f"**Comments:** {row.get('EVENT_COMMENTS', 'N/A')}")
-    
-            flags = {
-                "Open": row.get("EVENT_OPEN", False),
-                "Women": row.get("EVENT_WOMEN", False),
-                "Junior": row.get("EVENT_JUNIOR", False),
-                "Veteran": row.get("EVENT_VETERAN", False),
-                "Teams": row.get("EVENT_TEAMS", False),
-            }
-    
-            st.write("**Categories:** " + ", ".join([k for k, v in flags.items() if v]) or "None")
-    
-            if st.button(f"📝 Register for '{row['EVENT_TITLE']}'", key=f"register_{row['ID']}"):
-                st.success(f"You're registered for **{row['EVENT_TITLE']}**! (stub functionality)")
-    """  
+
     # Add new event
     with st.expander("➕ Add New Event"):
         with st.form("add_event_form"):
