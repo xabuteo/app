@@ -31,7 +31,7 @@ email = getattr(st.user, "email", None)
 auth_id = getattr(st.user, "sub", None)
 
 # Try to get first_name and family_name from user attributes
-first_name = getattr(st.user, "first_name", None)
+first_name = getattr(st.user, "given_name", None)
 last_name = getattr(st.user, "family_name", None)
 
 # Fallback if not available (email/password users)
@@ -72,6 +72,8 @@ if not last_name:
 
     st.success(f"Welcome, {st.user.email}!")
     st.json(st.user.to_dict())
+    st.write("User object:", st.user)
+    st.write("First name:", first_name)
     if st.button(
         "✨ Log out",
         type="primary",
