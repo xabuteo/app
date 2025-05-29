@@ -208,3 +208,5 @@ def show_event_details(event_id):
 
     if st.button("📝 Register for this Event"):
         st.success("Registration functionality coming soon!")  # Replace with actual registration logic
+        
+show()
