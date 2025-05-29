@@ -3,11 +3,12 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
 
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Events", layout="wide")  # ✅ Wider layout
 
 def show():
     st.title("📅 Events")
 
+    # Load events
     try:
         conn = get_snowflake_connection()
         cursor = conn.cursor()
@@ -26,7 +27,7 @@ def show():
         st.info("No events found.")
         return
 
-    # Optional filters (title, type, status)
+    # Filters
     st.subheader("🔍 Search and Filter")
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -36,7 +37,6 @@ def show():
     with col3:
         status_filter = st.selectbox("Event Status", ["All"] + sorted(df["EVENT_STATUS"].dropna().unique()))
 
-    # Apply filters
     if title_filter:
         df = df[df["EVENT_TITLE"].str.contains(title_filter, case=False, na=False)]
     if type_filter != "All":
@@ -44,19 +44,22 @@ def show():
     if status_filter != "All":
         df = df[df["EVENT_STATUS"] == status_filter]
 
-    # Select display columns
     display_cols = [
         "ID", "EVENT_TITLE", "EVENT_TYPE", "EVENT_START_DATE", "EVENT_END_DATE",
         "EVENT_LOCATION", "EVENT_STATUS"
     ]
-    df_display = df[display_cols]
+    df_display = df[display_cols].copy()
+
+    # ✅ Format date columns
+    df_display["EVENT_START_DATE"] = pd.to_datetime(df_display["EVENT_START_DATE"]).dt.date
+    df_display["EVENT_END_DATE"] = pd.to_datetime(df_display["EVENT_END_DATE"]).dt.date
 
     st.markdown("### 📋 Event List (Click a row to register)")
 
-    # Configure ag-Grid
+    # AgGrid config
     gb = GridOptionsBuilder.from_dataframe(df_display)
     gb.configure_selection(selection_mode="single", use_checkbox=True)
-    gb.configure_pagination()
+    gb.configure_pagination(paginationAutoPageSize=True)
     grid_options = gb.build()
 
     grid_response = AgGrid(
@@ -64,13 +67,14 @@ def show():
         gridOptions=grid_options,
         update_mode=GridUpdateMode.SELECTION_CHANGED,
         enable_enterprise_modules=False,
-        height=400,
-        theme="streamlit"
+        height=500,
+        theme="streamlit"  # ✅ Valid theme
     )
 
     selected = grid_response["selected_rows"]
 
-    if selected:
+    # ✅ Fix: check if selected is not empty
+    if selected and len(selected) > 0:
         selected_event = selected[0]
         event_title = selected_event["EVENT_TITLE"]
         if st.button(f"📝 Register for '{event_title}'"):
