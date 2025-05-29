@@ -62,13 +62,21 @@ def show():
     gb.configure_pagination(paginationAutoPageSize=True)
     grid_options = gb.build()
 
+    row_count = len(df_display)
+    max_rows_to_show = 15
+    row_height = 35  # default row height in pixels
+    header_height = 35
+    
+    # Calculate height dynamically
+    grid_height = min(row_count, max_rows_to_show) * row_height + header_height
+    
     grid_response = AgGrid(
         df_display,
         gridOptions=grid_options,
         update_mode=GridUpdateMode.SELECTION_CHANGED,
         enable_enterprise_modules=False,
-        height=50%,
-        theme="material"  # ✅ Valid theme
+        height=grid_height,
+        theme="material"
     )
 
     selected = grid_response["selected_rows"]
