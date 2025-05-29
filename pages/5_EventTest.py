@@ -3,7 +3,7 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
 
-st.set_page_config(page_title="Events", layout="wide")  # ✅ Wider layout
+st.set_page_config(page_title="Events", layout="centered")  # ✅ Wider layout
 
 def show():
     st.title("📅 Events")
