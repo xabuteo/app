@@ -3,7 +3,21 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
 
-st.set_page_config(page_title="Events", layout="wide")  # ✅ Wider layout
+st.set_page_config(page_title="Events", layout="wide")  # Wider layout
+
+# Inject CSS to constrain AgGrid width and center it
+st.markdown(
+    """
+    <style>
+    .ag-theme-streamlit {
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 def show():
     st.title("📅 Events")
@@ -50,30 +64,36 @@ def show():
     ]
     df_display = df[display_cols].copy()
 
-    # ✅ Format date columns
+    # Format date columns as string yyyy-mm-dd for AgGrid display
     df_display["EVENT_START_DATE"] = pd.to_datetime(df_display["EVENT_START_DATE"]).dt.strftime('%Y-%m-%d')
     df_display["EVENT_END_DATE"] = pd.to_datetime(df_display["EVENT_END_DATE"]).dt.strftime('%Y-%m-%d')
 
     st.markdown("### 📋 Event List (Click a row to register)")
 
-    # AgGrid config
     gb = GridOptionsBuilder.from_dataframe(df_display)
     gb.configure_selection(selection_mode="single", use_checkbox=True)
     gb.configure_pagination(paginationAutoPageSize=True)
     grid_options = gb.build()
+
+    # Dynamic height calculation
+    row_count = len(df_display)
+    max_rows_to_show = 15
+    row_height = 35  # Default row height px
+    header_height = 35
+
+    grid_height = min(row_count, max_rows_to_show) * row_height + header_height
 
     grid_response = AgGrid(
         df_display,
         gridOptions=grid_options,
         update_mode=GridUpdateMode.SELECTION_CHANGED,
         enable_enterprise_modules=False,
-        height=500,
-        theme="streamlit"  # ✅ Valid theme
+        height=grid_height,
+        theme="streamlit"
     )
 
     selected = grid_response["selected_rows"]
 
-    # ✅ Fix: check if selected is not empty
     if selected and len(selected) > 0:
         selected_event = selected[0]
         event_title = selected_event["EVENT_TITLE"]
