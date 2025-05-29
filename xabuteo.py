@@ -27,20 +27,20 @@ if not st.user.is_logged_in:
     ):
         st.login("auth0")
 else:
-email = getattr(st.user, "email", None)
-auth_id = getattr(st.user, "sub", None)
+    email = getattr(st.user, "email", None)
+    auth_id = getattr(st.user, "sub", None)
+    
+    # Try to get first_name and family_name from user attributes
+    first_name = getattr(st.user, "given_name", None)
+    last_name = getattr(st.user, "family_name", None)
+    
+    # Fallback if not available (email/password users)
+    if not first_name and hasattr(st.user, "name"):
+        first_name = st.user.name
+    if not last_name:
+        last_name = ""
 
-# Try to get first_name and family_name from user attributes
-first_name = getattr(st.user, "given_name", None)
-last_name = getattr(st.user, "family_name", None)
-
-# Fallback if not available (email/password users)
-if not first_name and hasattr(st.user, "name"):
-    first_name = st.user.name
-if not last_name:
-    last_name = ""
-
-# Insert into Snowflake (if new)
+    # Insert into Snowflake (if new)
     conn = get_snowflake_connection()
     cursor = conn.cursor()
     try:
