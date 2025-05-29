@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
-from utils import get_snowflake_connection
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+from utils import get_snowflake_connection
+
+st.set_page_config(page_title="Events", layout="wide")  # ✅ Wider layout
 
 def show():
-    st.set_page_config(layout="wide")
     st.title("📅 Events")
 
     # Load events
@@ -26,93 +27,57 @@ def show():
         st.info("No events found.")
         return
 
-    # --- Filters ---
+    # Filters
     st.subheader("🔍 Search and Filter")
     col1, col2, col3 = st.columns(3)
-
     with col1:
         title_filter = st.text_input("Search by Title")
-
     with col2:
-        type_filter = st.selectbox(
-            "Event Type",
-            options=["All"] + sorted(df["EVENT_TYPE"].dropna().unique().tolist()) if "EVENT_TYPE" in df.columns else ["All"]
-        )
-
+        type_filter = st.selectbox("Event Type", ["All"] + sorted(df["EVENT_TYPE"].dropna().unique()))
     with col3:
-        status_filter = st.selectbox(
-            "Event Status",
-            options=["All"] + sorted(df["EVENT_STATUS"].dropna().unique().tolist()) if "EVENT_STATUS" in df.columns else ["All"]
-        )
+        status_filter = st.selectbox("Event Status", ["All"] + sorted(df["EVENT_STATUS"].dropna().unique()))
 
-    # Apply filters
-    if title_filter and "EVENT_TITLE" in df.columns:
+    if title_filter:
         df = df[df["EVENT_TITLE"].str.contains(title_filter, case=False, na=False)]
-    if type_filter != "All" and "EVENT_TYPE" in df.columns:
+    if type_filter != "All":
         df = df[df["EVENT_TYPE"] == type_filter]
-    if status_filter != "All" and "EVENT_STATUS" in df.columns:
+    if status_filter != "All":
         df = df[df["EVENT_STATUS"] == status_filter]
 
-    if df.empty:
-        st.warning("No events match the filter.")
-        return
-
-    # --- Display table with st_aggrid ---
     display_cols = [
-        "ID", "EVENT_TITLE", "EVENT_TYPE", "EVENT_START_DATE",
-        "EVENT_END_DATE", "EVENT_LOCATION", "EVENT_STATUS"
+        "ID", "EVENT_TITLE", "EVENT_TYPE", "EVENT_START_DATE", "EVENT_END_DATE",
+        "EVENT_LOCATION", "EVENT_STATUS"
     ]
     df_display = df[display_cols].copy()
 
-    # Format dates
+    # ✅ Format date columns
     df_display["EVENT_START_DATE"] = pd.to_datetime(df_display["EVENT_START_DATE"]).dt.date
     df_display["EVENT_END_DATE"] = pd.to_datetime(df_display["EVENT_END_DATE"]).dt.date
 
-    st.markdown("### 📋 Event List")
+    st.markdown("### 📋 Event List (Click a row to register)")
 
+    # AgGrid config
     gb = GridOptionsBuilder.from_dataframe(df_display)
     gb.configure_selection(selection_mode="single", use_checkbox=True)
-    gb.configure_column("ID", hide=True)
+    gb.configure_pagination(paginationAutoPageSize=True)
     grid_options = gb.build()
 
     grid_response = AgGrid(
         df_display,
         gridOptions=grid_options,
         update_mode=GridUpdateMode.SELECTION_CHANGED,
-        theme="streamlit",
-        height=400,
-        fit_columns_on_grid_load=True
+        enable_enterprise_modules=False,
+        height=500,
+        theme="streamlit"  # ✅ Valid theme
     )
 
     selected = grid_response["selected_rows"]
 
-    # --- Show full event details if a row is selected ---
+    # ✅ Fix: check if selected is not empty
     if selected and len(selected) > 0:
-        selected_event_id = selected[0]["ID"]
+        selected_event = selected[0]
+        event_title = selected_event["EVENT_TITLE"]
+        if st.button(f"📝 Register for '{event_title}'"):
+            st.success(f"✅ You're registered for **{event_title}**! (stub functionality)")
 
-        try:
-            conn = get_snowflake_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM xabuteo.public.events_v WHERE ID = %s", (selected_event_id,))
-            row = cursor.fetchone()
-
-            if not row:
-                st.warning("Event not found.")
-            else:
-                cols = [desc[0] for desc in cursor.description]
-                event = dict(zip(cols, row))
-
-                st.markdown("## 🧾 Event Details")
-
-                for key, value in event.items():
-                    st.write(f"**{key.replace('_', ' ').title()}:** {value}")
-
-                if st.button(f"📝 Register for '{event['EVENT_TITLE']}'"):
-                    st.success(f"✅ You're registered for **{event['EVENT_TITLE']}**!")
-
-        except Exception as e:
-            st.error(f"Error loading event details: {e}")
-        finally:
-            cursor.close()
-            conn.close()
 show()
