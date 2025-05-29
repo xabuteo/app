@@ -67,7 +67,7 @@ def show():
         gridOptions=grid_options,
         update_mode=GridUpdateMode.SELECTION_CHANGED,
         enable_enterprise_modules=False,
-        height=50%,
+        height=300,
         theme="material"  # ✅ Valid theme
     )
 
