@@ -72,8 +72,7 @@ else:
 
     st.success(f"Welcome, {st.user.email}!")
     st.json(st.user.to_dict())
-    st.write("User object:", st.user)
-    st.write("First name:", first_name)
+
     if st.button(
         "✨ Log out",
         type="primary",
