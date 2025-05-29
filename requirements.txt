@@ -6,3 +6,4 @@ streamlit-auth0
 streamlit>=1.25
 requests
 Authlib
+streamlit-aggrid
