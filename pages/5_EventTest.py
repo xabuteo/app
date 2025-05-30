@@ -86,10 +86,16 @@ def show():
         theme="material"
     )
 
-    selected = grid_response.get("selected_rows", [])
+    selected = grid_response["selected_rows"]
+    if isinstance(selected, pd.DataFrame):
+        selected = selected.to_dict(orient="records")
+    
+    if selected and isinstance(selected, list) and len(selected) > 0:
+        selected_event = selected[0]
+        st.write("You selected:", selected_event)
     
     # ✅ Make sure selected is a list and not empty
-    if isinstance(selected, list) and len(selected) > 0:
+    if selected and isinstance(selected, list) and len(selected) > 0:
         selected_event_id = selected[0]["ID"]
     
         # Get the full row from df based on selected ID
