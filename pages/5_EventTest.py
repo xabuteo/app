@@ -59,14 +59,18 @@ def show():
     # AgGrid config
     gb = GridOptionsBuilder.from_dataframe(df_display)
     gb.configure_selection(selection_mode="single", use_checkbox=True)
-    gb.configure_pagination(paginationAutoPageSize=True)
+    gb.configure_pagination(paginationAutoPageSize=False)
+    gb.configure_pagination(paginationPageSize=0)
+    
+    # Set custom widths per column (in pixels)
     gb.configure_column("ID", width=70)
-    gb.configure_column("EVENT_TITLE", width=250)
+    gb.configure_column("EVENT_TITLE", minWidth=200, maxWidth=300)
     gb.configure_column("EVENT_TYPE", width=150)
     gb.configure_column("EVENT_START_DATE", width=120)
     gb.configure_column("EVENT_END_DATE", width=120)
-    gb.configure_column("EVENT_LOCATION", width=200)
+    gb.configure_column("EVENT_TITLE", minWidth=200, maxWidth=300)
     gb.configure_column("EVENT_STATUS", width=130)
+    
     grid_options = gb.build()
 
     row_count = len(df_display)
