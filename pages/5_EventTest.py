@@ -100,26 +100,20 @@ def show():
     
         # Build list of key-value pairs
         event_info = [
-            ("Start Date", selected_event.get("EVENT_START_DATE", "")),
-            ("End Date", selected_event.get("EVENT_END_DATE", "")),
-            ("Open", check(selected_event.get("EVENT_OPEN", False))),
-            ("Women", check(selected_event.get("EVENT_WOMEN", False))),
-            ("Junior", check(selected_event.get("EVENT_JUNIOR", False))),
-            ("Veteran", check(selected_event.get("EVENT_VETERAN", False))),
-            ("Teams", check(selected_event.get("EVENT_TEAMS", False))),
-            ("Event Type", selected_event.get("EVENT_TYPE", "")),
-            ("Location", selected_event.get("EVENT_LOCATION", "")),
-            ("Status", selected_event.get("EVENT_STATUS", "")),
-            ("Contact Email", selected_event.get("EVENT_EMAIL", "")),
-            ("Reg Open Date", selected_event.get("REG_OPEN_DATE", "")),
-            ("Reg Close Date", selected_event.get("REG_CLOSE_DATE", "")),
-            ("Comments", selected_event.get("EVENT_COMMENTS", ""))
+            ("Start Date", selected_event.get("EVENT_START_DATE", ""),"Reg Open Date", selected_event.get("REG_OPEN_DATE", "")),
+            ("End Date", selected_event.get("EVENT_END_DATE", ""),"Reg Close Date", selected_event.get("REG_CLOSE_DATE", "")),
+            ("Event Type", selected_event.get("EVENT_TYPE", ""),"Open", check(selected_event.get("EVENT_OPEN", False))),
+            ("Location", selected_event.get("EVENT_LOCATION", ""),"Women", check(selected_event.get("EVENT_WOMEN", False))),
+            ("Status", selected_event.get("EVENT_STATUS", ""),"Junior", check(selected_event.get("EVENT_JUNIOR", False))),
+            ("Contact Email", selected_event.get("EVENT_EMAIL", ""), "Veteran", check(selected_event.get("EVENT_VETERAN", False))),
+            ("Comments", selected_event.get("EVENT_COMMENTS", ""),"Teams", check(selected_event.get("EVENT_TEAMS", False)))
         ]
-    
+
         # Convert to DataFrame
-        df_details = pd.DataFrame(event_info, columns=["Field", "Value"])
-        st.dataframe(df_details, use_container_width=True, hide_index=True)
-    
+        df_details = pd.DataFrame(event_info, columns=["Field1", "Value1","Field2", "Value2"])
+        #st.dataframe(df_details, use_container_width=True, hide_index=True)
+        st.table(df_details)
+        
         # Action buttons
         st.markdown("### 🛠️ Actions")
         col1, col2, col3, col4 = st.columns(4)
