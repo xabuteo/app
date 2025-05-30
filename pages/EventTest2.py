@@ -46,8 +46,19 @@ grid_response = AgGrid(
 )
 
 # Extract selected row
-selected = grid_response.get("selected_rows", [])
-if selected:
+#selected = grid_response.get("selected_rows", [])
+selected = grid_response["selected_rows"]
+if isinstance(selected, pd.DataFrame):
+    selected = selected.to_dict(orient="records")
+
+if selected and isinstance(selected, list) and len(selected) > 0:
+    selected_event = selected[0]
+    st.write("You selected:", selected_event)
+
+st.write("Selected type:", type(selected))
+st.write(selected)
+
+if selected and isinstance(selected, list) and len(selected) > 0:
     selected_id = selected[0]["ID"]
     selected_row = df[df["ID"] == selected_id].iloc[0]
 
