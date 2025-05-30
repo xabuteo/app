@@ -95,41 +95,26 @@ def show():
         selected_event = selected[0]
         st.subheader(f"📄 Event Details: {selected_event.get('EVENT_TITLE', '')}")
     
-        col1, col2, col3, col4 = st.columns([1.2, 1.8, 1.2, 1.8])  # Adjust ratios as needed
+        # Format boolean as ✅/❌
+        def check(val): return "✅" if val else "❌"
     
-        with col1:
-            st.markdown("**Start Date**")
-            st.markdown("**Open**")
-            st.markdown("**Junior**")
-            st.markdown("**Contact Email**")
-            st.markdown("**Event Type**")
-            st.markdown("**Status**")
+        # Build a markdown table
+        event_details_table = f"""
+| **Field**         | **Value**                                | **Field**         | **Value**                                |
+|-------------------|-------------------------------------------|-------------------|-------------------------------------------|
+| Start Date        | {selected_event.get('EVENT_START_DATE', '')} | End Date          | {selected_event.get('EVENT_END_DATE', '')} |
+| Open              | {check(selected_event.get('EVENT_OPEN'))}     | Women             | {check(selected_event.get('EVENT_WOMEN'))}  |
+| Junior            | {check(selected_event.get('EVENT_JUNIOR'))}   | Veteran           | {check(selected_event.get('EVENT_VETERAN'))} |
+| Teams             | {check(selected_event.get('EVENT_TEAMS'))}    | Status            | {selected_event.get('EVENT_STATUS', '')} |
+| Event Type        | {selected_event.get('EVENT_TYPE', '')}        | Location          | {selected_event.get('EVENT_LOCATION', '')} |
+| Contact Email     | {selected_event.get('EVENT_EMAIL', '')}       | Comments          | {selected_event.get('EVENT_COMMENTS', '')} |
+| Reg Open Date     | {selected_event.get('REG_OPEN_DATE', '')}     | Reg Close Date    | {selected_event.get('REG_CLOSE_DATE', '')} |
+    """
     
-        with col2:
-            st.write(selected_event.get("EVENT_START_DATE", ""))
-            st.write("✅" if selected_event.get("EVENT_OPEN") else "❌")
-            st.write("✅" if selected_event.get("EVENT_JUNIOR") else "❌")
-            st.write(selected_event.get("EVENT_EMAIL", ""))
-            st.write(selected_event.get("EVENT_TYPE", ""))
-            st.write(selected_event.get("EVENT_STATUS", ""))
+        st.markdown(event_details_table)
     
-        with col3:
-            st.markdown("**End Date**")
-            st.markdown("**Women**")
-            st.markdown("**Veteran**")
-            st.markdown("**Location**")
-            st.markdown("**Teams**")
-            st.markdown("**Comments**")
-    
-        with col4:
-            st.write(selected_event.get("EVENT_END_DATE", ""))
-            st.write("✅" if selected_event.get("EVENT_WOMEN") else "❌")
-            st.write("✅" if selected_event.get("EVENT_VETERAN") else "❌")
-            st.write(selected_event.get("EVENT_LOCATION", ""))
-            st.write("✅" if selected_event.get("EVENT_TEAMS") else "❌")
-            st.write(selected_event.get("EVENT_COMMENTS", ""))
-    
-        st.markdown("---")
+        # Action buttons
+        st.markdown("### 🛠️ Actions")
         col_a, col_b, col_c, col_d = st.columns(4)
         with col_a:
             st.button("✅ Approve", key="approve_btn")
@@ -139,4 +124,5 @@ def show():
             st.button("❌ Close", key="close_btn")
         with col_d:
             st.button("✔️ Complete", key="complete_btn")
+
 show()
