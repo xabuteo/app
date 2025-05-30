@@ -64,8 +64,8 @@ def show():
 
     row_count = len(df_display)
     max_rows_to_show = 15
-    row_height = 70  # default row height in pixels
-    header_height = 70
+    row_height = 48  # default row height in pixels
+    header_height = 48
     
     # Calculate height dynamically
     grid_height = min(row_count, max_rows_to_show) * row_height + header_height
