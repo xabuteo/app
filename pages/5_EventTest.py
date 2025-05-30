@@ -112,7 +112,7 @@ def show():
         # Convert to DataFrame
         df_details = pd.DataFrame(event_info, columns=["Field1", "Value1","Field2", "Value2"])
         #st.dataframe(df_details, use_container_width=True, hide_index=True)
-        st.table(df_details)
+        st.table(df_details.style.hide(axis="columns"))
         
         # Action buttons
         st.markdown("### 🛠️ Actions")
