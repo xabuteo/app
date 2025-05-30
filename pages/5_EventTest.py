@@ -98,31 +98,38 @@ def show():
         # Format boolean as ✅/❌
         def check(val): return "✅" if val else "❌"
     
-        # Build a markdown table
-        event_details_table = f"""
-| **Field**         | **Value**                                | **Field**         | **Value**                                |
-|-------------------|-------------------------------------------|-------------------|-------------------------------------------|
-| Start Date        | {selected_event.get('EVENT_START_DATE', '')} | End Date          | {selected_event.get('EVENT_END_DATE', '')} |
-| Open              | {check(selected_event.get('EVENT_OPEN'))}     | Women             | {check(selected_event.get('EVENT_WOMEN'))}  |
-| Junior            | {check(selected_event.get('EVENT_JUNIOR'))}   | Veteran           | {check(selected_event.get('EVENT_VETERAN'))} |
-| Teams             | {check(selected_event.get('EVENT_TEAMS'))}    | Status            | {selected_event.get('EVENT_STATUS', '')} |
-| Event Type        | {selected_event.get('EVENT_TYPE', '')}        | Location          | {selected_event.get('EVENT_LOCATION', '')} |
-| Contact Email     | {selected_event.get('EVENT_EMAIL', '')}       | Comments          | {selected_event.get('EVENT_COMMENTS', '')} |
-| Reg Open Date     | {selected_event.get('REG_OPEN_DATE', '')}     | Reg Close Date    | {selected_event.get('REG_CLOSE_DATE', '')} |
-    """
+        # Build list of key-value pairs
+        event_info = [
+            ("Start Date", selected_event.get("EVENT_START_DATE", "")),
+            ("End Date", selected_event.get("EVENT_END_DATE", "")),
+            ("Open", check(selected_event.get("EVENT_OPEN", False))),
+            ("Women", check(selected_event.get("EVENT_WOMEN", False))),
+            ("Junior", check(selected_event.get("EVENT_JUNIOR", False))),
+            ("Veteran", check(selected_event.get("EVENT_VETERAN", False))),
+            ("Teams", check(selected_event.get("EVENT_TEAMS", False))),
+            ("Event Type", selected_event.get("EVENT_TYPE", "")),
+            ("Location", selected_event.get("EVENT_LOCATION", "")),
+            ("Status", selected_event.get("EVENT_STATUS", "")),
+            ("Contact Email", selected_event.get("EVENT_EMAIL", "")),
+            ("Reg Open Date", selected_event.get("REG_OPEN_DATE", "")),
+            ("Reg Close Date", selected_event.get("REG_CLOSE_DATE", "")),
+            ("Comments", selected_event.get("EVENT_COMMENTS", ""))
+        ]
     
-        st.markdown(event_details_table)
+        # Convert to DataFrame
+        df_details = pd.DataFrame(event_info, columns=["Field", "Value"])
+        st.dataframe(df_details, use_container_width=True, hide_index=True)
     
         # Action buttons
         st.markdown("### 🛠️ Actions")
-        col_a, col_b, col_c, col_d = st.columns(4)
-        with col_a:
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
             st.button("✅ Approve", key="approve_btn")
-        with col_b:
+        with col2:
             st.button("📝 Register", key="register_btn")
-        with col_c:
+        with col3:
             st.button("❌ Close", key="close_btn")
-        with col_d:
+        with col4:
             st.button("✔️ Complete", key="complete_btn")
 
 show()
