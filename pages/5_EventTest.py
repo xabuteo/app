@@ -92,48 +92,51 @@ def show():
         
     # ✅ Make sure selected is a list and not empty
     if selected and isinstance(selected, list) and len(selected) > 0:
-        selected_event_id = selected[0]["ID"]
+        selected_event = selected[0]
+        st.subheader(f"📄 Event Details: {selected_event.get('EVENT_TITLE', '')}")
     
-        # Get the full row from df based on selected ID
-        selected_row = df[df["ID"] == selected_event_id]
+        col1, col2, col3, col4 = st.columns([1.2, 1.8, 1.2, 1.8])  # Adjust ratios as needed
     
-        if not selected_row.empty:
-            event = selected_row.iloc[0]  # Convert single-row DataFrame to Series
+        with col1:
+            st.markdown("**Start Date**")
+            st.markdown("**Open**")
+            st.markdown("**Junior**")
+            st.markdown("**Contact Email**")
+            st.markdown("**Event Type**")
+            st.markdown("**Status**")
     
-            with st.container():
-                st.subheader(f"📄 Event Details: {event['EVENT_TITLE']}")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown(f"**Type:** {event['EVENT_TYPE']}")
-                    st.markdown(f"**Start Date:** {pd.to_datetime(event['EVENT_START_DATE']).strftime('%Y-%m-%d')}")
-                    st.markdown(f"**End Date:** {pd.to_datetime(event['EVENT_END_DATE']).strftime('%Y-%m-%d')}")
-                    st.markdown(f"**Registration Opens:** {pd.to_datetime(event['REG_OPEN_DATE']).strftime('%Y-%m-%d')}")
-                    st.markdown(f"**Registration Closes:** {pd.to_datetime(event['REG_CLOSE_DATE']).strftime('%Y-%m-%d')}")
-                    st.markdown(f"**Location:** {event['EVENT_LOCATION']}")
-                    st.markdown(f"**Email:** {event['EVENT_EMAIL'] or 'N/A'}")
-                with col2:
-                    st.markdown(f"**Status:** {event['EVENT_STATUS']}")
-                    st.markdown("**Categories:**")
-                    st.markdown(f"- Open: {'✅' if event['EVENT_OPEN'] else '❌'}")
-                    st.markdown(f"- Women: {'✅' if event['EVENT_WOMEN'] else '❌'}")
-                    st.markdown(f"- Junior: {'✅' if event['EVENT_JUNIOR'] else '❌'}")
-                    st.markdown(f"- Veteran: {'✅' if event['EVENT_VETERAN'] else '❌'}")
-                    st.markdown(f"- Teams: {'✅' if event['EVENT_TEAMS'] else '❌'}")
+        with col2:
+            st.write(selected_event.get("EVENT_START_DATE", ""))
+            st.write("✅" if selected_event.get("EVENT_OPEN") else "❌")
+            st.write("✅" if selected_event.get("EVENT_JUNIOR") else "❌")
+            st.write(selected_event.get("EVENT_EMAIL", ""))
+            st.write(selected_event.get("EVENT_TYPE", ""))
+            st.write(selected_event.get("EVENT_STATUS", ""))
     
-                st.markdown("**Comments:**")
-                st.info(event["EVENT_COMMENTS"] or "No comments.")
+        with col3:
+            st.markdown("**End Date**")
+            st.markdown("**Women**")
+            st.markdown("**Veteran**")
+            st.markdown("**Location**")
+            st.markdown("**Teams**")
+            st.markdown("**Comments**")
     
-                st.markdown("#### Actions")
-                col1, col2, col3, col4 = st.columns(4)
-                with col1:
-                    st.button("✅ Approve")
-                with col2:
-                    st.button("📝 Register")
-                with col3:
-                    st.button("🛑 Close")
-                with col4:
-                    st.button("📦 Complete")
-
-
-
+        with col4:
+            st.write(selected_event.get("EVENT_END_DATE", ""))
+            st.write("✅" if selected_event.get("EVENT_WOMEN") else "❌")
+            st.write("✅" if selected_event.get("EVENT_VETERAN") else "❌")
+            st.write(selected_event.get("EVENT_LOCATION", ""))
+            st.write("✅" if selected_event.get("EVENT_TEAMS") else "❌")
+            st.write(selected_event.get("EVENT_COMMENTS", ""))
+    
+        st.markdown("---")
+        col_a, col_b, col_c, col_d = st.columns(4)
+        with col_a:
+            st.button("✅ Approve", key="approve_btn")
+        with col_b:
+            st.button("📝 Register", key="register_btn")
+        with col_c:
+            st.button("❌ Close", key="close_btn")
+        with col_d:
+            st.button("✔️ Complete", key="complete_btn")
 show()
