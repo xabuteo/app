@@ -87,24 +87,24 @@ def show():
     )
 
     selected = grid_response.get("selected_rows", [])
-
-    if selected and len(selected) > 0:
+    
+    if isinstance(selected, list) and len(selected) > 0:
         selected_id = selected[0].get("ID")
         selected_row = df[df["ID"] == selected_id]
-
+    
         if not selected_row.empty:
             event = selected_row.iloc[0]
-
+    
             with st.container():
                 st.subheader(f"📄 Event Details: {event['EVENT_TITLE']}")
                 st.markdown(f"**Type:** {event['EVENT_TYPE']}")
-                st.markdown(f"**Dates:** {event['EVENT_START_DATE'].strftime('%Y-%m-%d')} to {event['EVENT_END_DATE'].strftime('%Y-%m-%d')}")
+                st.markdown(f"**Dates:** {pd.to_datetime(event['EVENT_START_DATE']).strftime('%Y-%m-%d')} to {pd.to_datetime(event['EVENT_END_DATE']).strftime('%Y-%m-%d')}")
                 st.markdown(f"**Location:** {event['EVENT_LOCATION']}")
                 st.markdown(f"**Status:** {event['EVENT_STATUS']}")
-                st.markdown(f"**Registration Period:** {event['REG_OPEN_DATE'].strftime('%Y-%m-%d')} to {event['REG_CLOSE_DATE'].strftime('%Y-%m-%d')}")
+                st.markdown(f"**Registration Period:** {pd.to_datetime(event['REG_OPEN_DATE']).strftime('%Y-%m-%d')} to {pd.to_datetime(event['REG_CLOSE_DATE']).strftime('%Y-%m-%d')}")
                 st.markdown(f"**Email:** {event['EVENT_EMAIL'] or 'N/A'}")
                 st.markdown(f"**Comments:** {event['EVENT_COMMENTS'] or 'N/A'}")
-
+    
                 col1, col2, col3, col4, col5 = st.columns(5)
                 with col1:
                     st.markdown("**Categories**")
@@ -113,8 +113,7 @@ def show():
                     st.markdown(f"Junior: {'✅' if event['EVENT_JUNIOR'] else '❌'}")
                     st.markdown(f"Veteran: {'✅' if event['EVENT_VETERAN'] else '❌'}")
                     st.markdown(f"Teams: {'✅' if event['EVENT_TEAMS'] else '❌'}")
-
-                # Action buttons (logic to follow)
+    
                 with col2:
                     st.button("✅ Approve")
                 with col3:
@@ -123,6 +122,7 @@ def show():
                     st.button("🛑 Close")
                 with col5:
                     st.button("📦 Complete")
+
 
 
 show()
