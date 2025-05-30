@@ -69,7 +69,7 @@ def show():
     
     # Calculate height dynamically
     grid_height = min(row_count, max_rows_to_show) * row_height + header_height
-    grid_height = 596
+    grid_height = 594
     grid_response = AgGrid(
         df_display,
         gridOptions=grid_options,
