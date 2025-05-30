@@ -88,39 +88,48 @@ def show():
 
     selected = grid_response.get("selected_rows", [])
     
+    # ✅ Make sure selected is a list and not empty
     if isinstance(selected, list) and len(selected) > 0:
-        selected_id = selected[0].get("ID")
-        selected_row = df[df["ID"] == selected_id]
+        selected_event_id = selected[0]["ID"]
+    
+        # Get the full row from df based on selected ID
+        selected_row = df[df["ID"] == selected_event_id]
     
         if not selected_row.empty:
-            event = selected_row.iloc[0]
+            event = selected_row.iloc[0]  # Convert single-row DataFrame to Series
     
             with st.container():
                 st.subheader(f"📄 Event Details: {event['EVENT_TITLE']}")
-                st.markdown(f"**Type:** {event['EVENT_TYPE']}")
-                st.markdown(f"**Dates:** {pd.to_datetime(event['EVENT_START_DATE']).strftime('%Y-%m-%d')} to {pd.to_datetime(event['EVENT_END_DATE']).strftime('%Y-%m-%d')}")
-                st.markdown(f"**Location:** {event['EVENT_LOCATION']}")
-                st.markdown(f"**Status:** {event['EVENT_STATUS']}")
-                st.markdown(f"**Registration Period:** {pd.to_datetime(event['REG_OPEN_DATE']).strftime('%Y-%m-%d')} to {pd.to_datetime(event['REG_CLOSE_DATE']).strftime('%Y-%m-%d')}")
-                st.markdown(f"**Email:** {event['EVENT_EMAIL'] or 'N/A'}")
-                st.markdown(f"**Comments:** {event['EVENT_COMMENTS'] or 'N/A'}")
-    
-                col1, col2, col3, col4, col5 = st.columns(5)
+                col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown("**Categories**")
-                    st.markdown(f"Open: {'✅' if event['EVENT_OPEN'] else '❌'}")
-                    st.markdown(f"Women: {'✅' if event['EVENT_WOMEN'] else '❌'}")
-                    st.markdown(f"Junior: {'✅' if event['EVENT_JUNIOR'] else '❌'}")
-                    st.markdown(f"Veteran: {'✅' if event['EVENT_VETERAN'] else '❌'}")
-                    st.markdown(f"Teams: {'✅' if event['EVENT_TEAMS'] else '❌'}")
-    
+                    st.markdown(f"**Type:** {event['EVENT_TYPE']}")
+                    st.markdown(f"**Start Date:** {pd.to_datetime(event['EVENT_START_DATE']).strftime('%Y-%m-%d')}")
+                    st.markdown(f"**End Date:** {pd.to_datetime(event['EVENT_END_DATE']).strftime('%Y-%m-%d')}")
+                    st.markdown(f"**Registration Opens:** {pd.to_datetime(event['REG_OPEN_DATE']).strftime('%Y-%m-%d')}")
+                    st.markdown(f"**Registration Closes:** {pd.to_datetime(event['REG_CLOSE_DATE']).strftime('%Y-%m-%d')}")
+                    st.markdown(f"**Location:** {event['EVENT_LOCATION']}")
+                    st.markdown(f"**Email:** {event['EVENT_EMAIL'] or 'N/A'}")
                 with col2:
+                    st.markdown(f"**Status:** {event['EVENT_STATUS']}")
+                    st.markdown("**Categories:**")
+                    st.markdown(f"- Open: {'✅' if event['EVENT_OPEN'] else '❌'}")
+                    st.markdown(f"- Women: {'✅' if event['EVENT_WOMEN'] else '❌'}")
+                    st.markdown(f"- Junior: {'✅' if event['EVENT_JUNIOR'] else '❌'}")
+                    st.markdown(f"- Veteran: {'✅' if event['EVENT_VETERAN'] else '❌'}")
+                    st.markdown(f"- Teams: {'✅' if event['EVENT_TEAMS'] else '❌'}")
+    
+                st.markdown("**Comments:**")
+                st.info(event["EVENT_COMMENTS"] or "No comments.")
+    
+                st.markdown("#### Actions")
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
                     st.button("✅ Approve")
-                with col3:
+                with col2:
                     st.button("📝 Register")
-                with col4:
+                with col3:
                     st.button("🛑 Close")
-                with col5:
+                with col4:
                     st.button("📦 Complete")
 
 
