@@ -90,12 +90,11 @@ def show():
         theme="material"
     )
 
-    selected = grid_response["selected_rows"]
+    selected = grid_response.get("selected_rows", [])
 
-    # ✅ Fix: check if selected is not empty
-    if selected and len(selected) > 0:
+    if isinstance(selected, list) and len(selected) > 0:
         selected_event = selected[0]
-        event_title = selected_event["EVENT_TITLE"]
+        event_title = selected_event.get("EVENT_TITLE", "Unknown Event")
         if st.button(f"📝 Register for '{event_title}'"):
             st.success(f"✅ You're registered for **{event_title}**! (stub functionality)")
 
