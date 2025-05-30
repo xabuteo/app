@@ -64,12 +64,12 @@ def show():
 
     row_count = len(df_display)
     max_rows_to_show = 15
-    row_height = 64  # default row height in pixels
-    header_height = 64
+    row_height = 48  # default row height in pixels
+    header_height = 113
     
     # Calculate height dynamically
     grid_height = min(row_count, max_rows_to_show) * row_height + header_height
-    grid_height = 593
+    
     grid_response = AgGrid(
         df_display,
         gridOptions=grid_options,
