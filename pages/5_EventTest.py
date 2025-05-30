@@ -88,37 +88,41 @@ def show():
 
     selected = grid_response.get("selected_rows", [])
 
-    if isinstance(selected, list) and len(selected) > 0:
-        selected_event = selected[0]
-        full_event = df[df["ID"] == selected_event["ID"]].iloc[0]
+    if selected and len(selected) > 0:
+        selected_id = selected[0].get("ID")
+        selected_row = df[df["ID"] == selected_id]
 
-        with st.container():
-            st.markdown("---")
-            st.subheader(f"🔍 Event Details: {full_event['EVENT_TITLE']}")
-            st.write(f"**Type:** {full_event['EVENT_TYPE']}")
-            st.write(f"**Status:** {full_event['EVENT_STATUS']}")
-            st.write(f"**Location:** {full_event['EVENT_LOCATION']}")
-            st.write(f"**Start Date:** {pd.to_datetime(full_event['EVENT_START_DATE']).strftime('%Y-%m-%d')}")
-            st.write(f"**End Date:** {pd.to_datetime(full_event['EVENT_END_DATE']).strftime('%Y-%m-%d')}")
-            st.write(f"**Registration Open:** {pd.to_datetime(full_event['REG_OPEN_DATE']).strftime('%Y-%m-%d') if full_event['REG_OPEN_DATE'] else 'N/A'}")
-            st.write(f"**Registration Close:** {pd.to_datetime(full_event['REG_CLOSE_DATE']).strftime('%Y-%m-%d') if full_event['REG_CLOSE_DATE'] else 'N/A'}")
-            st.write(f"**Open:** {'Yes' if full_event['EVENT_OPEN'] else 'No'}")
-            st.write(f"**Women:** {'Yes' if full_event['EVENT_WOMEN'] else 'No'}")
-            st.write(f"**Junior:** {'Yes' if full_event['EVENT_JUNIOR'] else 'No'}")
-            st.write(f"**Veteran:** {'Yes' if full_event['EVENT_VETERAN'] else 'No'}")
-            st.write(f"**Teams:** {'Yes' if full_event['EVENT_TEAMS'] else 'No'}")
-            st.write(f"**Email:** {full_event['EVENT_EMAIL']}")
-            st.write(f"**Comments:** {full_event['EVENT_COMMENTS']}")
+        if not selected_row.empty:
+            event = selected_row.iloc[0]
 
-            st.markdown("#### Actions")
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.button("🔄 Approve")
-            with col2:
-                st.button("🔍 Register")
-            with col3:
-                st.button("❌ Close")
-            with col4:
-                st.button("🎉 Complete")
+            with st.container():
+                st.subheader(f"📄 Event Details: {event['EVENT_TITLE']}")
+                st.markdown(f"**Type:** {event['EVENT_TYPE']}")
+                st.markdown(f"**Dates:** {event['EVENT_START_DATE'].strftime('%Y-%m-%d')} to {event['EVENT_END_DATE'].strftime('%Y-%m-%d')}")
+                st.markdown(f"**Location:** {event['EVENT_LOCATION']}")
+                st.markdown(f"**Status:** {event['EVENT_STATUS']}")
+                st.markdown(f"**Registration Period:** {event['REG_OPEN_DATE'].strftime('%Y-%m-%d')} to {event['REG_CLOSE_DATE'].strftime('%Y-%m-%d')}")
+                st.markdown(f"**Email:** {event['EVENT_EMAIL'] or 'N/A'}")
+                st.markdown(f"**Comments:** {event['EVENT_COMMENTS'] or 'N/A'}")
+
+                col1, col2, col3, col4, col5 = st.columns(5)
+                with col1:
+                    st.markdown("**Categories**")
+                    st.markdown(f"Open: {'✅' if event['EVENT_OPEN'] else '❌'}")
+                    st.markdown(f"Women: {'✅' if event['EVENT_WOMEN'] else '❌'}")
+                    st.markdown(f"Junior: {'✅' if event['EVENT_JUNIOR'] else '❌'}")
+                    st.markdown(f"Veteran: {'✅' if event['EVENT_VETERAN'] else '❌'}")
+                    st.markdown(f"Teams: {'✅' if event['EVENT_TEAMS'] else '❌'}")
+
+                # Action buttons (logic to follow)
+                with col2:
+                    st.button("✅ Approve")
+                with col3:
+                    st.button("📝 Register")
+                with col4:
+                    st.button("🛑 Close")
+                with col5:
+                    st.button("📦 Complete")
+
 
 show()
