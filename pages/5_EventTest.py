@@ -50,37 +50,33 @@ def show():
     ]
     df_display = df[display_cols].copy()
 
-    # ✅ Format date columns
+    # Format date columns
     df_display["EVENT_START_DATE"] = pd.to_datetime(df_display["EVENT_START_DATE"]).dt.strftime('%Y-%m-%d')
     df_display["EVENT_END_DATE"] = pd.to_datetime(df_display["EVENT_END_DATE"]).dt.strftime('%Y-%m-%d')
 
-    st.markdown("### 📋 Event List (Click a row to register)")
+    st.markdown("### 📋 Event List (Click a row to view details)")
 
     # AgGrid config
     gb = GridOptionsBuilder.from_dataframe(df_display)
     gb.configure_selection(selection_mode="single", use_checkbox=True)
     gb.configure_pagination(paginationAutoPageSize=False)
     gb.configure_pagination(paginationPageSize=0)
-    
-    # Set custom widths per column (in pixels)
+
     gb.configure_column("ID", width=70)
     gb.configure_column("EVENT_TITLE", minWidth=200, maxWidth=300)
     gb.configure_column("EVENT_TYPE", width=150)
     gb.configure_column("EVENT_START_DATE", width=120)
     gb.configure_column("EVENT_END_DATE", width=120)
-    gb.configure_column("EVENT_TITLE", minWidth=200, maxWidth=300)
     gb.configure_column("EVENT_STATUS", width=130)
-    
+
     grid_options = gb.build()
 
     row_count = len(df_display)
     max_rows_to_show = 10
-    row_height = 48  # default row height in pixels
+    row_height = 48
     header_height = 113
-    
-    # Calculate height dynamically
     grid_height = min(row_count, max_rows_to_show) * row_height + header_height
-    
+
     grid_response = AgGrid(
         df_display,
         gridOptions=grid_options,
@@ -94,97 +90,35 @@ def show():
 
     if isinstance(selected, list) and len(selected) > 0:
         selected_event = selected[0]
-        event_title = selected_event.get("EVENT_TITLE", "Unknown Event")
-        if st.button(f"📝 Register for '{event_title}'"):
-            st.success(f"✅ You're registered for **{event_title}**! (stub functionality)")
+        full_event = df[df["ID"] == selected_event["ID"]].iloc[0]
 
-    # Add new event
-    with st.expander("➕ Add New Event"):
-        with st.form("add_event_form"):
-            col1, col2 = st.columns(2)
-            with col1:            
-                title = st.text_input("Event Title")
-            with col2:            
-                # Fetch event types from lookup table
-                try:
-                    conn = get_snowflake_connection()
-                    cursor = conn.cursor()
-                    cursor.execute("""
-                        SELECT list_value
-                        FROM xabuteo.public.ref_lookup
-                        WHERE list_type = 'event_type'
-                        ORDER BY list_order
-                    """)
-                    event_types = [row[0] for row in cursor.fetchall()]
-                except Exception as e:
-                    st.error(f"Error loading event types: {e}")
-                    event_types = []
-                finally:
-                    cursor.close()
-                    conn.close()
-        
-                event_type = st.selectbox("Event Type", event_types)
+        with st.container():
+            st.markdown("---")
+            st.subheader(f"🔍 Event Details: {full_event['EVENT_TITLE']}")
+            st.write(f"**Type:** {full_event['EVENT_TYPE']}")
+            st.write(f"**Status:** {full_event['EVENT_STATUS']}")
+            st.write(f"**Location:** {full_event['EVENT_LOCATION']}")
+            st.write(f"**Start Date:** {pd.to_datetime(full_event['EVENT_START_DATE']).strftime('%Y-%m-%d')}")
+            st.write(f"**End Date:** {pd.to_datetime(full_event['EVENT_END_DATE']).strftime('%Y-%m-%d')}")
+            st.write(f"**Registration Open:** {pd.to_datetime(full_event['REG_OPEN_DATE']).strftime('%Y-%m-%d') if full_event['REG_OPEN_DATE'] else 'N/A'}")
+            st.write(f"**Registration Close:** {pd.to_datetime(full_event['REG_CLOSE_DATE']).strftime('%Y-%m-%d') if full_event['REG_CLOSE_DATE'] else 'N/A'}")
+            st.write(f"**Open:** {'Yes' if full_event['EVENT_OPEN'] else 'No'}")
+            st.write(f"**Women:** {'Yes' if full_event['EVENT_WOMEN'] else 'No'}")
+            st.write(f"**Junior:** {'Yes' if full_event['EVENT_JUNIOR'] else 'No'}")
+            st.write(f"**Veteran:** {'Yes' if full_event['EVENT_VETERAN'] else 'No'}")
+            st.write(f"**Teams:** {'Yes' if full_event['EVENT_TEAMS'] else 'No'}")
+            st.write(f"**Email:** {full_event['EVENT_EMAIL']}")
+            st.write(f"**Comments:** {full_event['EVENT_COMMENTS']}")
 
-            col1, col2 = st.columns(2)
-            with col1:            
-                start_date = st.date_input("Start Date")
-            with col2:            
-                end_date = st.date_input("End Date")
-
-            col1, col2 = st.columns(2)
-            with col1:            
-                reg_open_date = st.date_input("Registration Open Date")
-            with col2:            
-                reg_close_date = st.date_input("Registration Close Date")
-            
-            location = st.text_input("Location")
-    
-            # Checkboxes
-            col1, col2, col3 = st.columns(3)
+            st.markdown("#### Actions")
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
-                event_open = st.checkbox("Open")
-                event_women = st.checkbox("Women")
+                st.button("🔄 Approve")
             with col2:
-                event_junior = st.checkbox("Junior")
-                event_veteran = st.checkbox("Veteran")
+                st.button("🔍 Register")
             with col3:
-                event_teams = st.checkbox("Teams")
+                st.button("❌ Close")
+            with col4:
+                st.button("🎉 Complete")
 
-            event_email = st.text_input("Contact Email")
-    
-            comments = st.text_area("Comments")
-    
-            submit = st.form_submit_button("Add Event")
-    
-            if submit:
-                try:
-                    conn = get_snowflake_connection()
-                    cursor = conn.cursor()
-                    cursor.execute("""
-                        INSERT INTO xabuteo.public.events (
-                            event_title, event_type, event_location,
-                            event_start_date, event_end_date,
-                            reg_open_date, reg_close_date,
-                            event_email, event_open, event_women,
-                            event_junior, event_veteran, event_teams,
-                            event_comments
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (
-                        title, event_type, location,
-                        start_date.strftime('%Y-%m-%d'),
-                        end_date.strftime('%Y-%m-%d'),
-                        reg_open_date.strftime('%Y-%m-%d'),
-                        reg_close_date.strftime('%Y-%m-%d'),
-                        event_email, event_open, event_women,
-                        event_junior, event_veteran, event_teams,
-                        comments
-                    ))
-                    conn.commit()
-                    st.success("✅ Event added successfully.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error inserting event: {e}")
-                finally:
-                    cursor.close()
-                    conn.close()
 show()
