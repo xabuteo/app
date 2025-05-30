@@ -89,11 +89,7 @@ def show():
     selected = grid_response["selected_rows"]
     if isinstance(selected, pd.DataFrame):
         selected = selected.to_dict(orient="records")
-    
-    if selected and isinstance(selected, list) and len(selected) > 0:
-        selected_event = selected[0]
-        st.write("You selected:", selected_event)
-    
+        
     # ✅ Make sure selected is a list and not empty
     if selected and isinstance(selected, list) and len(selected) > 0:
         selected_event_id = selected[0]["ID"]
