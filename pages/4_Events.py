@@ -93,7 +93,7 @@ def show():
     if selected and isinstance(selected, list) and len(selected) > 0:
         selected_event = selected[0]
     
-        with st.expander("Event Details", expanded=True):
+        with st.container(border=True):
             # Header and subheader
             st.subheader(selected_event.get("EVENT_TITLE", "Untitled Event"))
             eventtype = selected_event.get("EVENT_TYPE", "")
