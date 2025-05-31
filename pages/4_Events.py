@@ -89,43 +89,52 @@ def show():
     selected = grid_response["selected_rows"]
     if isinstance(selected, pd.DataFrame):
         selected = selected.to_dict(orient="records")
-            
-    # ✅ Make sure selected is a list and not empty
+
     if selected and isinstance(selected, list) and len(selected) > 0:
         selected_event = selected[0]
-        st.subheader(f"📄 Event Details: {selected_event.get('EVENT_TITLE', '')}")
     
-        # Format boolean as ✅/❌
-        def check(val): return "✅" if val else "❌"
+        with st.container():
+            # Header and subheader
+            st.header(selected_event.get("EVENT_TITLE", "Untitled Event"))
+            st.subheader(selected_event.get("EVENT_TYPE", "Unknown Type"))
     
-        # Build list of key-value pairs
-        event_info = [
-            ("Start Date", selected_event.get("EVENT_START_DATE", ""),"Reg Open Date", selected_event.get("REG_OPEN_DATE", "")),
-            ("End Date", selected_event.get("EVENT_END_DATE", ""),"Reg Close Date", selected_event.get("REG_CLOSE_DATE", "")),
-            ("Event Type", selected_event.get("EVENT_TYPE", ""),"Open", check(selected_event.get("EVENT_OPEN", False))),
-            ("Location", selected_event.get("EVENT_LOCATION", ""),"Women", check(selected_event.get("EVENT_WOMEN", False))),
-            ("Status", selected_event.get("EVENT_STATUS", ""),"Junior", check(selected_event.get("EVENT_JUNIOR", False))),
-            ("Contact Email", selected_event.get("EVENT_EMAIL", ""), "Veteran", check(selected_event.get("EVENT_VETERAN", False))),
-            ("Comments", selected_event.get("EVENT_COMMENTS", ""),"Teams", check(selected_event.get("EVENT_TEAMS", False)))
-        ]
-
-        # Convert to DataFrame
-        df_details = pd.DataFrame(event_info, columns=["Field1", "Value1","Field2", "Value2"])
-        #st.dataframe(df_details, use_container_width=True, hide_index=True)
-        st.table(df_details.style.hide(axis="columns"))
-        
-        # Action buttons
-        st.markdown("### 🛠️ Actions")
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.button("✅ Approve", key="approve_btn")
-        with col2:
-            st.button("📝 Register", key="register_btn")
-        with col3:
-            st.button("❌ Close", key="close_btn")
-        with col4:
-            st.button("✔️ Complete", key="complete_btn")
-        
+            # Date display logic
+            start_date = selected_event.get("EVENT_START_DATE", "")
+            end_date = selected_event.get("EVENT_END_DATE", "")
+            if start_date == end_date or not end_date:
+                date_str = f"**Date:** {start_date}"
+            else:
+                date_str = f"**Date:** {start_date} to {end_date}"
+    
+            # Location
+            location = selected_event.get("EVENT_LOCATION", "Unknown Location")
+    
+            # Display main event info
+            st.markdown(date_str)
+            st.markdown(f"**Location:** {location}")
+    
+            # Registration expander
+            with st.expander("📋 Registration Details", expanded=True):
+                reg_open = selected_event.get("REG_OPEN_DATE", "")
+                reg_close = selected_event.get("REG_CLOSE_DATE", "")
+                event_status = selected_event.get("EVENT_STATUS", "Unknown")
+    
+                st.markdown(f"**Registration Dates:** {reg_open} to {reg_close}")
+                st.markdown(f"**Status:** {event_status}")
+    
+                if event_status == "Pending":
+                    if st.button("✅ Approve"):
+                        selected_event["EVENT_STATUS"] = "Approved"
+                        st.success("Event status updated to Approved.")
+    
+                elif event_status == "Open":
+                    st.markdown("🔓 Registration section will go here (details to come).")
+    
+            # Display email and comments
+            st.markdown("---")
+            st.markdown(f"**Contact Email:** {selected_event.get('EVENT_EMAIL', 'N/A')}")
+            st.markdown(f"**Comments:** {selected_event.get('EVENT_COMMENTS', 'None')}")
+ 
     # Add new event
     with st.expander("➕ Add New Event"):
         with st.form("add_event_form"):
