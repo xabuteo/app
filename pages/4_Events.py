@@ -132,7 +132,6 @@ def show():
                     st.markdown("🔓 Registration section will go here (details to come).")
     
             # Display email and comments
-            st.markdown("---")
             st.markdown(f"**Contact Email:** {selected_event.get('EVENT_EMAIL', 'N/A')}")
             st.markdown(f"**Comments:** {selected_event.get('EVENT_COMMENTS', 'None')}")
  
