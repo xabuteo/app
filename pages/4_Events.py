@@ -97,7 +97,7 @@ def show():
             # Header and subheader
             st.subheader(selected_event.get("EVENT_TITLE", "Untitled Event"))
             eventtype = selected_event.get("EVENT_TYPE", "")
-            st.markdown(f"{eventtype}")
+            st.markdown(f"**{eventtype}**")
     
             # Date display logic
             start_date = selected_event.get("EVENT_START_DATE", "")
