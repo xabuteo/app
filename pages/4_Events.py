@@ -93,10 +93,11 @@ def show():
     if selected and isinstance(selected, list) and len(selected) > 0:
         selected_event = selected[0]
     
-        with st.container():
+        with st.expander("Event Details", expanded=True):
             # Header and subheader
-            st.header(selected_event.get("EVENT_TITLE", "Untitled Event"))
-            st.subheader(selected_event.get("EVENT_TYPE", "Unknown Type"))
+            st.subheader(selected_event.get("EVENT_TITLE", "Untitled Event"))
+            eventtype = selected_event.get("EVENT_TYPE", "")
+            st.markdown(f"{eventtype}")
     
             # Date display logic
             start_date = selected_event.get("EVENT_START_DATE", "")
