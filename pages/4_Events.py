@@ -122,37 +122,37 @@ def show():
     
                 st.markdown(f"**Registration Dates:** {reg_open} to {reg_close}")
                 st.markdown(f"**Status:** {event_status}")
-    
-# Get necessary fields
-            event_id = selected_event.get("EVENT_ID")
-            event_status = selected_event.get("EVENT_STATUS", "")
-            user_email = st.session_state.get("user", {}).get("email", "unknown@user.com")  # adjust based on your session structure
+        
+                # Get necessary fields
+                event_id = selected_event.get("EVENT_ID")
+                event_status = selected_event.get("EVENT_STATUS", "")
+                user_email = st.session_state.get("user", {}).get("email", "unknown@user.com")  # adjust based on your session structure
+                                
+                if event_status == "Pending":
+                    if st.button("✅ Approve"):
+                        try:
+                            conn = get_snowflake_connection()
+                            cs = conn.cursor()
                             
-            if event_status == "Pending":
-                if st.button("✅ Approve"):
-                    try:
-                        conn = get_snowflake_connection()
-                        cs = conn.cursor()
-                        
-                        update_sql = """
-                            UPDATE EVENTS
-                            SET EVENT_STATUS = 'Approved',
-                                UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
-                                UPDATE_BY = %s
-                            WHERE EVENT_ID = %s
-                        """
-                        cs.execute(update_sql, (user_email, event_id))
-                        conn.commit()
-                        cs.close()
-                        conn.close()
-                        
-                        st.success("✅ Event status updated to 'Approved'.")
-                        selected_event["EVENT_STATUS"] = "Approved"  # optionally update local copy
-            
-                    except Exception as e:
-                        st.error(f"❌ Failed to update event status: {e}")    
-            elif event_status == "Open":
-                st.markdown("🔓 Registration section will go here (details to come).")
+                            update_sql = """
+                                UPDATE EVENTS
+                                SET EVENT_STATUS = 'Approved',
+                                    UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
+                                    UPDATE_BY = %s
+                                WHERE EVENT_ID = %s
+                            """
+                            cs.execute(update_sql, (user_email, event_id))
+                            conn.commit()
+                            cs.close()
+                            conn.close()
+                            
+                            st.success("✅ Event status updated to 'Approved'.")
+                            selected_event["EVENT_STATUS"] = "Approved"  # optionally update local copy
+                
+                        except Exception as e:
+                            st.error(f"❌ Failed to update event status: {e}")    
+                elif event_status == "Open":
+                    st.markdown("🔓 Registration section will go here (details to come).")
     
             # Display email and comments
             st.markdown(f"**Contact Email:** {selected_event.get('EVENT_EMAIL', 'N/A')}")
