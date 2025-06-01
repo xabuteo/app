@@ -118,7 +118,7 @@ def show():
             with st.expander("📋 Registration Details", expanded=True):
                 reg_open = selected_event.get("REG_OPEN_DATE")
                 reg_close = selected_event.get("REG_CLOSE_DATE")
-                event_status = selected_event.get("EVENT_EMAIL")
+                event_status = selected_event.get("EVENT_STATUS")
             
                 st.markdown(f"**Registration Dates:** {reg_open} to {reg_close}")
                 st.markdown(f"**Status:** {event_status}")
