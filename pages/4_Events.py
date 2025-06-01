@@ -101,21 +101,29 @@ def show():
             eventtype = selected_event.get("EVENT_TYPE", "")
             st.markdown(f"**{eventtype}**")
 
-            # Date display logic
-            start_date = selected_event.get("EVENT_START_DATE", "")
-            end_date = selected_event.get("EVENT_END_DATE", "")
-            if start_date == end_date or not end_date:
-                date_str = f"**Date:** {start_date}"
-            else:
-                date_str = f"**Date:** {start_date} to {end_date}"
-
-            # Location
-            location = selected_event.get("EVENT_LOCATION", "Unknown Location")
-
-            # Display main event info
-            st.markdown(date_str)
-            st.markdown(f"**Location:** {location}")
-
+            col1, col2 = st.columns(2)
+            with col1:
+                # Date display logic
+                start_date = selected_event.get("EVENT_START_DATE", "")
+                end_date = selected_event.get("EVENT_END_DATE", "")
+                if start_date == end_date or not end_date:
+                    date_str = f"**Date:** {start_date}"
+                else:
+                    date_str = f"**Date:** {start_date} to {end_date}"
+    
+                # Location
+                location = selected_event.get("EVENT_LOCATION", "Unknown Location")
+    
+                # Display main event info
+                st.markdown(date_str)
+                st.markdown(f"**Location:** {location}")
+            with col2:
+                # Competitions
+                competition = selected_event.get("COMPETITIONS", "Unknown")
+    
+                # Display main event info
+                st.markdown(f"**Competitions:** {competition}")
+        
             # Registration expander
             with st.expander("📋 Registration Details", expanded=True):
                 reg_open = selected_event.get("REG_OPEN_DATE", "")
