@@ -11,7 +11,7 @@ def show():
     # Load events
     try:
         conn = get_snowflake_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(DictCursor)
         cursor.execute("SELECT * FROM xabuteo.public.events_v ORDER BY EVENT_START_DATE DESC")
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
