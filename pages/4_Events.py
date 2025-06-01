@@ -167,7 +167,7 @@ def show():
                         """
                         cs.execute(update_sql, (user_email, event_id))
                         conn.commit()
-                        st.success("✅ Event status updated to 'Cancelled'.")
+                        st.success("❌ Event status updated to 'Cancelled'.")
                         st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to update event status: {e}")
