@@ -116,13 +116,13 @@ def show():
     
             # Registration expander
             with st.expander("📋 Registration Details", expanded=True):
-                reg_open = selected_event.get("REG_OPEN_DATE", "")
-                reg_close = selected_event.get("REG_CLOSE_DATE", "")
+                reg_open = selected_event.get("REG_OPEN_DATE", "N/A")
+                reg_close = selected_event.get("REG_CLOSE_DATE", "N/A")
                 event_status = selected_event.get("EVENT_STATUS", "Unknown")
-    
+            
                 st.markdown(f"**Registration Dates:** {reg_open} to {reg_close}")
                 st.markdown(f"**Status:** {event_status}")
-        
+                
                 # Get necessary fields
                 event_id = selected_event.get("ID")
                 event_status = selected_event.get("EVENT_STATUS", "")
@@ -157,7 +157,6 @@ def show():
             # Display email and comments
             st.markdown(f"**Contact Email:** {selected_event.get('EVENT_EMAIL', 'N/A')}")
             st.markdown(f"**Comments:** {selected_event.get('EVENT_COMMENTS', 'None')}")
- 
     # Add new event
     with st.expander("➕ Add New Event"):
         with st.form("add_event_form"):
