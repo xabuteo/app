@@ -150,9 +150,74 @@ def show():
                         finally:
                             cs.close()
                             conn.close()
-
+                
                 elif event_status == "Open":
-                    st.markdown("🔓 Registration section will go here (details to come).")
+                    st.markdown("🔓 Registration section")
+                
+                    user_info = st.session_state.get("user", {})
+                    user_id = user_info.get("user_id")
+                    user_name = user_info.get("name", "Unknown")
+                    user_gender = user_info.get("gender", "").upper()
+                    user_dob = pd.to_datetime(user_info.get("dob", "1900-01-01")).date()
+                    user_email = user_info.get("email", "unknown@user.com")
+                
+                    # Calculate age at event start
+                    try:
+                        age = event_start_date.year - user_dob.year - ((event_start_date.month, event_start_date.day) < (user_dob.month, user_dob.day))
+                    except Exception:
+                        age = 0
+                
+                    # TODO: Replace with actual lookup of user's club at event start date
+                    user_club_id = 123  # Placeholder
+                    user_club_name = "My Club"  # Placeholder
+                
+                    st.markdown(f"👤 **Name:** {user_name}")
+                    st.markdown(f"🏟️ **Club at Event Start Date:** {user_club_name}")
+                
+                    # Check eligibility
+                    competitions = {
+                        "Open": event_open,
+                        "Women": event_women and user_gender == "F",
+                        "Junior": event_junior and age < 18,
+                        "Veteran": event_veteran and age >= 45,
+                        "Teams": event_teams
+                    }
+                
+                    st.markdown("### 🏆 Eligible Competitions")
+                    comp_checkboxes = {}
+                    for comp, eligible in competitions.items():
+                        if eligible:
+                            comp_checkboxes[comp] = st.checkbox(f"{comp} Competition")
+                
+                    if st.button("📝 Register for Event"):
+                        try:
+                            conn = get_snowflake_connection()
+                            cs = conn.cursor()
+                
+                            insert_sql = """
+                                INSERT INTO event_registration (
+                                    user_id, event_id, club_id,
+                                    register_open, register_women, register_junior, register_veteran, register_teams,
+                                    update_timestamp, update_by
+                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s)
+                            """
+                
+                            cs.execute(insert_sql, (
+                                user_id, event_id, user_club_id,
+                                comp_checkboxes.get("Open", False),
+                                comp_checkboxes.get("Women", False),
+                                comp_checkboxes.get("Junior", False),
+                                comp_checkboxes.get("Veteran", False),
+                                comp_checkboxes.get("Teams", False),
+                                user_email
+                            ))
+                            conn.commit()
+                            st.success("✅ Registered successfully.")
+                        except Exception as e:
+                            st.error(f"❌ Failed to register: {e}")
+                        finally:
+                            cs.close()
+                            conn.close()
 
                 if not event_status == "Cancelled":                    
                     if st.button("❌ Cancel"):
