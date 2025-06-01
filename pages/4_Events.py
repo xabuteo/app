@@ -124,7 +124,7 @@ def show():
                 st.markdown(f"**Status:** {event_status}")
         
                 # Get necessary fields
-                event_id = selected_event.get("EVENT_ID")
+                event_id = selected_event.get("ID")
                 event_status = selected_event.get("EVENT_STATUS", "")
                 user_email = st.session_state.get("user", {}).get("email", "unknown@user.com")  # adjust based on your session structure
                                 
@@ -139,7 +139,7 @@ def show():
                                 SET EVENT_STATUS = 'Approved',
                                     UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
                                     UPDATE_BY = %s
-                                WHERE EVENT_ID = %s
+                                WHERE ID = %s
                             """
                             cs.execute(update_sql, (user_email, event_id))
                             conn.commit()
