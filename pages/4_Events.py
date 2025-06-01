@@ -154,7 +154,7 @@ def show():
                 elif event_status == "Open":
                     st.markdown("🔓 Registration section will go here (details to come).")
 
-                if st.button("✅ Cancel"):
+                if st.button("❌ Cancel"):
                     try:
                         conn = get_snowflake_connection()
                         cs = conn.cursor()
