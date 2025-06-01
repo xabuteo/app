@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
-from snowflake.connector import DictCursor
 
 st.set_page_config(page_title="Events", layout="wide")
 
@@ -12,7 +11,7 @@ def show():
     # Load events
     try:
         conn = get_snowflake_connection()
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor()
         cursor.execute("SELECT * FROM xabuteo.public.events_v ORDER BY EVENT_START_DATE DESC")
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
@@ -87,7 +86,7 @@ def show():
         theme="material"
     )
 
-    selected = grid_response["selected_rows"]
+    selected = df
     if isinstance(selected, pd.DataFrame):
         selected = selected.to_dict(orient="records")
 
