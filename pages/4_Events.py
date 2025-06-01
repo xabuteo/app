@@ -88,7 +88,10 @@ def show():
 
     selected_rows = grid_response["selected_rows"]
 
-    if isinstance(selected_rows, list) and len(selected_rows) > 0:
+    if isinstance(selected_rows, pd.DataFrame):
+        selected_rows = selected_rows.to_dict(orient="records")
+
+    if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
         selected_id = selected_rows[0].get("ID")
         selected_event = df[df["ID"] == selected_id].iloc[0].to_dict()
 
