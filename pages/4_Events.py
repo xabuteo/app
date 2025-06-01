@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
+from snowflake.connector import DictCursor
 
 st.set_page_config(page_title="Events", layout="wide")
 
