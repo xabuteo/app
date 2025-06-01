@@ -86,19 +86,18 @@ def show():
         theme="material"
     )
 
-    selected = df
-    if isinstance(selected, pd.DataFrame):
-        selected = selected.to_dict(orient="records")
+    selected_rows = grid_response["selected_rows"]
 
-    if selected and isinstance(selected, list) and len(selected) > 0:
-        selected_event = selected[0]
-    
+    if selected_rows:
+        selected_id = selected_rows[0].get("ID")
+        selected_event = df[df["ID"] == selected_id].iloc[0].to_dict()
+
         with st.container(border=True):
             # Header and subheader
             st.subheader(selected_event.get("EVENT_TITLE", "Untitled Event"))
             eventtype = selected_event.get("EVENT_TYPE", "")
             st.markdown(f"**{eventtype}**")
-    
+
             # Date display logic
             start_date = selected_event.get("EVENT_START_DATE", "")
             end_date = selected_event.get("EVENT_END_DATE", "")
@@ -106,34 +105,32 @@ def show():
                 date_str = f"**Date:** {start_date}"
             else:
                 date_str = f"**Date:** {start_date} to {end_date}"
-    
+
             # Location
             location = selected_event.get("EVENT_LOCATION", "Unknown Location")
-    
+
             # Display main event info
             st.markdown(date_str)
             st.markdown(f"**Location:** {location}")
-    
+
             # Registration expander
             with st.expander("📋 Registration Details", expanded=True):
-                reg_open = selected_event.get("REG_OPEN_DATE")
-                reg_close = selected_event.get("REG_CLOSE_DATE")
-                event_status = selected_event.get("EVENT_STATUS")
-            
+                reg_open = selected_event.get("REG_OPEN_DATE", "")
+                reg_close = selected_event.get("REG_CLOSE_DATE", "")
+                event_status = selected_event.get("EVENT_STATUS", "")
+
                 st.markdown(f"**Registration Dates:** {reg_open} to {reg_close}")
                 st.markdown(f"**Status:** {event_status}")
-                
-                # Get necessary fields
+
+                # Approve logic
                 event_id = selected_event.get("ID")
-                event_status = selected_event.get("EVENT_STATUS", "")
-                user_email = st.session_state.get("user", {}).get("email", "unknown@user.com")  # adjust based on your session structure
-                                
+                user_email = st.session_state.get("user", {}).get("email", "unknown@user.com")
+
                 if event_status == "Pending":
                     if st.button("✅ Approve"):
                         try:
                             conn = get_snowflake_connection()
                             cs = conn.cursor()
-                            
                             update_sql = """
                                 UPDATE EVENTS
                                 SET EVENT_STATUS = 'Approved',
@@ -143,20 +140,21 @@ def show():
                             """
                             cs.execute(update_sql, (user_email, event_id))
                             conn.commit()
+                            st.success("✅ Event status updated to 'Approved'.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to update event status: {e}")
+                        finally:
                             cs.close()
                             conn.close()
-                            
-                            st.success("✅ Event status updated to 'Approved'.")
-                            selected_event["EVENT_STATUS"] = "Approved"  # optionally update local copy
-                
-                        except Exception as e:
-                            st.error(f"❌ Failed to update event status: {e}")    
+
                 elif event_status == "Open":
                     st.markdown("🔓 Registration section will go here (details to come).")
-    
-            # Display email and comments
+
+            # Email and comments
             st.markdown(f"**Contact Email:** {selected_event.get('EVENT_EMAIL', 'N/A')}")
             st.markdown(f"**Comments:** {selected_event.get('EVENT_COMMENTS', 'None')}")
+
     # Add new event
     with st.expander("➕ Add New Event"):
         with st.form("add_event_form"):
