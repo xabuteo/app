@@ -164,7 +164,9 @@ def show():
                 
                     # Get current user's email from session
                     current_email = st.user.email
-                
+                    event_start_date_str = selected_event.get("EVENT_START_DATE")
+                    event_start_date = pd.to_datetime(event_start_date_str).date()
+
                     # Fetch player & club info from player_club_v
                     try:
                         conn = get_snowflake_connection()
