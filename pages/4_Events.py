@@ -159,9 +159,7 @@ def show():
                             cs.close()
                             conn.close()
                 
-                elif event_status == "Open":
-                    st.markdown("🔓 Registration section")
-                
+                elif event_status == "Open":              
                     # Get current user's email from session
                     current_email = st.user.email
                     event_start_date_str = selected_event.get("EVENT_START_DATE")
