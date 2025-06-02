@@ -227,7 +227,7 @@ def show():
                             cs = conn.cursor()
                             cs.execute("""
                                 INSERT INTO event_registration (
-                                    id, event_id, club_id,
+                                    user_id, event_id, club_id,
                                     register_open, register_women, register_junior, register_veteran, register_teams,
                                     update_timestamp, update_by
                                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s)
