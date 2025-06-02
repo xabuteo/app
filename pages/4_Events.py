@@ -162,30 +162,45 @@ def show():
                 elif event_status == "Open":
                     st.markdown("🔓 Registration section")
                 
-                    user_info = st.session_state.get("user", {})
-                    user_id = user_info.get("user_id")
-                    user_name = user_info.get("name", "Unknown")
-                    user_gender = user_info.get("gender", "").upper()
-                    user_dob = pd.to_datetime(user_info.get("dob", "1900-01-01")).date()
-                    user_email = user_info.get("email", "unknown@user.com")
+                    # Get current user's email from session
+                    current_email = st.user.email
                 
-                    # Calculate age at event start
+                    # Fetch player & club info from player_club_v
                     try:
-                        age = event_start_date.year - user_dob.year - ((event_start_date.month, event_start_date.day) < (user_dob.month, user_dob.day))
-                    except Exception:
-                        age = 0
+                        conn = get_snowflake_connection()
+                        cursor = conn.cursor()
+                        cursor.execute("""
+                            SELECT name, dob, gender, club_id, club_name
+                            FROM player_club_v
+                            WHERE user_id = %s
+                              AND player_status = 'Approved'
+                              AND %s BETWEEN valid_from AND valid_to
+                            LIMIT 1
+                        """, (current_email, event_start_date))
+                        player = cursor.fetchone()
+                        cursor.close()
+                        conn.close()
+                    except Exception as e:
+                        st.error(f"Error loading club info: {e}")
+                        return
                 
-                    # TODO: Replace with actual lookup of user's club at event start date
-                    user_club_id = 123  # Placeholder
-                    user_club_name = "My Club"  # Placeholder
+                    if not player:
+                        st.info("ℹ️ You are not assigned to any club at the event start date. Registration is not available.")
+                        return
                 
-                    st.markdown(f"👤 **Name:** {user_name}")
-                    st.markdown(f"🏟️ **Club at Event Start Date:** {user_club_name}")
+                    # Unpack player record
+                    name, dob, gender, club_id, club_name = player
+                    dob = pd.to_datetime(dob).date()
+                    gender = gender.upper()
+                    age = event_start_date.year - dob.year - ((event_start_date.month, event_start_date.day) < (dob.month, dob.day))
                 
-                    # Check eligibility
+                    st.markdown(f"👤 **Name:** {name}")
+                    st.markdown(f"🏟️ **Club at Event Start Date:** {club_name}")
+                
+                    # Determine eligibility
                     competitions = {
                         "Open": event_open,
-                        "Women": event_women and user_gender == "F",
+                        "Women": event_women and gender == "F",
                         "Junior": event_junior and age < 18,
                         "Veteran": event_veteran and age >= 45,
                         "Teams": event_teams
@@ -201,17 +216,14 @@ def show():
                         try:
                             conn = get_snowflake_connection()
                             cs = conn.cursor()
-                
-                            insert_sql = """
+                            cs.execute("""
                                 INSERT INTO event_registration (
                                     user_id, event_id, club_id,
                                     register_open, register_women, register_junior, register_veteran, register_teams,
                                     update_timestamp, update_by
                                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s)
-                            """
-                
-                            cs.execute(insert_sql, (
-                                user_id, event_id, user_club_id,
+                            """, (
+                                user_id, event_id, club_id,
                                 comp_checkboxes.get("Open", False),
                                 comp_checkboxes.get("Women", False),
                                 comp_checkboxes.get("Junior", False),
