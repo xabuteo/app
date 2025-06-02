@@ -172,7 +172,7 @@ def show():
                         conn = get_snowflake_connection()
                         cursor = conn.cursor()
                         cursor.execute("""
-                            SELECT first_name, last_name, dob, gender, club_id, club_name
+                            SELECT first_name, last_name, date_of_birth, gender, club_id, club_name
                             FROM player_club_v
                             WHERE user_id = %s
                               AND player_status = 'Approved'
@@ -191,10 +191,10 @@ def show():
                         return
                 
                     # Unpack player record
-                    first_name, last_name, dob, gender, club_id, club_name = player
-                    dob = pd.to_datetime(dob).date()
+                    first_name, last_name, date_of_birth, gender, club_id, club_name = player
+                    date_of_birth = pd.to_datetime(date_of_birth).date()
                     gender = gender.upper()
-                    age = event_start_date.year - dob.year - ((event_start_date.month, event_start_date.day) < (dob.month, dob.day))
+                    age = event_start_date.year - date_of_birth.year - ((event_start_date.month, event_start_date.day) < (date_of_birth.month, date_of_birth.day))
                 
                     st.markdown(f"👤 **Name:** {first_name} {last_name}")
                     st.markdown(f"🏟️ **Club at Event Start Date:** {club_name}")
