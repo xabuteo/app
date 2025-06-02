@@ -164,6 +164,11 @@ def show():
                     current_email = st.user.email
                     event_start_date_str = selected_event.get("EVENT_START_DATE")
                     event_start_date = pd.to_datetime(event_start_date_str).date()
+                    event_open = selected_event.get("EVENT_OPEN", False)
+                    event_women = selected_event.get("EVENT_WOMEN", False)
+                    event_junior = selected_event.get("EVENT_JUNIOR", False)
+                    event_veteran = selected_event.get("EVENT_VETERAN", False)
+                    event_teams = selected_event.get("EVENT_TEAMS", False)
 
                     # Fetch player & club info from player_club_v
                     try:
