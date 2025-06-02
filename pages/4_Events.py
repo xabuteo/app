@@ -174,7 +174,7 @@ def show():
                         cursor.execute("""
                             SELECT first_name, last_name, date_of_birth, gender, club_id, club_name
                             FROM player_club_v
-                            WHERE user_id = %s
+                            WHERE email = %s
                               AND player_status = 'Approved'
                               AND %s BETWEEN valid_from AND valid_to
                             LIMIT 1
@@ -220,12 +220,12 @@ def show():
                             cs = conn.cursor()
                             cs.execute("""
                                 INSERT INTO event_registration (
-                                    user_id, event_id, club_id,
+                                    id, event_id, club_id,
                                     register_open, register_women, register_junior, register_veteran, register_teams,
                                     update_timestamp, update_by
                                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s)
                             """, (
-                                user_id, event_id, club_id,
+                                id, event_id, club_id,
                                 comp_checkboxes.get("Open", False),
                                 comp_checkboxes.get("Women", False),
                                 comp_checkboxes.get("Junior", False),
