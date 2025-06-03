@@ -100,4 +100,4 @@ PAGES = [Details, Register, Scores, Result, Admin]
 
 for tab, page_module in zip(TABS, PAGES):
     with tab:
-        page_module.page(selected_id)      
+        page_module.page(selected_event)      
