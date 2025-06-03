@@ -1,3 +1,5 @@
 import streamlit as st
 
-Scores
+def page():
+    st.subheader("Event Scores")
+    st.write("Scores here.")
