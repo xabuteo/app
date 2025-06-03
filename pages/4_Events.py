@@ -73,7 +73,7 @@ def show():
     grid_options = gb.build()
 
     row_count = len(df_display)
-    max_rows_to_show = 10
+    max_rows_to_show = 6
     row_height = 48
     header_height = 113
     grid_height = min(row_count, max_rows_to_show) * row_height + header_height
