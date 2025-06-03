@@ -109,25 +109,3 @@ def page(selected_event):
                 finally:
                     cs.close()
                     conn.close()
-
-        if not event_status == "Cancelled":                    
-            if st.button("❌ Cancel"):
-                try:
-                    conn = get_snowflake_connection()
-                    cs = conn.cursor()
-                    update_sql = """
-                        UPDATE EVENTS
-                        SET EVENT_STATUS = 'Cancelled',
-                            UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
-                            UPDATE_BY = %s
-                        WHERE ID = %s
-                    """
-                    cs.execute(update_sql, (user_email, event_id))
-                    conn.commit()
-                    st.success("❌ Event status updated to 'Cancelled'.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Failed to update event status: {e}")
-                finally:
-                    cs.close()
-                    conn.close()
