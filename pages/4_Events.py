@@ -86,10 +86,18 @@ def show():
         height=grid_height,
         theme="material"
     )
+    selected_rows = grid_response["selected_rows"]
+
+    if isinstance(selected_rows, pd.DataFrame):
+        selected_rows = selected_rows.to_dict(orient="records")
+    
+    if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
+        selected_id = selected_rows[0].get("ID")
+        selected_event = df[df["ID"] == selected_id].iloc[0].to_dict()
 show()
 TABS = st.tabs(["DETAILS", "REGISTER", "SCORES", "RESULT", "ADMIN"])
 PAGES = [Details, Register, Scores, Result, Admin]
 
 for tab, page_module in zip(TABS, PAGES):
     with tab:
-        page_module.page()      
+        page_module.page(selected_id)      
