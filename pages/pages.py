@@ -1,3 +1,5 @@
+import streamlit as st
+
 TABS = st.tabs(
     tabs=[
         "PROFILE",
