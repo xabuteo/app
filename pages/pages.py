@@ -8,7 +8,7 @@ TABS = st.tabs(
     ]
 )
 
-PAGES = [2_profiles, 3_clubs, 4_events]
+PAGES = [profiles, clubs, events]
 
 for t, p in zip(TABS, PAGES):
     with t:
