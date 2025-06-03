@@ -3,7 +3,7 @@ import pandas as pd
 from utils import get_snowflake_connection
 
        
-def page():
+def page(selected_event):
     st.subheader("Event Admin")
     # Load events
     try:
