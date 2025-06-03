@@ -4,9 +4,6 @@ from utils import get_snowflake_connection
 
 # in detail.py
 def page(selected_event):
-    st.subheader(f"Event: {selected_event['NAME']}")
-    st.write(f"Starts on: {selected_event['START_DATE']}")
-    
     with st.container(border=True):
         # Header and subheader
         st.subheader(selected_event.get("EVENT_TITLE", "Untitled Event"))
