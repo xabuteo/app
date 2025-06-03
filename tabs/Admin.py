@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from utils import get_snowflake_connection
 
        
