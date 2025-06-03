@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 from utils import get_snowflake_connection
 
-       
 def page(selected_event):
     st.subheader("Event Admin")
+    st.subheader(selected_event.get("EVENT_STATUS", "Untitled Event"))
+
     # Load events
     try:
         conn = get_snowflake_connection()
@@ -19,14 +20,42 @@ def page(selected_event):
     finally:
         cursor.close()
         conn.close()
-    # Add new event
+
+    # Extract values from selected_event
+    event_id = selected_event.get("ID")
+    event_status = selected_event.get("EVENT_STATUS")
+    user_email = selected_event.get("UPDATE_BY", "admin@xabuteo.com")  # fallback default
+
+    # Approve pending event
+    if event_status == "Pending":
+        if st.button("✅ Approve"):
+            try:
+                conn = get_snowflake_connection()
+                cs = conn.cursor()
+                update_sql = """
+                    UPDATE EVENTS
+                    SET EVENT_STATUS = 'Approved',
+                        UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
+                        UPDATE_BY = %s
+                    WHERE ID = %s
+                """
+                cs.execute(update_sql, (user_email, event_id))
+                conn.commit()
+                st.success("✅ Event status updated to 'Approved'.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to update event status: {e}")
+            finally:
+                cs.close()
+                conn.close()
+
+    # Add new event form
     with st.expander("➕ Add New Event"):
         with st.form("add_event_form"):
             col1, col2 = st.columns(2)
-            with col1:            
+            with col1:
                 title = st.text_input("Event Title")
-            with col2:            
-                # Fetch event types from lookup table
+            with col2:
                 try:
                     conn = get_snowflake_connection()
                     cursor = conn.cursor()
@@ -43,23 +72,23 @@ def page(selected_event):
                 finally:
                     cursor.close()
                     conn.close()
-        
+
                 event_type = st.selectbox("Event Type", event_types)
 
             col1, col2 = st.columns(2)
-            with col1:            
+            with col1:
                 start_date = st.date_input("Start Date")
-            with col2:            
+            with col2:
                 end_date = st.date_input("End Date")
 
             col1, col2 = st.columns(2)
-            with col1:            
+            with col1:
                 reg_open_date = st.date_input("Registration Open Date")
-            with col2:            
+            with col2:
                 reg_close_date = st.date_input("Registration Close Date")
-            
+
             location = st.text_input("Location")
-    
+
             # Checkboxes
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -72,11 +101,10 @@ def page(selected_event):
                 event_teams = st.checkbox("Teams")
 
             event_email = st.text_input("Contact Email")
-    
             comments = st.text_area("Comments")
-    
+
             submit = st.form_submit_button("Add Event")
-    
+
             if submit:
                 try:
                     conn = get_snowflake_connection()
