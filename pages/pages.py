@@ -2,13 +2,13 @@ import streamlit as st
 
 TABS = st.tabs(
     tabs=[
-        "PROFILE",
-        "CLUBS",
-        "EVENTS",
+        "DETAIL",
+        "SCORES",
+        "RESULT",
     ]
 )
 
-PAGES = [profile, clubs, events]
+PAGES = [detail, scores, result]
 
 for t, p in zip(TABS, PAGES):
     with t:
