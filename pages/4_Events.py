@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
-from tabs import Details, Scores, Result
+from tabs import Details, Scores, Result, Admin
 
 st.set_page_config(page_title="Events", layout="wide")
 
@@ -29,7 +29,7 @@ def show():
         return
 
     # Filters
-    st.subheader("🔍 Search and Filter")
+    #st.subheader("🔍 Search and Filter")
     col1, col2, col3 = st.columns(3)
     with col1:
         title_filter = st.text_input("Search by Title")
@@ -55,7 +55,7 @@ def show():
     df_display["EVENT_START_DATE"] = pd.to_datetime(df_display["EVENT_START_DATE"]).dt.strftime('%Y-%m-%d')
     df_display["EVENT_END_DATE"] = pd.to_datetime(df_display["EVENT_END_DATE"]).dt.strftime('%Y-%m-%d')
 
-    st.markdown("### 📋 Event List (Click a row to view details)")
+    #st.markdown("### 📋 Event List (Click a row to view details)")
 
     # AgGrid config
     gb = GridOptionsBuilder.from_dataframe(df_display)
