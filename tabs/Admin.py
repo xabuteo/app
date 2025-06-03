@@ -1,7 +1,23 @@
 import streamlit as st
+from utils import get_snowflake_connection
 
+       
 def page():
     st.subheader("Event Admin")
+    # Load events
+    try:
+        conn = get_snowflake_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM xabuteo.public.events_v ORDER BY EVENT_START_DATE DESC")
+        rows = cursor.fetchall()
+        cols = [desc[0] for desc in cursor.description]
+        df = pd.DataFrame(rows, columns=cols)
+    except Exception as e:
+        st.error(f"Error loading events: {e}")
+        return
+    finally:
+        cursor.close()
+        conn.close()
     # Add new event
     with st.expander("➕ Add New Event"):
         with st.form("add_event_form"):
