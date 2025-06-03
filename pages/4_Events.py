@@ -274,13 +274,10 @@ def show():
             # Email and comments
             st.markdown(f"**Contact Email:** {selected_event.get('EVENT_EMAIL', 'N/A')}")
             st.markdown(f"**Comments:** {selected_event.get('EVENT_COMMENTS', 'None')}")
-
-
+show()
 TABS = st.tabs(["DETAILS", "SCORES", "RESULT", "ADMIN"])
 PAGES = [Details, Scores, Result, Admin]
 
 for tab, page_module in zip(TABS, PAGES):
     with tab:
-        page_module.page()       
-
-show()
+        page_module.page()      
