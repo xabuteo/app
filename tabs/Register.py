@@ -3,7 +3,7 @@ import pandas as pd
 from utils import get_snowflake_connection
 
 # in detail.py
-def page(event):
+def page(selected_event):
     st.subheader(f"Event: {event['NAME']}")
     st.write(f"Starts on: {event['START_DATE']}")
     
