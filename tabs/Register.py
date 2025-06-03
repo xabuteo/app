@@ -107,11 +107,11 @@ if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
                     conn.close()
                 except Exception as e:
                     st.error(f"Error loading club info: {e}")
-                    return
+                    #return
             
                 if not player:
                     st.info("ℹ️ You are not assigned to any club at the event start date. Registration is not available.")
-                    return
+                    #return
             
                 # Unpack player record
                 first_name, last_name, date_of_birth, gender, club_id, club_name = player
