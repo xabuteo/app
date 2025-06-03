@@ -1,3 +1,6 @@
+# tabs/detail.py
 import streamlit as st
 
-Help
+def page():
+    st.subheader("Event Details")
+    st.write("Details content here.")
