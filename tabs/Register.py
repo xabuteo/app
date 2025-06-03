@@ -19,7 +19,7 @@ def page(selected_event):
 
         # Approve logic
         event_id = selected_event.get("ID")
-        user_email = st.session_state.get("user", {}).get("email", "unknown@user.com")
+        current_email = st.user.email
 
         if event_status == "Open":
             # Define all event competition flags early
@@ -28,10 +28,7 @@ def page(selected_event):
             event_junior = selected_event.get("EVENT_JUNIOR", False)
             event_veteran = selected_event.get("EVENT_VETERAN", False)
             event_teams = selected_event.get("EVENT_TEAMS", False)
-        
-            # Get current user's email from session
-            current_email = st.user.email
-        
+                
             # Get and parse event start date
             event_start_date_str = selected_event.get("EVENT_START_DATE")
             event_start_date = pd.to_datetime(event_start_date_str).date()
@@ -41,7 +38,7 @@ def page(selected_event):
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT first_name, last_name, date_of_birth, gender, club_id, club_name
+                    SELECT id as user_id, first_name, last_name, date_of_birth, gender, club_id, club_name
                     FROM player_club_v
                     WHERE email = %s
                       AND player_status = 'Approved'
@@ -53,14 +50,14 @@ def page(selected_event):
                 conn.close()
             except Exception as e:
                 st.error(f"Error loading club info: {e}")
-                #return
+                return
         
             if not player:
                 st.info("ℹ️ You are not assigned to any club at the event start date. Registration is not available.")
-                #return
+                return
         
             # Unpack player record
-            first_name, last_name, date_of_birth, gender, club_id, club_name = player
+            user_id, first_name, last_name, date_of_birth, gender, club_id, club_name = player
             date_of_birth = pd.to_datetime(date_of_birth).date()
             gender = gender.upper()
             age = event_start_date.year - date_of_birth.year - ((event_start_date.month, event_start_date.day) < (date_of_birth.month, date_of_birth.day))
@@ -94,13 +91,13 @@ def page(selected_event):
                             update_timestamp, update_by
                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s)
                     """, (
-                        id, event_id, club_id,
+                        user_id, event_id, club_id,
                         comp_checkboxes.get("Open", False),
                         comp_checkboxes.get("Women", False),
                         comp_checkboxes.get("Junior", False),
                         comp_checkboxes.get("Veteran", False),
                         comp_checkboxes.get("Teams", False),
-                        user_email
+                        current_email
                     ))
                     conn.commit()
                     st.success("✅ Registered successfully.")
