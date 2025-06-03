@@ -94,10 +94,10 @@ def show():
     if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
         selected_id = selected_rows[0].get("ID")
         selected_event = df[df["ID"] == selected_id].iloc[0].to_dict()
+        TABS = st.tabs(["DETAILS", "REGISTER", "SCORES", "RESULT", "ADMIN"])
+        PAGES = [Details, Register, Scores, Result, Admin]
+        
+        for tab, page_module in zip(TABS, PAGES):
+            with tab:
+                page_module.page(selected_event)      
 show()
-TABS = st.tabs(["DETAILS", "REGISTER", "SCORES", "RESULT", "ADMIN"])
-PAGES = [Details, Register, Scores, Result, Admin]
-
-for tab, page_module in zip(TABS, PAGES):
-    with tab:
-        page_module.page(selected_event)      
