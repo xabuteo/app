@@ -4,7 +4,6 @@ from utils import get_snowflake_connection
 
 def page(selected_event):
     st.subheader("Event Admin")
-    st.subheader(selected_event.get("EVENT_STATUS", "Untitled Event"))
 
     # Load events
     try:
