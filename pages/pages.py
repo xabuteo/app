@@ -1,4 +1,5 @@
 import streamlit as st
+from tabs import detail, scores, result
 
 TABS = st.tabs(
     tabs=[
