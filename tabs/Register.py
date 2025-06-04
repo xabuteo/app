@@ -105,7 +105,8 @@ def page(selected_event):
             conn = get_snowflake_connection()
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT *
+                SELECT user_id, email, first_name, last_name, club_name,
+                       register_open, register_women, register_junior, register_veteran, register_teams
                 FROM EVENT_REGISTRATION_V
                 WHERE EVENT_ID = %s
                 ORDER BY updated_timestamp DESC
@@ -113,9 +114,35 @@ def page(selected_event):
             rows = cursor.fetchall()
             cols = [desc[0] for desc in cursor.description]
             df = pd.DataFrame(rows, columns=cols)
-            st.dataframe(df)
         except Exception as e:
-            st.error(f"Failed to load registrations: {e}")
+            st.error(f"❌ Failed to load registrations: {e}")
+            return
         finally:
             cursor.close()
             conn.close()
+    
+        # Mapping of competitions to event and registration columns
+        competition_config = {
+            "Open":     ("EVENT_OPEN",     "REGISTER_OPEN"),
+            "Women":    ("EVENT_WOMEN",    "REGISTER_WOMEN"),
+            "Junior":   ("EVENT_JUNIOR",   "REGISTER_JUNIOR"),
+            "Veteran":  ("EVENT_VETERAN",  "REGISTER_VETERAN"),
+            "Teams":    ("EVENT_TEAMS",    "REGISTER_TEAMS"),
+        }
+    
+        for comp, (event_flag, reg_col) in competition_config.items():
+            if selected_event.get(event_flag):
+                # Only include rows where the person registered for this competition
+                comp_df = df[df[reg_col] == True][["USER_ID", "EMAIL", "FIRST_NAME", "LAST_NAME", "CLUB_NAME"]]
+                if not comp_df.empty:
+                    st.markdown(f"### 🏆 {comp} Competition ({len(comp_df)} registered)")
+                    st.dataframe(comp_df, use_container_width=True)
+    
+                    # Add CSV download
+                    csv = comp_df.to_csv(index=False).encode("utf-8")
+                    st.download_button(
+                        label=f"⬇️ Download {comp} Registrations as CSV",
+                        data=csv,
+                        file_name=f"{comp.lower()}_registrations_event_{event_id}.csv",
+                        mime="text/csv"
+                    )
