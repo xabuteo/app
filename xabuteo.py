@@ -46,7 +46,7 @@ else:
     try:
         cursor.execute(
             """
-            MERGE INTO xabuteo.public.registrations AS tgt
+            MERGE INTO registrations AS tgt
             USING (
                 SELECT 
                     %s AS email,
