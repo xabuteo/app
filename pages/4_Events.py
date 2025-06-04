@@ -13,7 +13,7 @@ def show():
     try:
         conn = get_snowflake_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM xabuteo.public.events_v ORDER BY EVENT_START_DATE DESC")
+        cursor.execute("SELECT * FROM events_v ORDER BY EVENT_START_DATE DESC")
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
         df = pd.DataFrame(rows, columns=cols)
