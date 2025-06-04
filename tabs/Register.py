@@ -15,7 +15,6 @@ def page(selected_event):
         reg_open = selected_event.get("REG_OPEN_DATE", "")
         reg_close = selected_event.get("REG_CLOSE_DATE", "")
         st.markdown(f"**Registration Dates:** {reg_open} to {reg_close}")
-        st.markdown(f"**Status:** {event_status}")
 
         if event_status == "Open":
             # Competition flags
@@ -101,7 +100,7 @@ def page(selected_event):
                     conn.close()
 
     # ✅ Second expander: show registration view
-    with st.expander(f"📑 View Registrations for Event — Status: {event_status}", expanded=(event_status in ("Closed", "Complete"))):
+    with st.expander(f"📑 View Registered Competitiors", expanded=(event_status in ("Closed", "Complete"))):
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
