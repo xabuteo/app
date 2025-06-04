@@ -22,12 +22,6 @@ def get_snowflake_connection():
         schema=SNOWFLAKE_CONFIG['schema']
     )
 
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-def check_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
-
 def ensure_profile_complete():
     """Check that the current user's profile is complete in the registrations table."""
     if not st.user.is_logged_in:
@@ -39,7 +33,7 @@ def ensure_profile_complete():
 
     try:
         cursor.execute("""
-            SELECT first_name, last_name, date_of_birth, gender
+            SELECT id, first_name, last_name, date_of_birth, gender
             FROM registrations
             WHERE email = %s
         """, (st.user.email,))
