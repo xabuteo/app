@@ -9,7 +9,7 @@ def page(selected_event):
     try:
         conn = get_snowflake_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM xabuteo.public.events_v ORDER BY EVENT_START_DATE DESC")
+        cursor.execute("SELECT * FROM events_v ORDER BY EVENT_START_DATE DESC")
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
         df = pd.DataFrame(rows, columns=cols)
@@ -81,7 +81,7 @@ def page(selected_event):
                     cursor = conn.cursor()
                     cursor.execute("""
                         SELECT list_value
-                        FROM xabuteo.public.ref_lookup
+                        FROM ref_lookup
                         WHERE list_type = 'event_type'
                         ORDER BY list_order
                     """)
@@ -130,7 +130,7 @@ def page(selected_event):
                     conn = get_snowflake_connection()
                     cursor = conn.cursor()
                     cursor.execute("""
-                        INSERT INTO xabuteo.public.events (
+                        INSERT INTO events (
                             event_title, event_type, event_location,
                             event_start_date, event_end_date,
                             reg_open_date, reg_close_date,
