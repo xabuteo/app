@@ -15,7 +15,7 @@ def show():
     try:
         # Get user ID
         cursor.execute("""
-            SELECT id FROM xabuteo.public.registrations WHERE email = %s
+            SELECT id FROM registrations WHERE email = %s
         """, (st.user.email,))
         user_row = cursor.fetchone()
         if not user_row:
@@ -25,7 +25,7 @@ def show():
 
         # Get list of active clubs this user administers
         cursor.execute("""
-            SELECT club_id FROM xabuteo.public.club_user_admin 
+            SELECT club_id FROM club_user_admin 
             WHERE user_id = %s AND %s BETWEEN valid_from AND valid_to
         """, (user_id, date.today()))
         admin_club_rows = cursor.fetchall()
@@ -40,9 +40,9 @@ def show():
         query = f"""
             SELECT pc.id, r.first_name || ' ' || r.last_name AS player_name, 
                    c.club_name, pc.valid_from, pc.valid_to, pc.player_status
-            FROM xabuteo.public.player_club pc
-            JOIN xabuteo.public.registrations r ON pc.player_id = r.id
-            JOIN xabuteo.public.clubs c ON pc.club_id = c.id
+            FROM player_club pc
+            JOIN registrations r ON pc.player_id = r.id
+            JOIN clubs c ON pc.club_id = c.id
             WHERE pc.player_status = 'Pending' AND pc.club_id IN ({format_ids})
             ORDER BY pc.valid_from DESC
         """
@@ -75,7 +75,7 @@ def show():
                 with col1:
                     if st.button("✅ Approve", key=f"approve_{request['id']}"):
                         cursor.execute("""
-                            UPDATE xabuteo.public.player_club
+                            UPDATE player_club
                             SET player_status = 'Approved'
                             WHERE id = %s
                         """, (request["id"],))
@@ -86,7 +86,7 @@ def show():
                 with col2:
                     if st.button("❌ Reject", key=f"reject_{request['id']}"):
                         cursor.execute("""
-                            UPDATE xabuteo.public.player_club
+                            UPDATE player_club
                             SET player_status = 'Rejected'
                             WHERE id = %s
                         """, (request["id"],))
