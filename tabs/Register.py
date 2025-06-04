@@ -19,7 +19,7 @@ def page(selected_event):
 
         # Approve logic
         event_id = selected_event.get("ID")
-        current_email = st.user.email
+        user_id = get_userid()
 
         if event_status == "Open":
             # Define all event competition flags early
@@ -38,13 +38,13 @@ def page(selected_event):
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT id as user_id, first_name, last_name, date_of_birth, gender, club_id, club_name
+                    SELECT first_name, last_name, date_of_birth, gender, club_id, club_name
                     FROM player_club_v
-                    WHERE email = %s
+                    WHERE id = %s
                       AND player_status = 'Approved'
                       AND %s BETWEEN valid_from AND valid_to
                     LIMIT 1
-                """, (current_email, event_start_date))
+                """, (user_id, event_start_date))
                 player = cursor.fetchone()
                 cursor.close()
                 conn.close()
@@ -57,7 +57,7 @@ def page(selected_event):
                 return
         
             # Unpack player record
-            user_id, first_name, last_name, date_of_birth, gender, club_id, club_name = player
+            first_name, last_name, date_of_birth, gender, club_id, club_name = player
             date_of_birth = pd.to_datetime(date_of_birth).date()
             gender = gender.upper()
             age = event_start_date.year - date_of_birth.year - ((event_start_date.month, event_start_date.day) < (date_of_birth.month, date_of_birth.day))
@@ -97,7 +97,7 @@ def page(selected_event):
                         comp_checkboxes.get("Junior", False),
                         comp_checkboxes.get("Veteran", False),
                         comp_checkboxes.get("Teams", False),
-                        current_email
+                        user_id
                     ))
                     conn.commit()
                     st.success("✅ Registered successfully.")
