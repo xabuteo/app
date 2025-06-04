@@ -14,7 +14,7 @@ def show():
     try:
         # Get Player ID for logged-in user
         cursor.execute(
-            "SELECT ID FROM XABUTEO.PUBLIC.REGISTRATIONS WHERE EMAIL = %s", 
+            "SELECT ID FROM REGISTRATIONS WHERE EMAIL = %s", 
             (st.user.email,)
         )
         player_row = cursor.fetchone()
@@ -25,7 +25,7 @@ def show():
 
         # --- Display PLAYER_CLUB_V view ---
         cursor.execute(
-            "SELECT * FROM XABUTEO.PUBLIC.PLAYER_CLUB_V WHERE EMAIL = %s", 
+            "SELECT * FROM PLAYER_CLUB_V WHERE EMAIL = %s", 
             (st.user.email,)
         )
         rows = cursor.fetchall()
@@ -63,7 +63,7 @@ def show():
             # Associations dropdown
             cursor.execute("""
                 SELECT id, association_name 
-                FROM xabuteo.public.associations 
+                FROM associations 
                 ORDER BY association_name
             """)
             assoc_data = cursor.fetchall()
@@ -75,7 +75,7 @@ def show():
                     assoc_id = assoc_options[assoc_name]
                     cursor.execute("""
                         SELECT id, club_name 
-                        FROM xabuteo.public.clubs 
+                        FROM clubs 
                         WHERE association_id = %s 
                         ORDER BY club_name
                     """, (assoc_id,))
@@ -91,7 +91,7 @@ def show():
                             club_id = club_options[club_name]
                             try:
                                 cursor.execute("""
-                                    INSERT INTO XABUTEO.PUBLIC.PLAYER_CLUB 
+                                    INSERT INTO PLAYER_CLUB 
                                     (PLAYER_ID, CLUB_ID, VALID_FROM, VALID_TO)
                                     VALUES (%s, %s, %s, %s)
                                 """, (player_id, club_id, valid_from, valid_to))
