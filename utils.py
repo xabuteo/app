@@ -40,7 +40,7 @@ def ensure_profile_complete():
     try:
         cursor.execute("""
             SELECT first_name, last_name, date_of_birth, gender
-            FROM xabuteo.public.registrations
+            FROM registrations
             WHERE email = %s
         """, (st.user.email,))
         row = cursor.fetchone()
