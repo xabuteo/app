@@ -49,3 +49,38 @@ def ensure_profile_complete():
     finally:
         cursor.close()
         conn.close()
+
+import streamlit as st
+from utils import get_snowflake_connection
+
+def get_userid():
+    try:
+        if not getattr(st, "user", None) or not getattr(st.user, "email", None):
+            st.warning("User not logged in or email not available.")
+            return None
+
+        conn = get_snowflake_connection()
+        cursor = conn.cursor()
+
+        query = """
+            SELECT id
+            FROM registrations
+            WHERE email = %s
+        """
+        cursor.execute(query, (st.user.email,))
+        row = cursor.fetchone()
+
+        return row[0] if row else None
+
+    except Exception as e:
+        st.error(f"Error fetching user ID: {e}")
+        return None
+
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except:
+            pass
+
+
