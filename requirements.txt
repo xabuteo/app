@@ -1,9 +1,9 @@
 # requirements.txt
 snowflake-connector-python
 streamlit
-#bcrypt
+bcrypt
 streamlit-auth0
 streamlit>=1.25
-#requests
+requests
 Authlib
 streamlit-aggrid
