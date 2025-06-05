@@ -1,6 +1,5 @@
 import os
 import snowflake.connector
-import bcrypt
 import streamlit as st
 
 SNOWFLAKE_CONFIG = {
