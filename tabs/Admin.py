@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
 
 def page(selected_event):
@@ -69,6 +70,78 @@ def page(selected_event):
                 cs.close()
                 conn.close()
                     
+    # Seeding and Group Assignment
+    with st.expander("➕ Seeding and Group Assignment"):
+        try:
+            conn = get_snowflake_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT user_id, event_id, first_name, last_name, email,
+                       club_name, club_code, seed_no, group_no
+                FROM EVENT_REGISTRATION_V
+                WHERE event_id = %s
+                ORDER BY last_name, first_name
+            """, (event_id,))
+            rows = cursor.fetchall()
+            cols = [desc[0].upper() for desc in cursor.description]
+            df = pd.DataFrame(rows, columns=cols)
+        except Exception as e:
+            st.error(f"Error loading registrations: {e}")
+            return
+        finally:
+            cursor.close()
+            conn.close()
+
+        from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+
+        gb = GridOptionsBuilder.from_dataframe(df)
+        gb.configure_default_column(editable=False)
+        gb.configure_column("SEED_NO", editable=True)
+        gb.configure_column("GROUP_NO", editable=True)
+        gb.configure_selection("multiple", use_checkbox=True)
+        grid_options = gb.build()
+
+        grid_response = AgGrid(
+            df,
+            gridOptions=grid_options,
+            update_mode=GridUpdateMode.MANUAL,
+            fit_columns_on_grid_load=True,
+            enable_enterprise_modules=False
+        )
+
+        updated_rows = grid_response["data"]
+        selected = grid_response["selected_rows"]
+
+        if st.button("💾 Save Seeding/Grouping Changes"):
+            if not selected:
+                st.info("No rows selected for update.")
+            else:
+                try:
+                    conn = get_snowflake_connection()
+                    cursor = conn.cursor()
+                    for row in selected:
+                        cursor.execute("""
+                            UPDATE EVENT_REGISTRATION
+                            SET SEED_NO = %s,
+                                GROUP_NO = %s,
+                                UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                            WHERE user_id = %s AND event_id = %s
+                        """, (
+                            row["SEED_NO"],
+                            row["GROUP_NO"],
+                            row["USER_ID"],
+                            row["EVENT_ID"]
+                        ))
+                    conn.commit()
+                    st.success(f"✅ {len(selected)} record(s) updated.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Failed to update: {e}")
+                finally:
+                    cursor.close()
+                    conn.close()
+
+
     # Add new event form
     with st.expander("➕ Add New Event"):
         with st.form("add_event_form"):
