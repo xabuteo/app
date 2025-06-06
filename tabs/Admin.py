@@ -112,10 +112,13 @@ def page(selected_event):
 
         if st.button("💾 Save Seeding/Grouping Changes"):
             try:
-                # Detect changed rows by comparing to original df
-                changed_rows = updated_data.loc[
-                    (updated_data["SEED_NO"] != df["SEED_NO"]) |
-                    (updated_data["GROUP_NO"] != df["GROUP_NO"])
+                # Reset index for both to align rows correctly
+                updated_data_reset = updated_data.reset_index(drop=True)
+                df_reset = df.reset_index(drop=True)
+                
+                changed_rows = updated_data_reset.loc[
+                    (updated_data_reset["SEED_NO"] != df_reset["SEED_NO"]) |
+                    (updated_data_reset["GROUP_NO"] != df_reset["GROUP_NO"])
                 ]
 
                 if changed_rows.empty:
