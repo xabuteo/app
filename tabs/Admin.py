@@ -132,6 +132,26 @@ def page(selected_event):
                         except (ValueError, TypeError):
                             seed_no = 0  # default if invalid
                         group_no = str(row["GROUP_NO"]) if row["GROUP_NO"] is not None else ''
+                        cursor.execute("""
+                            UPDATE EVENT_REGISTRATION
+                            SET SEED_NO = %s,
+                                GROUP_NO = %s,
+                                UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                            WHERE USER_ID = %s AND EVENT_ID = %s
+                        """, (
+                            seed_no,
+                            group_no,
+                            row["USER_ID"],
+                            row["EVENT_ID"]
+                        ))
+                    conn.commit()
+                    st.success(f"✅ {len(changed_rows)} record(s) updated.")
+                    st.rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to update: {e}")
+            finally:
+                cursor.close()
+                conn.close()
                 
         # Auto-grouping section
         with st.form("group_auto_assign"):
