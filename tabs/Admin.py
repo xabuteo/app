@@ -69,7 +69,7 @@ def page(selected_event):
             finally:
                 cs.close()
                 conn.close()
-                    
+
     # Seeding and Group Assignment
     with st.expander("➕ Seeding and Group Assignment"):
         try:
@@ -112,6 +112,8 @@ def page(selected_event):
 
         updated_rows = grid_response["data"]
         selected = grid_response["selected_rows"]
+        st.write("Selected row:", selected)
+        st.write("Type:", type(selected))                   
 
         if st.button("💾 Save Seeding/Grouping Changes"):
             if not selected or len(selected) == 0:
