@@ -153,6 +153,10 @@ def page(selected_event):
                 cursor.close()
                 conn.close()
                 
+        # Store result so it can be used outside expander
+        if "final_group_df" not in st.session_state:
+            st.session_state.final_group_df = None
+        
         # Auto-grouping section
         with st.expander("➕ Auto-Group Participants", expanded=True):
             num_groups = st.selectbox("Select number of groups", list(range(2, 11)), index=2)
@@ -177,14 +181,13 @@ def page(selected_event):
                     # Count how many in each group so far
                     group_counts = {label: len(groups[label]) for label in group_labels}
         
-                    # Sort group labels by current count (ascending) to assign unseeded
+                    # Assign unseeded players to groups with smallest current size
                     for _, row in unseeded.iterrows():
-                        # Choose group with smallest size so far
                         smallest_group = min(group_counts, key=group_counts.get)
                         groups[smallest_group].append(row)
                         group_counts[smallest_group] += 1
         
-                    # Flatten final DataFrame
+                    # Compile final DataFrame
                     final_rows = []
                     for label in group_labels:
                         for row in groups[label]:
@@ -192,38 +195,42 @@ def page(selected_event):
                             final_rows.append(row)
         
                     final_df = pd.DataFrame(final_rows).sort_values(["GROUP_NO", "SEED_NO", "LAST_NAME"])
+                    st.session_state.final_group_df = final_df  # store for saving
                     st.success("✅ Groups assigned successfully.")
                     st.dataframe(final_df[["FIRST_NAME", "LAST_NAME", "SEED_NO", "GROUP_NO"]], use_container_width=True)
         
-                    # Save groups with form
-                    with st.form("save_group_assignments_form"):
-                        save_assigned = st.form_submit_button("💾 Save Assigned Groups")
-                        if save_assigned:
-                            try:
-                                conn = get_snowflake_connection()
-                                cursor = conn.cursor()
-                                for _, row in final_df.iterrows():
-                                    cursor.execute("""
-                                        UPDATE EVENT_REGISTRATION
-                                        SET GROUP_NO = %s,
-                                            UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                                        WHERE user_id = %s AND event_id = %s
-                                    """, (
-                                        row["GROUP_NO"],
-                                        row["USER_ID"],
-                                        row["EVENT_ID"]
-                                    ))
-                                conn.commit()
-                                st.success(f"✅ {len(final_df)} participants updated with group assignment.")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"❌ Failed to update: {e}")
-                            finally:
-                                cursor.close()
-                                conn.close()
                 except Exception as e:
                     st.error(f"❌ Grouping error: {e}")
-                    
+        
+        # Save Assigned Groups (shown only if final_group_df exists)
+        if st.session_state.final_group_df is not None:
+            with st.form("save_group_assignments_form"):
+                save_assigned = st.form_submit_button("💾 Save Assigned Groups")
+                if save_assigned:
+                    try:
+                        final_df = st.session_state.final_group_df
+                        conn = get_snowflake_connection()
+                        cursor = conn.cursor()
+                        for _, row in final_df.iterrows():
+                            cursor.execute("""
+                                UPDATE EVENT_REGISTRATION
+                                SET GROUP_NO = %s,
+                                    UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                                WHERE user_id = %s AND event_id = %s
+                            """, (
+                                row["GROUP_NO"],
+                                row["USER_ID"],
+                                row["EVENT_ID"]
+                            ))
+                        conn.commit()
+                        st.success(f"✅ {len(final_df)} participants updated with group assignment.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to update: {e}")
+                    finally:
+                        cursor.close()
+                        conn.close()
+    
     # Add new event form
     with st.expander("➕ Add New Event"):
         with st.form("add_event_form"):
