@@ -71,7 +71,7 @@ def page(selected_event):
                 conn.close()
 
     # Seeding and Group Assignment
-    with st.expander("➕ Seeding and Group Assignment", expanded=True):
+    with st.expander("➕ Seeding and Group Assignment"):
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
@@ -84,7 +84,7 @@ def page(selected_event):
             """, (event_id,))
             rows = cursor.fetchall()
             cols = [desc[0].upper() for desc in cursor.description]
-            df_original = pd.DataFrame(rows, columns=cols)
+            df = pd.DataFrame(rows, columns=cols)
         except Exception as e:
             st.error(f"Error loading registrations: {e}")
             return
@@ -92,67 +92,69 @@ def page(selected_event):
             cursor.close()
             conn.close()
 
-        if df_original.empty:
-            st.info("No registrations found.")
-        else:
-            # Grid config
-            gb = GridOptionsBuilder.from_dataframe(df_original)
-            gb.configure_default_column(editable=False)
-            gb.configure_column("SEED_NO", editable=True)
-            gb.configure_column("GROUP_NO", editable=True)
-            grid_options = gb.build()
+        gb = GridOptionsBuilder.from_dataframe(df)
+        gb.configure_default_column(editable=False)
+        gb.configure_column("SEED_NO", editable=True, type=["numericColumn"])
+        gb.configure_column("GROUP_NO", editable=True, cellEditor="agTextCellEditor")
+        gb.configure_selection("multiple", use_checkbox=True)  # optional
+        grid_options = gb.build()
 
-            grid_response = AgGrid(
-                df_original,
-                gridOptions=grid_options,
-                update_mode=GridUpdateMode.MANUAL,
-                fit_columns_on_grid_load=True,
-                enable_enterprise_modules=False,
-                theme="material",
-                height=400
-            )
+        grid_response = AgGrid(
+            df,
+            gridOptions=grid_options,
+            update_mode=GridUpdateMode.MANUAL,  # manual update to detect edits on Save button
+            fit_columns_on_grid_load=False,
+            enable_enterprise_modules=False,
+            theme="material"
+        )
 
-            df_updated = grid_response["data"].reset_index(drop=True)
-            df_original = df_original.reset_index(drop=True)
+        updated_data = pd.DataFrame(grid_response["data"])
 
-            if st.button("💾 Save Seeding/Grouping Changes"):
-                # Compare original and updated to find changed rows
-                changed_rows = df_updated[
-                    (df_updated["SEED_NO"] != df_original["SEED_NO"]) |
-                    (df_updated["GROUP_NO"] != df_original["GROUP_NO"])
+        if st.button("💾 Save Seeding/Grouping Changes"):
+            try:
+                # Detect changed rows by comparing to original df
+                changed_rows = updated_data.loc[
+                    (updated_data["SEED_NO"] != df["SEED_NO"]) |
+                    (updated_data["GROUP_NO"] != df["GROUP_NO"])
                 ]
 
                 if changed_rows.empty:
-                    st.info("No changes detected.")
+                    st.warning("No changes detected.")
                 else:
-                    try:
-                        conn = get_snowflake_connection()
-                        cursor = conn.cursor()
-                        updated_count = 0
+                    conn = get_snowflake_connection()
+                    cursor = conn.cursor()
 
-                        for _, row in changed_rows.iterrows():
-                            cursor.execute("""
-                                UPDATE EVENT_REGISTRATION
-                                SET SEED_NO = %s,
-                                    GROUP_NO = %s,
-                                    UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                                WHERE USER_ID = %s AND EVENT_ID = %s
-                            """, (
-                                int(row["SEED_NO"]) if pd.notna(row["SEED_NO"]) else None,
-                                int(row["GROUP_NO"]) if pd.notna(row["GROUP_NO"]) else None,
-                                row["USER_ID"],
-                                row["EVENT_ID"]
-                            ))
-                            updated_count += 1
+                    for _, row in changed_rows.iterrows():
+                        try:
+                            seed_no = int(row["SEED_NO"])
+                        except (ValueError, TypeError):
+                            seed_no = 0  # default if invalid
 
-                        conn.commit()
-                        st.success(f"✅ Updated {updated_count} row(s).")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Update failed: {e}")
-                    finally:
-                        cursor.close()
-                        conn.close()
+                        group_no = str(row["GROUP_NO"]) if row["GROUP_NO"] is not None else ''
+
+                        cursor.execute("""
+                            UPDATE EVENT_REGISTRATION
+                            SET SEED_NO = %s,
+                                GROUP_NO = %s,
+                                UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                            WHERE USER_ID = %s AND EVENT_ID = %s
+                        """, (
+                            seed_no,
+                            group_no,
+                            row["USER_ID"],
+                            row["EVENT_ID"]
+                        ))
+
+                    conn.commit()
+                    st.success(f"✅ {len(changed_rows)} record(s) updated.")
+                    st.experimental_rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to update: {e}")
+            finally:
+                if 'cursor' in locals():
+                    cursor.close()
+                if 'conn' in locals():
+                    conn.close()
                     
     # Add new event form
     with st.expander("➕ Add New Event"):
