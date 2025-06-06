@@ -52,7 +52,7 @@ grid_response = AgGrid(
     width='100%',
     allow_unsafe_jscode=True,  # Required for JsCode to work
     update_mode=GridUpdateMode.VALUE_CHANGED,
-    enable_enterprise_modules=FALSE,
+    enable_enterprise_modules=False,
     theme="streamlit",  # or "balham", "material"
 )
 
