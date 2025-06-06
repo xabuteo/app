@@ -71,7 +71,7 @@ def page(selected_event):
                 conn.close()
 
     # Seeding and Group Assignment
-    with st.expander("➕ Seeding and Group Assignment"):
+    with st.expander("➕ Seeding and Group Assignment", expanded=True):
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
