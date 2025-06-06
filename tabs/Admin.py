@@ -114,8 +114,9 @@ def page(selected_event):
         selected = grid_response["selected_rows"]
 
         if st.button("💾 Save Seeding/Grouping Changes"):
-            if not selected:
-                st.info("No rows selected for update.")
+            if not selected or len(selected) == 0:
+                st.warning("Please select a row to update.")
+                return
             else:
                 try:
                     conn = get_snowflake_connection()
