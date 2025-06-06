@@ -150,7 +150,7 @@ def page(selected_event):
 
                     conn.commit()
                     st.success(f"✅ {len(changed_rows)} record(s) updated.")
-                    st.experimental_rerun()
+                    st.rerun()
             except Exception as e:
                 st.error(f"❌ Failed to update: {e}")
             finally:
