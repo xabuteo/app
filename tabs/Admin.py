@@ -106,7 +106,8 @@ def page(selected_event):
             gridOptions=grid_options,
             update_mode=GridUpdateMode.MANUAL,
             fit_columns_on_grid_load=True,
-            enable_enterprise_modules=False
+            enable_enterprise_modules=False,
+            theme="material"
         )
 
         updated_rows = grid_response["data"]
