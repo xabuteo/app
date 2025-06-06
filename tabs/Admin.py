@@ -102,7 +102,7 @@ def page(selected_event):
         grid_response = AgGrid(
             df,
             gridOptions=grid_options,
-            update_mode=GridUpdateMode.VALUE_CHANGED,  # manual update to detect edits on Save button
+            update_mode=GridUpdateMode.SELECTION_CHANGED,  # manual update to detect edits on Save button
             fit_columns_on_grid_load=False,
             enable_enterprise_modules=False,
             theme="material"
