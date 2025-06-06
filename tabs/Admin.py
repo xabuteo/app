@@ -105,7 +105,7 @@ def page(selected_event):
             df,
             gridOptions=grid_options,
             update_mode=GridUpdateMode.MANUAL,
-            fit_columns_on_grid_load=True,
+            fit_columns_on_grid_load=False,
             enable_enterprise_modules=False,
             theme="material"
         )
