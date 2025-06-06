@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import string
+import random
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
 
@@ -92,14 +94,10 @@ def page(selected_event):
             cursor.close()
             conn.close()
 
-        from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
-        import string
-        import random
-
         gb = GridOptionsBuilder.from_dataframe(df)
         gb.configure_default_column(editable=False)
-        gb.configure_column("SEED_NO", editable=True)
-        gb.configure_column("GROUP_NO", editable=True)
+        gb.configure_column("SEED_NO", editable=True, type=["numericColumn"])
+        gb.configure_column("GROUP_NO", editable=True, cellEditor="agTextCellEditor")
         gb.configure_selection("multiple", use_checkbox=True)
         grid_options = gb.build()
 
@@ -112,46 +110,29 @@ def page(selected_event):
             theme="material"
         )
 
-        updated_rows = grid_response["data"]
-        selected = grid_response["selected_rows"]
-
+        updated_data = pd.DataFrame(grid_response["data"])
         if st.button("💾 Save Seeding/Grouping Changes"):
-            if not selected or len(selected) == 0:
-                st.warning("Please select a row to update.")
-            else:
-                try:
+            try:
+                # Reset index for both to align rows correctly
+                updated_data_reset = updated_data.reset_index(drop=True)
+                df_reset = df.reset_index(drop=True)
+
+                changed_rows = updated_data_reset.loc[
+                    (updated_data_reset["SEED_NO"] != df_reset["SEED_NO"]) |
+                    (updated_data_reset["GROUP_NO"] != df_reset["GROUP_NO"])
+                ]
+                if changed_rows.empty:
+                    st.warning("No changes detected.")
+                else:
                     conn = get_snowflake_connection()
                     cursor = conn.cursor()
-                    for row in selected:
-                        group_no = row["GROUP_NO"]
-                        if group_no and isinstance(group_no, str):
-                            group_no = group_no.strip().upper()[:2]
-                        else:
-                            group_no = None
-                        seed_no = row["SEED_NO"]
-                        seed_no = int(seed_no) if str(seed_no).isdigit() else 0
-
-                        cursor.execute("""
-                            UPDATE EVENT_REGISTRATION
-                            SET SEED_NO = %s,
-                                GROUP_NO = %s,
-                                UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                            WHERE user_id = %s AND event_id = %s
-                        """, (
-                            seed_no,
-                            group_no,
-                            row["USER_ID"],
-                            row["EVENT_ID"]
-                        ))
-                    conn.commit()
-                    st.success(f"✅ {len(selected)} record(s) updated.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Failed to update: {e}")
-                finally:
-                    cursor.close()
-                    conn.close()
-
+                    for _, row in changed_rows.iterrows():
+                        try:
+                            seed_no = int(row["SEED_NO"])
+                        except (ValueError, TypeError):
+                            seed_no = 0  # default if invalid
+                        group_no = str(row["GROUP_NO"]) if row["GROUP_NO"] is not None else ''
+                
         # Auto-grouping section
         with st.form("group_auto_assign"):
             num_groups = st.selectbox("Select number of groups", list(range(2, 11)), index=2)
