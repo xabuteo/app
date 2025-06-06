@@ -112,7 +112,8 @@ def page(selected_event):
                 height=400
             )
 
-            df_updated = grid_response["data"]
+            df_updated = grid_response["data"].reset_index(drop=True)
+            df_original = df_original.reset_index(drop=True)
 
             if st.button("💾 Save Seeding/Grouping Changes"):
                 # Compare original and updated to find changed rows
