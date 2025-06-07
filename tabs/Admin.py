@@ -158,7 +158,7 @@ def page(selected_event):
             st.session_state.final_group_df = None
         
         # Auto-grouping section
-        with st.container(border=True):
+        with st.form("save_group_assignments_form"):
             num_groups = st.selectbox("Select number of groups", list(range(2, 11)), index=2)
             assign_btn = st.button("🎯 Auto-Assign Groups")
         
