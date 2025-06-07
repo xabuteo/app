@@ -13,5 +13,5 @@ def page(selected_event):
     # Run sections
     event_status.render(event_id, event_status_value, user_email)
     seed_and_group.render(event_id)
-    auto_group.render(event_id)
+    auto_group.render(event_id, user_email)
     new_event_form.render()
