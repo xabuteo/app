@@ -23,11 +23,12 @@ def page(selected_event):
         cursor.close()
         conn.close()
 
+    # Extract values from selected_event
     event_id = selected_event.get("ID")
     event_status = selected_event.get("EVENT_STATUS")
-    user_email = selected_event.get("UPDATE_BY", "admin@xabuteo.com")
+    user_email = selected_event.get("UPDATE_BY", "admin@xabuteo.com")  # fallback default
 
-    # Approve event
+    # Approve pending event
     if event_status == "Pending":
         if st.button("✅ Approve"):
             try:
@@ -71,7 +72,7 @@ def page(selected_event):
                 conn.close()
 
     # Seeding and Group Assignment
-    with st.expander("➕ Seeding and Group Assignment"):
+    with st.expander("➕ Seeding and Group Assignment", expanded=True):
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
@@ -113,6 +114,7 @@ def page(selected_event):
             try:
                 updated_data_reset = updated_data.reset_index(drop=True)
                 df_reset = df.reset_index(drop=True)
+
                 changed_rows = updated_data_reset.loc[
                     (updated_data_reset["SEED_NO"] != df_reset["SEED_NO"]) |
                     (updated_data_reset["GROUP_NO"] != df_reset["GROUP_NO"])
@@ -123,11 +125,8 @@ def page(selected_event):
                     conn = get_snowflake_connection()
                     cursor = conn.cursor()
                     for _, row in changed_rows.iterrows():
-                        try:
-                            seed_no = int(row["SEED_NO"])
-                        except (ValueError, TypeError):
-                            seed_no = 0
-                        group_no = str(row["GROUP_NO"]) if row["GROUP_NO"] is not None else ''
+                        seed_no = int(row["SEED_NO"]) if pd.notna(row["SEED_NO"]) else 0
+                        group_no = str(row["GROUP_NO"]) if pd.notna(row["GROUP_NO"]) else ''
                         cursor.execute("""
                             UPDATE EVENT_REGISTRATION
                             SET SEED_NO = %s,
@@ -149,20 +148,20 @@ def page(selected_event):
                 cursor.close()
                 conn.close()
 
-        if "final_group_df" not in st.session_state:
-            st.session_state.final_group_df = None
-
-        with st.form("group_form"):
+        with st.form("auto_grouping_form"):
             num_groups = st.selectbox("Select number of groups", list(range(2, 11)), index=2)
-            assign_btn = st.form_submit_button("🎯 Auto-Assign Groups")
+            submit_auto_assign = st.form_submit_button("🎯 Auto-Assign Groups")
 
-            if assign_btn:
+            if submit_auto_assign:
                 try:
                     df_copy = df.copy()
                     df_copy["SEED_NO"] = pd.to_numeric(df_copy["SEED_NO"], errors="coerce").fillna(0).astype(int)
 
                     seeded = df_copy[df_copy["SEED_NO"] > 0].sort_values("SEED_NO")
-                    unseeded = df_copy[df_copy["SEED_NO"] == 0].sample(frac=1, random_state=42)
+                    unseeded = df_copy[df_copy["SEED_NO"] == 0].sample(frac=1, random_state=random.randint(0, 10000))
+
+                    # Shuffle seeded order randomly before round-robin
+                    seeded = seeded.sample(frac=1, random_state=random.randint(0, 10000))
 
                     group_labels = list(string.ascii_uppercase[:num_groups])
                     groups = {label: [] for label in group_labels}
@@ -172,7 +171,6 @@ def page(selected_event):
                         groups[group].append(row)
 
                     group_counts = {label: len(groups[label]) for label in group_labels}
-
                     for _, row in unseeded.iterrows():
                         smallest_group = min(group_counts, key=group_counts.get)
                         groups[smallest_group].append(row)
@@ -190,7 +188,8 @@ def page(selected_event):
                     st.success("✅ Groups assigned successfully.")
                     st.dataframe(final_df[["FIRST_NAME", "LAST_NAME", "SEED_NO", "GROUP_NO"]], use_container_width=True)
 
-                    if st.form_submit_button("💾 Save Assigned Groups"):
+                    # Save after display
+                    if st.button("💾 Save Assigned Groups"):
                         try:
                             conn = get_snowflake_connection()
                             cursor = conn.cursor()
@@ -216,7 +215,7 @@ def page(selected_event):
                 except Exception as e:
                     st.error(f"❌ Grouping error: {e}")
 
-    # Add new event form
+    # Add new event form (unchanged)
     with st.expander("➕ Add New Event"):
         with st.form("add_event_form"):
             col1, col2 = st.columns(2)
@@ -239,7 +238,6 @@ def page(selected_event):
                 finally:
                     cursor.close()
                     conn.close()
-
                 event_type = st.selectbox("Event Type", event_types)
 
             col1, col2 = st.columns(2)
