@@ -1,6 +1,6 @@
 import streamlit as st
 from utils import get_snowflake_connection
-from components import event_status, seed_and_group, auto_group, new_event_form
+from admin import event_status, seed_and_group, auto_group, new_event_form
 
 def page(selected_event):
     st.subheader("Event Admin")
