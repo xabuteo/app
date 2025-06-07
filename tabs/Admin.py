@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import string
+import random
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
 
@@ -14,7 +15,7 @@ def page(selected_event):
         cursor.execute("SELECT * FROM events_v ORDER BY EVENT_START_DATE DESC")
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
-        df_events = pd.DataFrame(rows, columns=cols)
+        df = pd.DataFrame(rows, columns=cols)
     except Exception as e:
         st.error(f"Error loading events: {e}")
         return
@@ -25,52 +26,54 @@ def page(selected_event):
     # Extract values from selected_event
     event_id = selected_event.get("ID")
     event_status = selected_event.get("EVENT_STATUS")
-    user_email = selected_event.get("UPDATE_BY", "admin@xabuteo.com")
+    user_email = selected_event.get("UPDATE_BY", "admin@xabuteo.com")  # fallback default
 
-    # Approve or Cancel
-    if event_status == "Pending" and st.button("✅ Approve"):
-        try:
-            conn = get_snowflake_connection()
-            cursor = conn.cursor()
-            cursor.execute("""
-                UPDATE EVENTS
-                SET EVENT_STATUS = 'Approved',
-                    UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
-                    UPDATE_BY = %s
-                WHERE ID = %s
-            """, (user_email, event_id))
-            conn.commit()
-            st.success("✅ Event approved.")
-            st.rerun()
-        except Exception as e:
-            st.error(f"❌ Failed to approve event: {e}")
-        finally:
-            cursor.close()
+    # Approve pending event
+    if event_status == "Pending":
+        if st.button("✅ Approve"):
+            try:
+                conn = get_snowflake_connection()
+                cs = conn.cursor()
+                update_sql = """
+                    UPDATE EVENTS
+                    SET EVENT_STATUS = 'Approved',
+                        UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
+                        UPDATE_BY = %s
+                    WHERE ID = %s
+                """
+                cs.execute(update_sql, (user_email, event_id))
+                conn.commit()
+                st.success("✅ Event status updated to 'Approved'.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to update event status: {e}")
+            finally:
+                cs.close()
             conn.close()
+    if not event_status == "Cancelled":                    
+        if st.button("❌ Cancel"):
+            try:
+                conn = get_snowflake_connection()
+                cs = conn.cursor()
+                update_sql = """
+                    UPDATE EVENTS
+                    SET EVENT_STATUS = 'Cancelled',
+                        UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
+                        UPDATE_BY = %s
+                    WHERE ID = %s
+                """
+                cs.execute(update_sql, (user_email, event_id))
+                conn.commit()
+                st.success("❌ Event status updated to 'Cancelled'.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to update event status: {e}")
+            finally:
+                cs.close()
+                conn.close()
 
-    if event_status != "Cancelled" and st.button("❌ Cancel"):
-        try:
-            conn = get_snowflake_connection()
-            cursor = conn.cursor()
-            cursor.execute("""
-                UPDATE EVENTS
-                SET EVENT_STATUS = 'Cancelled',
-                    UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
-                    UPDATE_BY = %s
-                WHERE ID = %s
-            """, (user_email, event_id))
-            conn.commit()
-            st.success("❌ Event cancelled.")
-            st.rerun()
-        except Exception as e:
-            st.error(f"❌ Failed to cancel event: {e}")
-        finally:
-            cursor.close()
-            conn.close()
-
-    # Manual Seeding and Grouping
-    st.markdown("### 🧬 Seeding and Manual Grouping")
-    with st.expander("➕ Seeding and Manual Grouping", expanded=True):
+    # Seeding and Group Assignment
+    with st.expander("➕ Seeding and Group Assignment", expanded=True):
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
@@ -92,8 +95,10 @@ def page(selected_event):
             conn.close()
 
         gb = GridOptionsBuilder.from_dataframe(df)
+        gb.configure_default_column(editable=False)
         gb.configure_column("SEED_NO", editable=True, type=["numericColumn"])
-        gb.configure_column("GROUP_NO", editable=True)
+        gb.configure_column("GROUP_NO", editable=True, cellEditor="agTextCellEditor")
+        gb.configure_selection("multiple", use_checkbox=True)
         grid_options = gb.build()
 
         grid_response = AgGrid(
@@ -108,8 +113,10 @@ def page(selected_event):
         updated_data = pd.DataFrame(grid_response["data"])
         if st.button("💾 Save Seeding/Grouping Changes"):
             try:
+                # Reset index for both to align rows correctly
                 updated_data_reset = updated_data.reset_index(drop=True)
                 df_reset = df.reset_index(drop=True)
+
                 changed_rows = updated_data_reset.loc[
                     (updated_data_reset["SEED_NO"] != df_reset["SEED_NO"]) |
                     (updated_data_reset["GROUP_NO"] != df_reset["GROUP_NO"])
@@ -120,15 +127,23 @@ def page(selected_event):
                     conn = get_snowflake_connection()
                     cursor = conn.cursor()
                     for _, row in changed_rows.iterrows():
-                        seed_no = int(row["SEED_NO"]) if pd.notna(row["SEED_NO"]) else 0
-                        group_no = str(row["GROUP_NO"]) if row["GROUP_NO"] else ''
+                        try:
+                            seed_no = int(row["SEED_NO"])
+                        except (ValueError, TypeError):
+                            seed_no = 0  # default if invalid
+                        group_no = str(row["GROUP_NO"]) if row["GROUP_NO"] is not None else ''
                         cursor.execute("""
                             UPDATE EVENT_REGISTRATION
                             SET SEED_NO = %s,
                                 GROUP_NO = %s,
                                 UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
                             WHERE USER_ID = %s AND EVENT_ID = %s
-                        """, (seed_no, group_no, row["USER_ID"], row["EVENT_ID"]))
+                        """, (
+                            seed_no,
+                            group_no,
+                            row["USER_ID"],
+                            row["EVENT_ID"]
+                        ))
                     conn.commit()
                     st.success(f"✅ {len(changed_rows)} record(s) updated.")
                     st.rerun()
@@ -137,70 +152,84 @@ def page(selected_event):
             finally:
                 cursor.close()
                 conn.close()
-
-    # Auto-grouping
-    st.markdown("### 🧪 Auto-Group Participants")
-    with st.expander("⚙️ Auto-Assign Groups", expanded=False):
-        num_groups = st.selectbox("Select number of groups", list(range(2, 11)), index=2)
-        if st.button("🎯 Auto-Assign Groups"):
-            try:
-                df_copy = df.copy()
-                df_copy["SEED_NO"] = pd.to_numeric(df_copy["SEED_NO"], errors="coerce").fillna(0).astype(int)
-
-                seeded = df_copy[df_copy["SEED_NO"] > 0].sort_values("SEED_NO")
-                unseeded = df_copy[df_copy["SEED_NO"] == 0].sample(frac=1, random_state=42)
-
-                group_labels = list(string.ascii_uppercase[:num_groups])
-                groups = {label: [] for label in group_labels}
-
-                for idx, (_, row) in enumerate(seeded.iterrows()):
-                    group = group_labels[idx % num_groups]
-                    groups[group].append(row)
-
-                group_counts = {label: len(groups[label]) for label in group_labels}
-
-                for _, row in unseeded.iterrows():
-                    smallest_group = min(group_counts, key=group_counts.get)
-                    groups[smallest_group].append(row)
-                    group_counts[smallest_group] += 1
-
-                final_rows = []
-                for label in group_labels:
-                    for row in groups[label]:
-                        row["GROUP_NO"] = label
-                        final_rows.append(row)
-
-                final_df = pd.DataFrame(final_rows).sort_values(["GROUP_NO", "SEED_NO", "LAST_NAME"])
-                st.session_state.final_group_df = final_df
-                st.success("✅ Groups assigned successfully.")
-                st.dataframe(final_df[["FIRST_NAME", "LAST_NAME", "SEED_NO", "GROUP_NO"]], use_container_width=True)
-            except Exception as e:
-                st.error(f"❌ Grouping error: {e}")
-
-    # Save Assigned Groups
-    if st.session_state.get("final_group_df") is not None:
-        with st.form("save_group_assignments_form"):
-            if st.form_submit_button("💾 Save Assigned Groups"):
+                
+        # Store result so it can be used outside expander
+        if "final_group_df" not in st.session_state:
+            st.session_state.final_group_df = None
+        
+        # Auto-grouping section
+        with st.container(border=True):
+            num_groups = st.selectbox("Select number of groups", list(range(2, 11)), index=2)
+            assign_btn = st.button("🎯 Auto-Assign Groups")
+        
+            if assign_btn:
                 try:
-                    final_df = st.session_state.final_group_df
-                    conn = get_snowflake_connection()
-                    cursor = conn.cursor()
-                    for _, row in final_df.iterrows():
-                        cursor.execute("""
-                            UPDATE EVENT_REGISTRATION
-                            SET GROUP_NO = %s,
-                                UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                            WHERE user_id = %s AND event_id = %s
-                        """, (row["GROUP_NO"], row["USER_ID"], row["EVENT_ID"]))
-                    conn.commit()
-                    st.success(f"✅ {len(final_df)} participants updated with group assignment.")
-                    st.rerun()
+                    df_copy = df.copy()
+                    df_copy["SEED_NO"] = pd.to_numeric(df_copy["SEED_NO"], errors="coerce").fillna(0).astype(int)
+        
+                    seeded = df_copy[df_copy["SEED_NO"] > 0].sort_values("SEED_NO")
+                    unseeded = df_copy[df_copy["SEED_NO"] == 0].sample(frac=1, random_state=42)
+        
+                    group_labels = list(string.ascii_uppercase[:num_groups])
+                    groups = {label: [] for label in group_labels}
+        
+                    # Round-robin assign seeded players
+                    for idx, (_, row) in enumerate(seeded.iterrows()):
+                        group = group_labels[idx % num_groups]
+                        groups[group].append(row)
+        
+                    # Count how many in each group so far
+                    group_counts = {label: len(groups[label]) for label in group_labels}
+        
+                    # Assign unseeded players to groups with smallest current size
+                    for _, row in unseeded.iterrows():
+                        smallest_group = min(group_counts, key=group_counts.get)
+                        groups[smallest_group].append(row)
+                        group_counts[smallest_group] += 1
+        
+                    # Compile final DataFrame
+                    final_rows = []
+                    for label in group_labels:
+                        for row in groups[label]:
+                            row["GROUP_NO"] = label
+                            final_rows.append(row)
+        
+                    final_df = pd.DataFrame(final_rows).sort_values(["GROUP_NO", "SEED_NO", "LAST_NAME"])
+                    st.session_state.final_group_df = final_df  # store for saving
+                    st.success("✅ Groups assigned successfully.")
+                    st.dataframe(final_df[["FIRST_NAME", "LAST_NAME", "SEED_NO", "GROUP_NO"]], use_container_width=True)
+        
                 except Exception as e:
-                    st.error(f"❌ Failed to update: {e}")
-                finally:
-                    cursor.close()
-                    conn.close()
-
+                    st.error(f"❌ Grouping error: {e}")
+        
+        # Save Assigned Groups (shown only if final_group_df exists)
+        if st.session_state.final_group_df is not None:
+            with st.form("save_group_assignments_form"):
+                save_assigned = st.form_submit_button("💾 Save Assigned Groups")
+                if save_assigned:
+                    try:
+                        final_df = st.session_state.final_group_df
+                        conn = get_snowflake_connection()
+                        cursor = conn.cursor()
+                        for _, row in final_df.iterrows():
+                            cursor.execute("""
+                                UPDATE EVENT_REGISTRATION
+                                SET GROUP_NO = %s,
+                                    UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                                WHERE user_id = %s AND event_id = %s
+                            """, (
+                                row["GROUP_NO"],
+                                row["USER_ID"],
+                                row["EVENT_ID"]
+                            ))
+                        conn.commit()
+                        st.success(f"✅ {len(final_df)} participants updated with group assignment.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to update: {e}")
+                    finally:
+                        cursor.close()
+                        conn.close()
     
     # Add new event form
     with st.expander("➕ Add New Event"):
