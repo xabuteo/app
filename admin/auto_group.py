@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import string
+import render
 from utils import get_snowflake_connection
 
 def auto_assign_groups(df, event_id):
