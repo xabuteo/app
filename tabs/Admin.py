@@ -201,31 +201,30 @@ def page(selected_event):
                     st.dataframe(final_df[["FIRST_NAME", "LAST_NAME", "SEED_NO", "GROUP_NO"]], use_container_width=True)
 
                     # Save Assigned Groups (within container)
-                    with st.form("save_group_assignments_form"):
-                        save_assigned = st.form_submit_button("💾 Save Assigned Groups")
-                        if save_assigned:
-                            try:
-                                conn = get_snowflake_connection()
-                                cursor = conn.cursor()
-                                for _, row in final_df.iterrows():
-                                    cursor.execute("""
-                                        UPDATE EVENT_REGISTRATION
-                                        SET GROUP_NO = %s,
-                                            UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                                        WHERE user_id = %s AND event_id = %s
-                                    """, (
-                                        row["GROUP_NO"],
-                                        row["USER_ID"],
-                                        row["EVENT_ID"]
-                                    ))
-                                conn.commit()
-                                st.success(f"✅ {len(final_df)} participants updated with group assignment.")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"❌ Failed to update: {e}")
-                            finally:
-                                cursor.close()
-                                conn.close()
+                    save_assigned = st.form_submit_button("💾 Save Assigned Groups")
+                    if save_assigned:
+                        try:
+                            conn = get_snowflake_connection()
+                            cursor = conn.cursor()
+                            for _, row in final_df.iterrows():
+                                cursor.execute("""
+                                    UPDATE EVENT_REGISTRATION
+                                    SET GROUP_NO = %s,
+                                        UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                                    WHERE user_id = %s AND event_id = %s
+                                """, (
+                                    row["GROUP_NO"],
+                                    row["USER_ID"],
+                                    row["EVENT_ID"]
+                                ))
+                            conn.commit()
+                            st.success(f"✅ {len(final_df)} participants updated with group assignment.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to update: {e}")
+                        finally:
+                            cursor.close()
+                            conn.close()
                 except Exception as e:
                     st.error(f"❌ Grouping error: {e}")
     
