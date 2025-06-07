@@ -1,19 +1,45 @@
+# admin/auto_group.py
+
 import streamlit as st
 import pandas as pd
 import string
 from utils import get_snowflake_connection
 
-def auto_assign_groups(df, event_id):
-    st.subheader("🎯 Auto-Assign Groups")
+def render(event_id, user_email):
+    st.markdown("### 🎯 Auto-Assign Groups")
+
+    try:
+        conn = get_snowflake_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT user_id, event_id, first_name, last_name, email,
+                   club_name, club_code, seed_no, group_no
+            FROM EVENT_REGISTRATION_V
+            WHERE event_id = %s
+            ORDER BY last_name, first_name
+        """, (event_id,))
+        rows = cursor.fetchall()
+        cols = [desc[0].upper() for desc in cursor.description]
+        df = pd.DataFrame(rows, columns=cols)
+    except Exception as e:
+        st.error(f"Error loading registrations: {e}")
+        return
+    finally:
+        cursor.close()
+        conn.close()
+
+    if df.empty:
+        st.warning("No registrations found.")
+        return
 
     num_groups = st.selectbox("Select number of groups", list(range(2, 11)), index=2)
-    if st.button("🚀 Assign Groups Now"):
+    if st.button("🎯 Auto-Assign Groups Now"):
         try:
             df_copy = df.copy()
             df_copy["SEED_NO"] = pd.to_numeric(df_copy["SEED_NO"], errors="coerce").fillna(0).astype(int)
 
             seeded = df_copy[df_copy["SEED_NO"] > 0].sort_values("SEED_NO")
-            unseeded = df_copy[df_copy["SEED_NO"] == 0].sample(frac=1, random_state=None)
+            unseeded = df_copy[df_copy["SEED_NO"] == 0].sample(frac=1, random_state=None)  # random shuffle
 
             group_labels = list(string.ascii_uppercase[:num_groups])
             groups = {label: [] for label in group_labels}
@@ -36,11 +62,9 @@ def auto_assign_groups(df, event_id):
 
             final_df = pd.DataFrame(final_rows).sort_values(["GROUP_NO", "SEED_NO", "LAST_NAME"])
 
-            st.session_state["auto_group_df"] = final_df
-            st.success("✅ Groups assigned. Review below before saving.")
             st.dataframe(final_df[["FIRST_NAME", "LAST_NAME", "SEED_NO", "GROUP_NO"]], use_container_width=True)
 
-            if st.button("💾 Save Assigned Groups"):
+            if st.button("💾 Save Assigned Groups to DB"):
                 try:
                     conn = get_snowflake_connection()
                     cursor = conn.cursor()
@@ -49,20 +73,19 @@ def auto_assign_groups(df, event_id):
                             UPDATE EVENT_REGISTRATION
                             SET GROUP_NO = %s,
                                 UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                            WHERE user_id = %s AND event_id = %s
+                            WHERE USER_ID = %s AND EVENT_ID = %s
                         """, (
                             row["GROUP_NO"],
                             row["USER_ID"],
                             row["EVENT_ID"]
                         ))
                     conn.commit()
-                    st.success(f"✅ {len(final_df)} participants updated in EVENT_REGISTRATION.")
+                    st.success(f"✅ {len(final_df)} participants updated with group assignment.")
                     st.rerun()
                 except Exception as e:
-                    st.error(f"❌ Failed to save group assignments: {e}")
+                    st.error(f"❌ Failed to save to database: {e}")
                 finally:
                     cursor.close()
                     conn.close()
-
         except Exception as e:
-            st.error(f"❌ Grouping failed: {e}")
+            st.error(f"❌ Grouping error: {e}")
