@@ -23,25 +23,23 @@ def page(selected_event):
         cursor.close()
         conn.close()
 
-    # Extract values from selected_event
     event_id = selected_event.get("ID")
     event_status = selected_event.get("EVENT_STATUS")
     user_email = selected_event.get("UPDATE_BY", "admin@xabuteo.com")
 
-    # Approve pending event
+    # Approve event
     if event_status == "Pending":
         if st.button("✅ Approve"):
             try:
                 conn = get_snowflake_connection()
                 cs = conn.cursor()
-                update_sql = """
+                cs.execute("""
                     UPDATE EVENTS
                     SET EVENT_STATUS = 'Approved',
                         UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
                         UPDATE_BY = %s
                     WHERE ID = %s
-                """
-                cs.execute(update_sql, (user_email, event_id))
+                """, (user_email, event_id))
                 conn.commit()
                 st.success("✅ Event status updated to 'Approved'.")
                 st.rerun()
@@ -56,14 +54,13 @@ def page(selected_event):
             try:
                 conn = get_snowflake_connection()
                 cs = conn.cursor()
-                update_sql = """
+                cs.execute("""
                     UPDATE EVENTS
                     SET EVENT_STATUS = 'Cancelled',
                         UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
                         UPDATE_BY = %s
                     WHERE ID = %s
-                """
-                cs.execute(update_sql, (user_email, event_id))
+                """, (user_email, event_id))
                 conn.commit()
                 st.success("❌ Event status updated to 'Cancelled'.")
                 st.rerun()
@@ -74,7 +71,7 @@ def page(selected_event):
                 conn.close()
 
     # Seeding and Group Assignment
-    with st.expander("➕ Seeding and Group Assignment", expanded=True):
+    with st.expander("➕ Seeding and Group Assignment"):
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
@@ -116,7 +113,6 @@ def page(selected_event):
             try:
                 updated_data_reset = updated_data.reset_index(drop=True)
                 df_reset = df.reset_index(drop=True)
-
                 changed_rows = updated_data_reset.loc[
                     (updated_data_reset["SEED_NO"] != df_reset["SEED_NO"]) |
                     (updated_data_reset["GROUP_NO"] != df_reset["GROUP_NO"])
@@ -153,10 +149,12 @@ def page(selected_event):
                 cursor.close()
                 conn.close()
 
-        # Auto-grouping section with proper form usage
-        with st.form("auto_group_form"):
+        if "final_group_df" not in st.session_state:
+            st.session_state.final_group_df = None
+
+        with st.form("group_form"):
             num_groups = st.selectbox("Select number of groups", list(range(2, 11)), index=2)
-            assign_btn = st.form_submit_button("🎯 Auto-Assign and Save Groups")
+            assign_btn = st.form_submit_button("🎯 Auto-Assign Groups")
 
             if assign_btn:
                 try:
@@ -189,28 +187,34 @@ def page(selected_event):
                     final_df = pd.DataFrame(final_rows).sort_values(["GROUP_NO", "SEED_NO", "LAST_NAME"])
                     st.session_state.final_group_df = final_df
 
-                    conn = get_snowflake_connection()
-                    cursor = conn.cursor()
-                    for _, row in final_df.iterrows():
-                        cursor.execute("""
-                            UPDATE EVENT_REGISTRATION
-                            SET GROUP_NO = %s,
-                                UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                            WHERE user_id = %s AND event_id = %s
-                        """, (
-                            row["GROUP_NO"],
-                            row["USER_ID"],
-                            row["EVENT_ID"]
-                        ))
-                    conn.commit()
-                    st.success(f"✅ {len(final_df)} participants updated with group assignment.")
+                    st.success("✅ Groups assigned successfully.")
                     st.dataframe(final_df[["FIRST_NAME", "LAST_NAME", "SEED_NO", "GROUP_NO"]], use_container_width=True)
-                    st.rerun()
+
+                    if st.form_submit_button("💾 Save Assigned Groups"):
+                        try:
+                            conn = get_snowflake_connection()
+                            cursor = conn.cursor()
+                            for _, row in final_df.iterrows():
+                                cursor.execute("""
+                                    UPDATE EVENT_REGISTRATION
+                                    SET GROUP_NO = %s,
+                                        UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                                    WHERE user_id = %s AND event_id = %s
+                                """, (
+                                    row["GROUP_NO"],
+                                    row["USER_ID"],
+                                    row["EVENT_ID"]
+                                ))
+                            conn.commit()
+                            st.success(f"✅ {len(final_df)} participants updated with group assignment.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to update: {e}")
+                        finally:
+                            cursor.close()
+                            conn.close()
                 except Exception as e:
                     st.error(f"❌ Grouping error: {e}")
-                finally:
-                    cursor.close()
-                    conn.close()
 
     # Add new event form
     with st.expander("➕ Add New Event"):
@@ -235,6 +239,7 @@ def page(selected_event):
                 finally:
                     cursor.close()
                     conn.close()
+
                 event_type = st.selectbox("Event Type", event_types)
 
             col1, col2 = st.columns(2)
