@@ -3,7 +3,7 @@ import pandas as pd
 import string
 from utils import get_snowflake_connection
 
-def render(event_id):
+def render(event_id, user_email):
     with st.expander("🎯 Auto Grouping"):
         try:
             conn = get_snowflake_connection()
