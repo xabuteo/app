@@ -81,7 +81,7 @@ def render(event_id, user_email):
                             ))
                         conn.commit()
                         st.success(f"✅ {len(final_df)} participants updated with group assignment.")
-                        st.rerun()
+                        #st.rerun()
                     except Exception as e:
                         st.error(f"❌ Failed to save to database: {e}")
                     finally:
