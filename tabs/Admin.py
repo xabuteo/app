@@ -14,4 +14,4 @@ def page(selected_event):
     event_status.render(event_id, event_status_value, user_email)
     seed_and_group.render(event_id)
     auto_group.render(event_id, user_email)
-    new_event.render()
+    new_event.add_new_event()
