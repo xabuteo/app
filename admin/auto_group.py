@@ -62,30 +62,35 @@ def render(event_id, user_email):
     
                 final_df = pd.DataFrame(final_rows).sort_values(["GROUP_NO", "SEED_NO", "LAST_NAME"])
     
+                st.session_state.final_group_df = final_df
                 st.dataframe(final_df[["FIRST_NAME", "LAST_NAME", "SEED_NO", "GROUP_NO"]], use_container_width=True)
-    
-                if st.button("💾 Save Assigned Groups to DB"):
-                    try:
-                        conn = get_snowflake_connection()
-                        cursor = conn.cursor()
-                        for _, row in final_df.iterrows():
-                            cursor.execute("""
-                                UPDATE EVENT_REGISTRATION
-                                SET GROUP_NO = %s,
-                                    UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                                WHERE USER_ID = %s AND EVENT_ID = %s
-                            """, (
-                                row["GROUP_NO"],
-                                row["USER_ID"],
-                                row["EVENT_ID"]
-                            ))
-                        conn.commit()
-                        st.success(f"✅ {len(final_df)} participants updated with group assignment.")
-                        #st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Failed to save to database: {e}")
-                    finally:
-                        cursor.close()
-                        conn.close()
-            except Exception as e:
-                st.error(f"❌ Grouping error: {e}")
+                
+                # Ensure final_df is available
+                if "final_group_df" in st.session_state and not st.session_state.final_group_df.empty:
+                    final_df = st.session_state.final_group_df
+                
+                    if st.button("💾 Save Assigned Groups to DB"):
+                        try:
+                            conn = get_snowflake_connection()
+                            cursor = conn.cursor()
+                            for _, row in final_df.iterrows():
+                                cursor.execute("""
+                                    UPDATE EVENT_REGISTRATION
+                                    SET GROUP_NO = %s,
+                                        UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                                    WHERE USER_ID = %s AND EVENT_ID = %s
+                                """, (
+                                    row["GROUP_NO"],
+                                    row["USER_ID"],
+                                    row["EVENT_ID"]
+                                ))
+                            conn.commit()
+                            st.success(f"✅ {len(final_df)} participants updated with group assignment.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to save to database: {e}")
+                        finally:
+                            cursor.close()
+                            conn.close()
+                else:
+                    st.warning("No group assignments available to save.")
