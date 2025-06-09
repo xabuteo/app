@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
-from tabs import Details, Register, Scores, Result, Admin
+from tabs import Details, Register, Tables, Scores, Result, Admin
 
 st.set_page_config(page_title="Events", layout="wide")
 
@@ -94,8 +94,8 @@ def show():
     if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
         selected_id = selected_rows[0].get("ID")
         selected_event = df[df["ID"] == selected_id].iloc[0].to_dict()
-        TABS = st.tabs(["DETAILS", "REGISTER", "SCORES", "RESULT", "ADMIN"])
-        PAGES = [Details, Register, Scores, Result, Admin]
+        TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT", "ADMIN"])
+        PAGES = [Details, Register, Tables, Scores, Result, Admin]
         
         for tab, page_module in zip(TABS, PAGES):
             with tab:
