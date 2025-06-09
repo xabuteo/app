@@ -3,9 +3,7 @@ import pandas as pd
 from utils import get_snowflake_connection, get_userid
 
 def page(selected_event):
-    event_status = selected_event.get("EVENT_STATUS", "")
     event_id = selected_event.get("ID")
-    user_id = get_userid()
 
     try:
         conn = get_snowflake_connection()
@@ -39,6 +37,6 @@ def page(selected_event):
             for group in groups:
                 group_df = comp_df[comp_df["GROUP_NO"] == group][[
                     "FIRST_NAME", "LAST_NAME", "CLUB_CODE", "PLAYED", "WON", "DRAWN", "LOST", "GF", "GA", "GD", "PTS"
-                    ]]
-                    st.markdown(f"#### Group {group}")
-                    st.dataframe(group_df, use_container_width=True)
+                ]]
+                st.markdown(f"#### Group {group}")
+                st.dataframe(group_df, use_container_width=True)
