@@ -29,11 +29,12 @@ def page(selected_event):
 
         if df.empty:
             st.info("ℹ️ No groups or matches have been assigned yet.")
-        else:
-            competitions = df["COMPETITION_TYPE"].unique()
-            for comp in competitions:
-                st.markdown(f"## 🏆 {comp} Competition")
-                comp_df = df[df["COMPETITION_TYPE"] == comp]
+            return
+
+        competitions = sorted(df["COMPETITION_TYPE"].dropna().unique(), key=lambda x: (x != "Open", x))
+        for comp in competitions:
+            comp_df = df[df["COMPETITION_TYPE"] == comp]
+            with st.expander(f"🏆 {comp} Competition", expanded=(comp == "Open")):
                 groups = comp_df["GROUP_NO"].dropna().unique()
                 groups.sort()
                 for group in groups:
