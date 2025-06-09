@@ -17,7 +17,7 @@ def page(selected_event):
         st.markdown(f"**Registration Dates:** {reg_open} to {reg_close}")
 
         if event_status == "Open":
-            # Competition flags
+            # Competition flags from event setup
             event_open = selected_event.get("EVENT_OPEN", False)
             event_women = selected_event.get("EVENT_WOMEN", False)
             event_junior = selected_event.get("EVENT_JUNIOR", False)
@@ -67,32 +67,30 @@ def page(selected_event):
             }
 
             st.markdown("### 🏆 Eligible Competitions")
-            comp_checkboxes = {}
-            for comp, eligible in competitions.items():
-                if eligible:
-                    comp_checkboxes[comp] = st.checkbox(f"{comp} Competition")
+            selected_competitions = [
+                comp for comp, eligible in competitions.items()
+                if eligible and st.checkbox(f"{comp} Competition")
+            ]
 
             if st.button("📝 Register for Event"):
                 try:
                     conn = get_snowflake_connection()
                     cs = conn.cursor()
-                    cs.execute("""
-                        INSERT INTO event_registration (
-                            user_id, event_id, club_id,
-                            register_open, register_women, register_junior, register_veteran, register_teams,
-                            updated_timestamp, updated_by
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s)
-                    """, (
-                        user_id, event_id, club_id,
-                        comp_checkboxes.get("Open", False),
-                        comp_checkboxes.get("Women", False),
-                        comp_checkboxes.get("Junior", False),
-                        comp_checkboxes.get("Veteran", False),
-                        comp_checkboxes.get("Teams", False),
-                        user_id
-                    ))
+
+                    for comp in selected_competitions:
+                        cs.execute("""
+                            INSERT INTO event_registration (
+                                user_id, event_id, club_id, competition_type,
+                                updated_timestamp, updated_by
+                            )
+                            VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP, %s)
+                        """, (
+                            user_id, event_id, club_id, comp, user_id
+                        ))
+
                     conn.commit()
-                    st.success("✅ Registered successfully.")
+
+                    st.success(f"✅ Registered for: {', '.join(selected_competitions)}")
                 except Exception as e:
                     st.error(f"❌ Failed to register: {e}")
                 finally:
