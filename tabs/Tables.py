@@ -7,7 +7,7 @@ def page(selected_event):
     event_id = selected_event.get("ID")
     user_id = get_userid()
 
-    with st.expander(f"🏓 Tables", expanded=True):
+    with st.container(border=True):
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
@@ -15,23 +15,30 @@ def page(selected_event):
                 SELECT *
                 FROM EVENT_TABLE_V
                 WHERE EVENT_ID = %s
-                ORDER BY competition_type, last_name, first_name
+                ORDER BY competition_type, group_no, last_name, first_name
             """, (event_id,))
             rows = cursor.fetchall()
             cols = [desc[0] for desc in cursor.description]
             df = pd.DataFrame(rows, columns=cols)
         except Exception as e:
-            st.error(f"❌ Failed to load registrations: {e}")
+            st.error(f"❌ Failed to load table data: {e}")
             return
         finally:
             cursor.close()
             conn.close()
-    
+
         if df.empty:
-            st.info("No groups assigned yet.")
+            st.info("ℹ️ No groups or matches have been assigned yet.")
         else:
             competitions = df["COMPETITION_TYPE"].unique()
             for comp in competitions:
-                comp_df = df[df["COMPETITION_TYPE"] == comp][["FIRST_NAME", "LAST_NAME", "CLUB_CODE", "PLAYED", "WON", "DRAWN", "LOST", "GF", "GA", "GD", "PTS"]]
-                st.markdown(f"### 🏆 {comp} Competition")
-                st.dataframe(comp_df, use_container_width=True)
+                st.markdown(f"## 🏆 {comp} Competition")
+                comp_df = df[df["COMPETITION_TYPE"] == comp]
+                groups = comp_df["GROUP_NO"].dropna().unique()
+                groups.sort()
+                for group in groups:
+                    group_df = comp_df[comp_df["GROUP_NO"] == group][[
+                        "FIRST_NAME", "LAST_NAME", "CLUB_CODE", "PLAYED", "WON", "DRAWN", "LOST", "GF", "GA", "GD", "PTS"
+                    ]]
+                    st.markdown(f"### Group {group}")
+                    st.dataframe(group_df, use_container_width=True)
