@@ -41,5 +41,5 @@ def page(selected_event):
                     group_df = comp_df[comp_df["GROUP_NO"] == group][[
                         "FIRST_NAME", "LAST_NAME", "CLUB_CODE", "PLAYED", "WON", "DRAWN", "LOST", "GF", "GA", "GD", "PTS"
                     ]]
-                    st.markdown(f"## Group {group}")
+                    st.markdown(f"#### Group {group}")
                     st.dataframe(group_df, use_container_width=True)
