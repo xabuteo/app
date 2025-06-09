@@ -7,7 +7,7 @@ def page(selected_event):
     event_id = selected_event.get("ID")
     user_id = get_userid()
 
-    with st.expander(f"🏓 Tables", expanded=true):
+    with st.expander(f"🏓 Tables", expanded=True):
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
