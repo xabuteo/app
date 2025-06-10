@@ -55,12 +55,19 @@ def render(event_id):
         gb.configure_selection("multiple", use_checkbox=True)
         grid_options = gb.build()
 
+        row_count = len(df)
+        max_rows_to_show = 10
+        row_height = 48
+        header_height = 113
+        grid_height = min(row_count, max_rows_to_show) * row_height + header_height
+        
         grid_response = AgGrid(
             df,
             gridOptions=grid_options,
             update_mode=GridUpdateMode.VALUE_CHANGED,
             fit_columns_on_grid_load=False,
             enable_enterprise_modules=False,
+            height=grid_height,
             theme="material"
         )
 
