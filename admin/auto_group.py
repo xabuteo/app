@@ -9,7 +9,7 @@ def render(event_id, user_email):
             conn = get_snowflake_connection()
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT user_id, event_id, first_name, last_name, email,
+                SELECT id, user_id, event_id, first_name, last_name, email,
                        club_name, club_code, seed_no, group_no
                 FROM EVENT_REGISTRATION_V
                 WHERE event_id = %s
@@ -37,7 +37,7 @@ def render(event_id, user_email):
                 df_copy["SEED_NO"] = pd.to_numeric(df_copy["SEED_NO"], errors="coerce").fillna(0).astype(int)
 
                 seeded = df_copy[df_copy["SEED_NO"] > 0].sort_values("SEED_NO")
-                unseeded = df_copy[df_copy["SEED_NO"] == 0].sample(frac=1, random_state=None)  # shuffle
+                unseeded = df_copy[df_copy["SEED_NO"] == 0].sample(frac=1, random_state=None)
 
                 group_labels = list(string.ascii_uppercase[:num_groups])
                 groups = {label: [] for label in group_labels}
@@ -83,11 +83,10 @@ def render(event_id, user_email):
                             UPDATE EVENT_REGISTRATION
                             SET GROUP_NO = %s,
                                 UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                            WHERE user_id = %s AND event_id = %s
+                            WHERE id = %s
                         """, (
                             row["GROUP_NO"],
-                            row["USER_ID"],
-                            row["EVENT_ID"]
+                            row["ID"]
                         ))
                     conn.commit()
                     st.success(f"✅ {len(final_df)} participants updated with group assignments.")
