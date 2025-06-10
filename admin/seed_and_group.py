@@ -8,22 +8,45 @@ def render(event_id):
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
+
+            # Fetch available competitions for this event
+            cursor.execute("""
+                SELECT DISTINCT competition_type
+                FROM event_registration
+                WHERE event_id = %s
+                ORDER BY competition_type
+            """, (event_id,))
+            competitions = [row[0] for row in cursor.fetchall()]
+
+            if not competitions:
+                st.info("No competitions found for this event.")
+                return
+
+            selected_comp = st.radio("🏆 Select Competition", competitions)
+
+            # Fetch registration data for selected competition
             cursor.execute("""
                 SELECT id, user_id, event_id, first_name, last_name, email,
                        club_name, club_code, seed_no, group_no
                 FROM EVENT_REGISTRATION_V
-                WHERE event_id = %s
+                WHERE event_id = %s AND competition_type = %s
                 ORDER BY last_name, first_name
-            """, (event_id,))
+            """, (event_id, selected_comp))
+
             rows = cursor.fetchall()
             cols = [desc[0].upper() for desc in cursor.description]
             df = pd.DataFrame(rows, columns=cols)
+
         except Exception as e:
             st.error(f"Error loading registrations: {e}")
             return
         finally:
             cursor.close()
             conn.close()
+
+        if df.empty:
+            st.warning("No registrations found for this competition.")
+            return
 
         gb = GridOptionsBuilder.from_dataframe(df)
         gb.configure_default_column(editable=False)
