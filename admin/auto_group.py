@@ -8,16 +8,33 @@ def render(event_id, user_email):
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
+
+            # Step 1: Get available competitions for the event
             cursor.execute("""
-                SELECT id, user_id, event_id, first_name, last_name, email,
+                SELECT DISTINCT competition_type
+                FROM event_registration
+                WHERE event_id = %s
+                ORDER BY competition_type
+            """, (event_id,))
+            competitions = [row[0] for row in cursor.fetchall()]
+            if not competitions:
+                st.info("No competitions found for this event.")
+                return
+
+            selected_comp = st.radio("🏆 Select Competition", competitions)
+
+            # Step 2: Get relevant registrations
+            cursor.execute("""
+                SELECT id, user_id, event_id, competition_type, first_name, last_name, email,
                        club_name, club_code, seed_no, group_no
                 FROM EVENT_REGISTRATION_V
-                WHERE event_id = %s
+                WHERE event_id = %s AND competition_type = %s
                 ORDER BY last_name, first_name
-            """, (event_id,))
+            """, (event_id, selected_comp))
             rows = cursor.fetchall()
             cols = [desc[0].upper() for desc in cursor.description]
             df = pd.DataFrame(rows, columns=cols)
+
         except Exception as e:
             st.error(f"Error loading registrations: {e}")
             return
@@ -26,7 +43,7 @@ def render(event_id, user_email):
             conn.close()
 
         if df.empty:
-            st.info("No registrations for this event.")
+            st.info("No registrations for this competition.")
             return
 
         num_groups = st.selectbox("Select number of groups", list(range(2, 11)), index=2)
