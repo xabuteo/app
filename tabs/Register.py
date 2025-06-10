@@ -73,11 +73,33 @@ def page(selected_event):
             ]
 
             if st.button("📝 Register for Event"):
+                if not selected_competitions:
+                    st.warning("Please select at least one competition to register.")
+                    return
+            
                 try:
                     conn = get_snowflake_connection()
                     cs = conn.cursor()
-
+            
+                    registered_comps = []
+            
                     for comp in selected_competitions:
+                        # Check if already registered
+                        cs.execute("""
+                            SELECT 1
+                            FROM event_registration
+                            WHERE user_id = %s
+                              AND event_id = %s
+                              AND competition_type = %s
+                            LIMIT 1
+                        """, (user_id, event_id, comp))
+            
+                        exists = cs.fetchone()
+                        if exists:
+                            st.warning(f"⚠️ Already registered for {comp} competition.")
+                            continue
+            
+                        # Insert new registration
                         cs.execute("""
                             INSERT INTO event_registration (
                                 user_id, event_id, club_id, competition_type,
@@ -87,10 +109,15 @@ def page(selected_event):
                         """, (
                             user_id, event_id, club_id, comp, user_id
                         ))
-
+                        registered_comps.append(comp)
+            
                     conn.commit()
-
-                    st.success(f"✅ Registered for: {', '.join(selected_competitions)}")
+            
+                    if registered_comps:
+                        st.success(f"✅ Registered for: {', '.join(registered_comps)}")
+                    else:
+                        st.info("ℹ️ No new registrations submitted.")
+            
                 except Exception as e:
                     st.error(f"❌ Failed to register: {e}")
                 finally:
