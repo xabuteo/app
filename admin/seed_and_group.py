@@ -9,7 +9,7 @@ def render(event_id):
             conn = get_snowflake_connection()
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT user_id, event_id, first_name, last_name, email,
+                SELECT id, user_id, event_id, first_name, last_name, email,
                        club_name, club_code, seed_no, group_no
                 FROM EVENT_REGISTRATION_V
                 WHERE event_id = %s
@@ -63,17 +63,17 @@ def render(event_id):
                         except (ValueError, TypeError):
                             seed_no = 0
                         group_no = str(row["GROUP_NO"]) if row["GROUP_NO"] is not None else ''
+                        record_id = row["ID"]
                         cursor.execute("""
                             UPDATE EVENT_REGISTRATION
                             SET SEED_NO = %s,
                                 GROUP_NO = %s,
                                 UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                            WHERE USER_ID = %s AND EVENT_ID = %s
+                            WHERE ID = %s
                         """, (
                             seed_no,
                             group_no,
-                            row["USER_ID"],
-                            row["EVENT_ID"]
+                            record_id
                         ))
                     conn.commit()
                     st.success(f"✅ {len(changed_rows)} record(s) updated.")
