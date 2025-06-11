@@ -5,11 +5,15 @@ from utils import get_snowflake_connection
 
 def render(event_id, user_email):
     with st.expander("🎯 Auto Grouping"):
+        # Persist selected competition in session state
+        if "selected_competition" not in st.session_state:
+            st.session_state.selected_competition = "Open"
+
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
 
-            # Step 1: Get available competitions for the event
+            # Fetch competition types
             cursor.execute("""
                 SELECT DISTINCT competition_type
                 FROM event_registration
@@ -17,15 +21,23 @@ def render(event_id, user_email):
                 ORDER BY competition_type
             """, (event_id,))
             competitions = [row[0] for row in cursor.fetchall()]
+
             if not competitions:
-                st.info("No competitions found for this event.")
+                st.info("No competitions found.")
                 return
 
-            selected_comp = st.radio("🏆 Select Competition", competitions)
+            selected_comp = st.radio(
+                "🏆 Select Competition",
+                competitions,
+                index=competitions.index(st.session_state.selected_competition)
+                    if st.session_state.selected_competition in competitions else 0,
+                key="competition_selector_auto_group"
+            )
+            st.session_state.selected_competition = selected_comp
 
-            # Step 2: Get relevant registrations
+            # Load registrations for selected competition
             cursor.execute("""
-                SELECT id, user_id, event_id, competition_type, first_name, last_name, email,
+                SELECT id, user_id, event_id, first_name, last_name, email,
                        club_name, club_code, seed_no, group_no
                 FROM EVENT_REGISTRATION_V
                 WHERE event_id = %s AND competition_type = %s
@@ -34,7 +46,6 @@ def render(event_id, user_email):
             rows = cursor.fetchall()
             cols = [desc[0].upper() for desc in cursor.description]
             df = pd.DataFrame(rows, columns=cols)
-
         except Exception as e:
             st.error(f"Error loading registrations: {e}")
             return
@@ -54,7 +65,7 @@ def render(event_id, user_email):
                 df_copy["SEED_NO"] = pd.to_numeric(df_copy["SEED_NO"], errors="coerce").fillna(0).astype(int)
 
                 seeded = df_copy[df_copy["SEED_NO"] > 0].sort_values("SEED_NO")
-                unseeded = df_copy[df_copy["SEED_NO"] == 0].sample(frac=1, random_state=None)
+                unseeded = df_copy[df_copy["SEED_NO"] == 0].sample(frac=1)
 
                 group_labels = list(string.ascii_uppercase[:num_groups])
                 groups = {label: [] for label in group_labels}
@@ -64,14 +75,13 @@ def render(event_id, user_email):
                     group = group_labels[idx % num_groups]
                     groups[group].append(row)
 
-                # Fill remaining groups with unseeded
+                # Distribute unseeded evenly
                 group_counts = {label: len(groups[label]) for label in group_labels}
                 for _, row in unseeded.iterrows():
                     smallest = min(group_counts, key=group_counts.get)
                     groups[smallest].append(row)
                     group_counts[smallest] += 1
 
-                # Create final DataFrame
                 final_rows = []
                 for label in group_labels:
                     for row in groups[label]:
@@ -87,10 +97,9 @@ def render(event_id, user_email):
             except Exception as e:
                 st.error(f"❌ Grouping error: {e}")
 
-        # Save to DB (if final_df exists)
+        # Save to DB
         if "final_group_df" in st.session_state and st.session_state.final_group_df is not None:
             final_df = st.session_state.final_group_df
-
             if st.button("💾 Save Assigned Groups to DB"):
                 try:
                     conn = get_snowflake_connection()
@@ -106,7 +115,7 @@ def render(event_id, user_email):
                             row["ID"]
                         ))
                     conn.commit()
-                    st.success(f"✅ {len(final_df)} participants updated with group assignments.")
+                    st.success(f"✅ {len(final_df)} participants updated.")
                     st.rerun()
                 except Exception as e:
                     st.error(f"❌ Failed to update: {e}")
