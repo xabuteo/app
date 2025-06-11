@@ -5,11 +5,15 @@ from utils import get_snowflake_connection
 
 def render(event_id):
     with st.expander("➕ Seeding and Group Assignment", expanded=True):
+        # Persist selected competition
+        if "selected_competition" not in st.session_state:
+            st.session_state.selected_competition = "Open"
+
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
 
-            # Fetch available competitions for this event
+            # Get competition list
             cursor.execute("""
                 SELECT DISTINCT competition_type
                 FROM event_registration
@@ -17,14 +21,19 @@ def render(event_id):
                 ORDER BY competition_type
             """, (event_id,))
             competitions = [row[0] for row in cursor.fetchall()]
-
             if not competitions:
-                st.info("No competitions found for this event.")
+                st.info("No competitions found.")
                 return
 
-            selected_comp = st.radio("🏆 Select Competition", competitions)
+            selected_comp = st.radio(
+                "🏆 Select Competition",
+                competitions,
+                index=competitions.index(st.session_state.selected_competition)
+                    if st.session_state.selected_competition in competitions else 0,
+                key="competition_selector_seed_group"
+            )
+            st.session_state.selected_competition = selected_comp
 
-            # Fetch registration data for selected competition
             cursor.execute("""
                 SELECT id, user_id, event_id, first_name, last_name, email,
                        club_name, club_code, seed_no, group_no
@@ -32,11 +41,9 @@ def render(event_id):
                 WHERE event_id = %s AND competition_type = %s
                 ORDER BY last_name, first_name
             """, (event_id, selected_comp))
-
             rows = cursor.fetchall()
             cols = [desc[0].upper() for desc in cursor.description]
             df = pd.DataFrame(rows, columns=cols)
-
         except Exception as e:
             st.error(f"Error loading registrations: {e}")
             return
@@ -45,7 +52,7 @@ def render(event_id):
             conn.close()
 
         if df.empty:
-            st.warning("No registrations found for this competition.")
+            st.info("No registrations found for this competition.")
             return
 
         gb = GridOptionsBuilder.from_dataframe(df)
