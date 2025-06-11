@@ -14,5 +14,5 @@ def page(selected_event):
     event_status.render(event_id, event_status_value, user_email)
     seed_and_group.render(event_id)
     auto_group.render(event_id, user_email)
-    generate_matches.render(event_id)
+    generate_matches.render_match_generation(event_id)
     new_event.add_new_event()
