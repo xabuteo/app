@@ -1,103 +1,119 @@
 import streamlit as st
 import pandas as pd
-from itertools import combinations
 from utils import get_snowflake_connection
 
-def generate_matches(event_id, competition):
-    with st.expander("🎮 Generate Matches"):
-        if st.button("🔁 Generate Round-Robin Matches"):
-            try:
-                conn = get_snowflake_connection()
-                cursor = conn.cursor()
-                
-                # Load players for selected event and competition
-                cursor.execute("""
-                    SELECT user_id, club_id, group_no
-                    FROM EVENT_REGISTRATION
-                    WHERE event_id = %s
-                      AND competition_type = %s
-                      AND group_no IS NOT NULL
-                    ORDER BY group_no
-                """, (event_id, competition))
-                rows = cursor.fetchall()
-                if not rows:
-                    st.warning("No registered players with group assignments.")
-                    return
-                
-                df = pd.DataFrame(rows, columns=["player_id", "club_id", "group_no"])
-                
-                # Generate round-robin matches
-                all_matches = []
-                for group in df["group_no"].unique():
-                    group_players = df[df["group_no"] == group].reset_index(drop=True)
-                    players = list(group_players.itertuples(index=False))
+def render_match_generation(event_id):
+    st.header("🎾 Auto-Generate Matches")
 
+    try:
+        conn = get_snowflake_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, user_id, club_id, group_no, competition_type
+            FROM event_registration
+            WHERE event_id = %s AND group_no IS NOT NULL
+        """, (event_id,))
+        rows = cursor.fetchall()
+        cols = [desc[0].upper() for desc in cursor.description]
+        df = pd.DataFrame(rows, columns=cols)
+    except Exception as e:
+        st.error(f"❌ Failed to load registration data: {e}")
+        return
+    finally:
+        cursor.close()
+        conn.close()
+
+    if df.empty:
+        st.info("ℹ️ No groupings found for this event.")
+        return
+
+    st.success("✅ Registrations loaded. Ready to generate matches.")
+
+    if st.button("⚙️ Generate Round-Robin Matches"):
+        try:
+            match_rows = []
+            for comp in df["COMPETITION_TYPE"].unique():
+                for group in df[df["COMPETITION_TYPE"] == comp]["GROUP_NO"].unique():
+                    group_df = df[(df["COMPETITION_TYPE"] == comp) & (df["GROUP_NO"] == group)]
+                    players = group_df.to_dict("records")
+
+                    # Add a BYE if odd number
                     if len(players) % 2 != 0:
-                        players.append(("BYE", None, group))  # pad with BYE
+                        players.append({
+                            "ID": None,
+                            "USER_ID": None,
+                            "CLUB_ID": None,
+                            "GROUP_NO": group,
+                            "COMPETITION_TYPE": comp
+                        })
 
-                    num_rounds = len(players) - 1
-                    num_matches_per_round = len(players) // 2
+                    n = len(players)
+                    rounds = n - 1
+                    half = n // 2
 
-                    schedule = []
-                    for rnd in range(num_rounds):
-                        round_matches = []
-                        for i in range(num_matches_per_round):
-                            p1 = players[i]
-                            p2 = players[-(i+1)]
-                            round_matches.append((p1, p2))
-                        players = [players[0]] + [players[-1]] + players[1:-1]
-                        schedule.append(round_matches)
+                    rotation = players[:]
+                    for round_no in range(1, rounds + 1):
+                        for i in range(half):
+                            p1 = rotation[i]
+                            p2 = rotation[n - 1 - i]
 
-                    for rnd, round_matches in enumerate(schedule, start=1):
-                        for p1, p2 in round_matches:
-                            is_bye = "BYE" in [p1[0], p2[0]]
-                            match = {
-                                "event_id": event_id,
-                                "competition_type": competition,
-                                "group_no": group,
-                                "round_no": rnd,
-                                "player_1_id": None if p1[0] == "BYE" else p1[0],
-                                "player_1_club_id": None if p1[0] == "BYE" else p1[1],
-                                "player_2_id": None if p2[0] == "BYE" else p2[0],
-                                "player_2_club_id": None if p2[0] == "BYE" else p2[1],
-                                "is_bye": is_bye
-                            }
-                            all_matches.append(match)
+                            match_rows.append({
+                                "EVENT_ID": event_id,
+                                "COMPETITION_TYPE": comp,
+                                "GROUP_NO": group,
+                                "ROUND_NO": round_no,
+                                "PLAYER1_ID": p1["USER_ID"],
+                                "PLAYER1_CLUB_ID": p1["CLUB_ID"],
+                                "PLAYER2_ID": p2["USER_ID"],
+                                "PLAYER2_CLUB_ID": p2["CLUB_ID"],
+                                "STATUS": "Scheduled"
+                            })
 
-                # Insert into DB
-                for match in all_matches:
-                    cursor.execute("""
-                        INSERT INTO EVENT_MATCHES (
-                            event_id, competition_type, group_no, round_no,
-                            player_1_id, player_1_club_id,
-                            player_2_id, player_2_club_id,
-                            is_bye, status, updated_timestamp
-                        )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'Scheduled', CURRENT_TIMESTAMP)
-                    """, (
-                        match["event_id"], match["competition_type"], match["group_no"], match["round_no"],
-                        match["player_1_id"], match["player_1_club_id"],
-                        match["player_2_id"], match["player_2_club_id"],
-                        match["is_bye"]
-                    ))
+                        # Rotate
+                        rotation = [rotation[0]] + [rotation[-1]] + rotation[1:-1]
 
-                conn.commit()
-                st.success(f"✅ {len(all_matches)} matches generated and saved.")
+            # Save matches
+            conn = get_snowflake_connection()
+            cursor = conn.cursor()
 
-                # Display generated matches from view
+            for row in match_rows:
                 cursor.execute("""
-                    SELECT *
-                    FROM EVENT_MATCHES_V
-                    WHERE event_id = %s AND competition_type = %s
-                    ORDER BY group_no, round_no
-                """, (event_id, competition))
-                matches_view = cursor.fetchall()
-                cols = [desc[0] for desc in cursor.description]
-                view_df = pd.DataFrame(matches_view, columns=cols)
-                st.dataframe(view_df, use_container_width=True)
+                    INSERT INTO EVENT_MATCHES (
+                        EVENT_ID, COMPETITION_TYPE, GROUP_NO, ROUND_NO,
+                        PLAYER1_ID, PLAYER1_CLUB_ID, PLAYER2_ID, PLAYER2_CLUB_ID,
+                        STATUS, GENERATED_FLAG
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
+                """, (
+                    row["EVENT_ID"], row["COMPETITION_TYPE"], row["GROUP_NO"], row["ROUND_NO"],
+                    row["PLAYER1_ID"], row["PLAYER1_CLUB_ID"],
+                    row["PLAYER2_ID"], row["PLAYER2_CLUB_ID"],
+                    row["STATUS"]
+                ))
+            conn.commit()
+            st.success(f"✅ {len(match_rows)} matches generated and saved.")
 
-            except Exception as e:
-                st.error(f"❌ Failed to generate matches: {e}")
-            finally:
-                cursor.close()
-                conn.close()
+        except Exception as e:
+            st.error(f"❌ Failed to generate matches: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+
+    # Display match view
+    try:
+        conn = get_snowflake_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM EVENT_MATCHES_V
+            WHERE event_id = %s
+            ORDER BY COMPETITION_TYPE, GROUP_NO, ROUND_NO
+        """, (event_id,))
+        matches = cursor.fetchall()
+        match_cols = [desc[0].upper() for desc in cursor.description]
+        df_matches = pd.DataFrame(matches, columns=match_cols)
+        st.markdown("### 📋 Matches")
+        st.dataframe(df_matches, use_container_width=True)
+    except Exception as e:
+        st.error(f"❌ Failed to load match view: {e}")
+    finally:
+        cursor.close()
+        conn.close()
