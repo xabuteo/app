@@ -65,7 +65,7 @@ def render(event_id):
         row_count = len(df)
         max_rows_to_show = 10
         row_height = 48
-        header_height = 48
+        header_height = 64
         grid_height = min(row_count, max_rows_to_show) * row_height + header_height
         
         grid_response = AgGrid(
