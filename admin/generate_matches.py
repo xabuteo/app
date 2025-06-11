@@ -1,90 +1,100 @@
 import streamlit as st
 import pandas as pd
+from itertools import combinations
 from utils import get_snowflake_connection
 
-def generate_round_robin(players):
-    """Generate round-robin schedule with BYE support."""
-    if len(players) % 2:
-        players.append({"USER_ID": -1, "CLUB_ID": None})  # BYE represented by -1
-
-    num_players = len(players)
-    rounds = []
-
-    for round_idx in range(num_players - 1):
-        matches = []
-        for i in range(num_players // 2):
-            p1 = players[i]
-            p2 = players[num_players - 1 - i]
-            if p1["USER_ID"] != -1 and p2["USER_ID"] != -1:
-                matches.append((p1, p2))
-            elif p1["USER_ID"] != -1:
-                matches.append((p1, {"USER_ID": -1, "CLUB_ID": None}))
-            elif p2["USER_ID"] != -1:
-                matches.append((p2, {"USER_ID": -1, "CLUB_ID": None}))
-        rounds.append(matches)
-        players = [players[0]] + [players[-1]] + players[1:-1]
-    return rounds
-
-def render(event_id):
+def generate_matches(event_id, competition):
     with st.expander("🎮 Generate Matches"):
-        st.markdown("This will generate round-robin matches for each group and competition.")
-
-        if st.button("🔄 Generate Round-Robin Matches"):
+        if st.button("🔁 Generate Round-Robin Matches"):
             try:
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
-
+                
+                # Load players for selected event and competition
                 cursor.execute("""
-                    SELECT user_id, club_id, competition_type, group_no
-                    FROM event_registration
-                    WHERE event_id = %s AND group_no IS NOT NULL
-                    ORDER BY competition_type, group_no
-                """, (event_id,))
+                    SELECT user_id, club_id, group_no
+                    FROM EVENT_REGISTRATION
+                    WHERE event_id = %s
+                      AND competition_type = %s
+                      AND group_no IS NOT NULL
+                    ORDER BY group_no
+                """, (event_id, competition))
                 rows = cursor.fetchall()
                 if not rows:
-                    st.warning("No players with groups found.")
+                    st.warning("No registered players with group assignments.")
                     return
-
-                df = pd.DataFrame(rows, columns=["USER_ID", "CLUB_ID", "COMPETITION_TYPE", "GROUP_NO"])
-                all_matches = []
-
-                for (comp, group), group_df in df.groupby(["COMPETITION_TYPE", "GROUP_NO"]):
-                    players = group_df[["USER_ID", "CLUB_ID"]].to_dict(orient="records")
-                    rounds = generate_round_robin(players)
-
-                    for round_no, match_round in enumerate(rounds, 1):
-                        for p1, p2 in match_round:
-                            all_matches.append({
-                                "event_id": event_id,
-                                "competition_type": comp,
-                                "group_no": group,
-                                "round_no": round_no,
-                                "player_1_id": int(p1["USER_ID"]),
-                                "player_1_club_id": p1["CLUB_ID"],
-                                "player_2_id": int(p2["USER_ID"]),
-                                "player_2_club_id": p2["CLUB_ID"]
-                            })
-
-                match_df = pd.DataFrame(all_matches)
-
-                for _, row in match_df.iterrows():
-                    row = {k: (None if pd.isna(v) else v) for k, v in row.items()}  # Clean NaNs
                 
+                df = pd.DataFrame(rows, columns=["player_id", "club_id", "group_no"])
+                
+                # Generate round-robin matches
+                all_matches = []
+                for group in df["group_no"].unique():
+                    group_players = df[df["group_no"] == group].reset_index(drop=True)
+                    players = list(group_players.itertuples(index=False))
+
+                    if len(players) % 2 != 0:
+                        players.append(("BYE", None, group))  # pad with BYE
+
+                    num_rounds = len(players) - 1
+                    num_matches_per_round = len(players) // 2
+
+                    schedule = []
+                    for rnd in range(num_rounds):
+                        round_matches = []
+                        for i in range(num_matches_per_round):
+                            p1 = players[i]
+                            p2 = players[-(i+1)]
+                            round_matches.append((p1, p2))
+                        players = [players[0]] + [players[-1]] + players[1:-1]
+                        schedule.append(round_matches)
+
+                    for rnd, round_matches in enumerate(schedule, start=1):
+                        for p1, p2 in round_matches:
+                            is_bye = "BYE" in [p1[0], p2[0]]
+                            match = {
+                                "event_id": event_id,
+                                "competition_type": competition,
+                                "group_no": group,
+                                "round_no": rnd,
+                                "player_1_id": None if p1[0] == "BYE" else p1[0],
+                                "player_1_club_id": None if p1[0] == "BYE" else p1[1],
+                                "player_2_id": None if p2[0] == "BYE" else p2[0],
+                                "player_2_club_id": None if p2[0] == "BYE" else p2[1],
+                                "is_bye": is_bye
+                            }
+                            all_matches.append(match)
+
+                # Insert into DB
+                for match in all_matches:
                     cursor.execute("""
-                        INSERT INTO event_matches (
+                        INSERT INTO EVENT_MATCHES (
                             event_id, competition_type, group_no, round_no,
-                            player_1_id, player_1_club_id, player_2_id, player_2_club_id,
-                            status, updated_timestamp
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'Scheduled', CURRENT_TIMESTAMP)
+                            player_1_id, player_1_club_id,
+                            player_2_id, player_2_club_id,
+                            is_bye, status, updated_timestamp
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'Scheduled', CURRENT_TIMESTAMP)
                     """, (
-                        row["event_id"], row["competition_type"], row["group_no"], row["round_no"],
-                        row["player_1_id"], row["player_1_club_id"],
-                        row["player_2_id"], row["player_2_club_id"]
+                        match["event_id"], match["competition_type"], match["group_no"], match["round_no"],
+                        match["player_1_id"], match["player_1_club_id"],
+                        match["player_2_id"], match["player_2_club_id"],
+                        match["is_bye"]
                     ))
 
                 conn.commit()
-                st.success(f"✅ {len(match_df)} matches generated and saved.")
-                st.dataframe(match_df)
+                st.success(f"✅ {len(all_matches)} matches generated and saved.")
+
+                # Display generated matches from view
+                cursor.execute("""
+                    SELECT *
+                    FROM EVENT_MATCHES_V
+                    WHERE event_id = %s AND competition_type = %s
+                    ORDER BY group_no, round_no
+                """, (event_id, competition))
+                matches_view = cursor.fetchall()
+                cols = [desc[0] for desc in cursor.description]
+                view_df = pd.DataFrame(matches_view, columns=cols)
+                st.dataframe(view_df, use_container_width=True)
 
             except Exception as e:
                 st.error(f"❌ Failed to generate matches: {e}")
