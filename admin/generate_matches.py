@@ -68,7 +68,6 @@ def render(event_id):
                 match_df = pd.DataFrame(all_matches)
 
                 for _, row in match_df.iterrows():
-                for _, row in matches_df.iterrows():
                     row = {k: (None if pd.isna(v) else v) for k, v in row.items()}  # Clean NaNs
                 
                     cursor.execute("""
