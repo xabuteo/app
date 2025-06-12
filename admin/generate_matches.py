@@ -4,8 +4,8 @@ from utils import get_snowflake_connection
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 def render_match_generation(event_id):
-    with st.expander(f"🎾 Match Generation & Scoring"):
-        # Check if matches already exist
+    with st.expander("🎾 Match Generation & Scoring", expanded=True):
+        # 1. Check existing matches
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
@@ -17,7 +17,7 @@ def render_match_generation(event_id):
         finally:
             cursor.close()
             conn.close()
-    
+
         if match_count > 0:
             st.warning(f"⚠️ {match_count} matches already exist. Re-generating will **DELETE all matches and scores**.")
             if not st.button("🔁 Re-Generate Matches (This will delete all existing!)"):
@@ -28,15 +28,16 @@ def render_match_generation(event_id):
                     cursor = conn.cursor()
                     cursor.execute("DELETE FROM EVENT_MATCHES WHERE event_id = %s", (event_id,))
                     conn.commit()
-                    cursor.close()
-                    conn.close()
                     st.success("✅ Old matches deleted. You can now generate new ones.")
-                    match_count = 0  # Reset
+                    match_count = 0
                 except Exception as e:
                     st.error(f"❌ Failed to delete old matches: {e}")
                     return
-    
-        # Load group registration
+                finally:
+                    cursor.close()
+                    conn.close()
+
+        # 2. Load registration
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
@@ -54,11 +55,12 @@ def render_match_generation(event_id):
         finally:
             cursor.close()
             conn.close()
-    
+
         if df.empty:
             st.info("ℹ️ No groupings found for this event.")
             return
-    
+
+        # 3. Generate matches
         if match_count == 0 and st.button("⚙️ Generate Round-Robin Matches"):
             try:
                 match_rows = []
@@ -66,7 +68,7 @@ def render_match_generation(event_id):
                     for group in df[df["COMPETITION_TYPE"] == comp]["GROUP_NO"].unique():
                         group_df = df[(df["COMPETITION_TYPE"] == comp) & (df["GROUP_NO"] == group)]
                         players = group_df.to_dict("records")
-    
+
                         if len(players) % 2 != 0:
                             players.append({
                                 "ID": None,
@@ -75,11 +77,11 @@ def render_match_generation(event_id):
                                 "GROUP_NO": group,
                                 "COMPETITION_TYPE": comp
                             })
-    
+
                         n = len(players)
                         rounds = n - 1
                         half = n // 2
-    
+
                         rotation = players[:]
                         for round_no in range(1, rounds + 1):
                             for i in range(half):
@@ -97,7 +99,7 @@ def render_match_generation(event_id):
                                     "STATUS": "Scheduled"
                                 })
                             rotation = [rotation[0]] + [rotation[-1]] + rotation[1:-1]
-    
+
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
                 for row in match_rows:
@@ -120,8 +122,8 @@ def render_match_generation(event_id):
             finally:
                 cursor.close()
                 conn.close()
-    
-        # View & Edit Matches
+
+        # 4. View/Edit matches
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
@@ -141,14 +143,18 @@ def render_match_generation(event_id):
         finally:
             cursor.close()
             conn.close()
-    
+
+        if df_matches.empty:
+            st.info("ℹ️ No matches to show.")
+            return
+
         st.markdown("### 📋 Match Results")
         gb = GridOptionsBuilder.from_dataframe(df_matches)
         gb.configure_default_column(editable=False)
         gb.configure_column("PLAYER1_GOALS", editable=True)
         gb.configure_column("PLAYER2_GOALS", editable=True)
         grid_options = gb.build()
-    
+
         grid_response = AgGrid(
             df_matches,
             gridOptions=grid_options,
@@ -156,30 +162,33 @@ def render_match_generation(event_id):
             fit_columns_on_grid_load=True,
             theme="material"
         )
-    
+
         updated_df = pd.DataFrame(grid_response["data"])
         if st.button("💾 Save Scores"):
             try:
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
                 for _, row in updated_df.iterrows():
+                    # Check for NaN or None in goal columns
+                    if pd.isna(row["PLAYER1_GOALS"]) or pd.isna(row["PLAYER2_GOALS"]):
+                        continue
                     cursor.execute("""
                         UPDATE EVENT_MATCHES
-                        SET P1_GOALS = %s,
-                            P2_GOALS = %s,
+                        SET PLAYER1_GOALS = %s,
+                            PLAYER2_GOALS = %s,
                             STATUS = 'Final',
                             UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
                         WHERE ID = %s
                     """, (
-                        row["PLAYER1_GOALS"],
-                        row["PLAYER2_GOALS"],
-                        row["ID"]
+                        int(row["PLAYER1_GOALS"]),
+                        int(row["PLAYER2_GOALS"]),
+                        int(row["ID"])
                     ))
                 conn.commit()
                 st.success("✅ Scores updated and matches marked as 'Final'.")
                 st.rerun()
             except Exception as e:
                 st.error(f"❌ Failed to save scores: {e}")
-        finally:
-            cursor.close()
-            conn.close()
+            finally:
+                cursor.close()
+                conn.close()
