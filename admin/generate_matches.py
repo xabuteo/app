@@ -4,7 +4,7 @@ from utils import get_snowflake_connection
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 def render_match_generation(event_id):
-    with st.expander("🎾 Match Generation & Scoring", expanded=True):
+    with st.expander("🎾 Match Generation & Scoring"):
         # 1. Check existing matches
         try:
             conn = get_snowflake_connection()
@@ -159,7 +159,8 @@ def render_match_generation(event_id):
             df_matches,
             gridOptions=grid_options,
             update_mode=GridUpdateMode.VALUE_CHANGED,
-            fit_columns_on_grid_load=True,
+            fit_columns_on_grid_load=False,
+            enable_enterprise_modules=False,
             theme="material"
         )
 
