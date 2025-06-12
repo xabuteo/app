@@ -175,8 +175,8 @@ def render_match_generation(event_id):
                         continue
                     cursor.execute("""
                         UPDATE EVENT_MATCHES
-                        SET PLAYER1_GOALS = %s,
-                            PLAYER2_GOALS = %s,
+                        SET P1_GOALS = %s,
+                            P2_GOALS = %s,
                             STATUS = 'Final',
                             UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
                         WHERE ID = %s
