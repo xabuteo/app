@@ -4,7 +4,7 @@ from utils import get_snowflake_connection
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 def render_match_generation(event_id):
-    st.header("🎾 Match Generation & Scoring")
+    st.expander("🎾 Match Generation & Scoring")
 
     # Check if matches already exist
     try:
@@ -166,8 +166,8 @@ def render_match_generation(event_id):
             for _, row in updated_df.iterrows():
                 cursor.execute("""
                     UPDATE EVENT_MATCHES
-                    SET PLAYER1_GOALS = %s,
-                        PLAYER2_GOALS = %s,
+                    SET P1_GOALS = %s,
+                        P2_GOALS = %s,
                         STATUS = 'Final',
                         UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
                     WHERE ID = %s
