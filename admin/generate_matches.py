@@ -106,7 +106,7 @@ def render_match_generation(event_id):
                     cursor.execute("""
                         INSERT INTO EVENT_MATCHES (
                             EVENT_ID, COMPETITION_TYPE, GROUP_NO, ROUND_NO,
-                            PLAYER1_ID, PLAYER1_CLUB_ID, PLAYER2_ID, PLAYER2_CLUB_ID,
+                            PLAYER_1_ID, PLAYER_1_CLUB_ID, PLAYER_2_ID, PLAYER_2_CLUB_ID,
                             STATUS, GENERATED_FLAG
                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
                     """, (
