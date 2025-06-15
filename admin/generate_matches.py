@@ -170,9 +170,10 @@ def render_match_generation(event_id):
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
                 for _, row in updated_df.iterrows():
-                    # Check for NaN or None in goal columns
+                    # Skip rows missing goal data
                     if pd.isna(row["PLAYER1_GOALS"]) or pd.isna(row["PLAYER2_GOALS"]):
                         continue
+        
                     cursor.execute("""
                         UPDATE EVENT_MATCHES
                         SET P1_GOALS = %s,
