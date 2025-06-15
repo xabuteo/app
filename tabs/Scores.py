@@ -38,5 +38,23 @@ def page(selected_event):
                 group_df = comp_df[comp_df["GROUP_NO"] == group][[
                     "ROUND_NO", "PLAYER1", "PLAYER1_GOALS", "PLAYER2_GOALS", "PLAYER2", "STATUS"
                 ]]
+
+                # Define highlight function
+                def highlight_winner(row):
+                    style = [''] * len(row)
+                    if row["PLAYER1_GOALS"] > row["PLAYER2_GOALS"]:
+                        style[1] = 'font-weight: bold; color: green; text-align: right;'
+                    elif row["PLAYER2_GOALS"] > row["PLAYER1_GOALS"]:
+                        style[4] = 'font-weight: bold; color: green;'
+                    return style
+
+                styled_df = (
+                    group_df.style
+                    .apply(highlight_winner, axis=1)
+                    .set_properties(subset=["PLAYER1"], **{'text-align': 'right'})
+                    .set_properties(subset=["PLAYER1_GOALS", "PLAYER2_GOALS"], **{'text-align': 'center'})
+                    .set_properties(**{'text-align': 'left'})  # default for others
+                )
+
                 st.markdown(f"#### Group {group}")
-                st.dataframe(group_df, use_container_width=True, hide_index=True)
+                st.dataframe(styled_df, use_container_width=True, hide_index=True)
