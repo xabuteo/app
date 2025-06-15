@@ -36,7 +36,7 @@ def page(selected_event):
             groups.sort()
             for group in groups:
                 group_df = comp_df[comp_df["GROUP_NO"] == group][[
-                    "RANK", "PLAYER1", "PLAYED", "WON", "DRAWN", "LOST", "GF", "GA", "GD", "PTS"
+                    "RANK", "PLAYER", "PLAYED", "WON", "DRAWN", "LOST", "GF", "GA", "GD", "PTS"
                 ]]
                 st.markdown(f"#### Group {group}")
-                st.dataframe(group_df, use_container_width=True)
+                st.dataframe(group_df, use_container_width=True, hide_index=True)
