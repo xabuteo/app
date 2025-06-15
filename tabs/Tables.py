@@ -12,7 +12,7 @@ def page(selected_event):
             SELECT *
             FROM EVENT_TABLE_V
             WHERE EVENT_ID = %s
-            ORDER BY competition_type, group_no, last_name, first_name
+            ORDER BY competition_type, group_no, rank
         """, (event_id,))
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
@@ -36,7 +36,7 @@ def page(selected_event):
             groups.sort()
             for group in groups:
                 group_df = comp_df[comp_df["GROUP_NO"] == group][[
-                    "FIRST_NAME", "LAST_NAME", "CLUB_CODE", "PLAYED", "WON", "DRAWN", "LOST", "GF", "GA", "GD", "PTS"
+                    "RANK", "PLAYER1", "PLAYED", "WON", "DRAWN", "LOST", "GF", "GA", "GD", "PTS"
                 ]]
                 st.markdown(f"#### Group {group}")
                 st.dataframe(group_df, use_container_width=True)
