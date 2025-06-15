@@ -12,6 +12,7 @@ def render_match_generation(event_id):
             cursor.execute("SELECT COUNT(*) FROM EVENT_MATCHES WHERE event_id = %s", (event_id,))
             match_count = cursor.fetchone()[0]
         except Exception as e:
+            
             st.error(f"❌ Could not check match state: {e}")
             return
         finally:
@@ -107,8 +108,8 @@ def render_match_generation(event_id):
                         INSERT INTO EVENT_MATCHES (
                             EVENT_ID, COMPETITION_TYPE, GROUP_NO, ROUND_NO,
                             PLAYER_1_ID, PLAYER_1_CLUB_ID, PLAYER_2_ID, PLAYER_2_CLUB_ID,
-                            STATUS, GENERATED_FLAG
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
+                            STATUS
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
                         row["EVENT_ID"], row["COMPETITION_TYPE"], row["GROUP_NO"], row["ROUND_NO"],
                         row["PLAYER1_ID"], row["PLAYER1_CLUB_ID"],
