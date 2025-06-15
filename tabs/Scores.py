@@ -39,22 +39,16 @@ def page(selected_event):
                     "ROUND_NO", "PLAYER1", "PLAYER1_GOALS", "PLAYER2_GOALS", "PLAYER2", "STATUS"
                 ]]
 
-                # Define highlight function
+                # Highlight the winner's player cell with light cyan
                 def highlight_winner(row):
                     style = [''] * len(row)
                     if row["PLAYER1_GOALS"] > row["PLAYER2_GOALS"]:
-                        style[1] = 'font-weight: bold; color: green; text-align: right;'
+                        style[1] = 'background-color: lightcyan'
                     elif row["PLAYER2_GOALS"] > row["PLAYER1_GOALS"]:
-                        style[4] = 'font-weight: bold; color: green;'
+                        style[4] = 'background-color: lightcyan'
                     return style
 
-                styled_df = (
-                    group_df.style
-                    .apply(highlight_winner, axis=1)
-                    .set_properties(subset=["PLAYER1"], **{'text-align': 'right'})
-                    .set_properties(subset=["PLAYER1_GOALS", "PLAYER2_GOALS"], **{'text-align': 'center'})
-                    .set_properties(**{'text-align': 'left'})  # default for others
-                )
+                styled_df = group_df.style.apply(highlight_winner, axis=1)
 
                 st.markdown(f"#### Group {group}")
                 st.dataframe(styled_df, use_container_width=True, hide_index=True)
