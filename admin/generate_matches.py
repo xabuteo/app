@@ -2,17 +2,77 @@ import streamlit as st
 import pandas as pd
 from utils import get_snowflake_connection
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+import string
+
+def generate_knockout_placeholders(num_groups):
+    group_letters = list(string.ascii_uppercase[:num_groups])
+    matches = []
+    next_round = []
+
+    if num_groups < 2:
+        return []
+
+    # Determine initial knockout round and pairings
+    if num_groups == 2:
+        matches = [
+            ("SF", "Winner Group A", "Runner-up Group B"),
+            ("SF", "Winner Group B", "Runner-up Group A"),
+            ("F", "Winner SF1", "Winner SF2")
+        ]
+    elif num_groups == 3:
+        matches = [
+            ("SF", "Winner Group A", "Best Runner-up"),
+            ("SF", "Winner Group B", "Winner Group C"),
+            ("F", "Winner SF1", "Winner SF2")
+        ]
+    elif num_groups == 4:
+        matches = [
+            ("QF", "Winner Group A", "Runner-up Group C"),
+            ("QF", "Winner Group B", "Runner-up Group D"),
+            ("QF", "Winner Group C", "Runner-up Group A"),
+            ("QF", "Winner Group D", "Runner-up Group B"),
+            ("SF", "Winner QF1", "Winner QF2"),
+            ("SF", "Winner QF3", "Winner QF4"),
+            ("F", "Winner SF1", "Winner SF2")
+        ]
+    elif num_groups >= 5 and num_groups <= 8:
+        r16_matches = []
+        used = set()
+        for i in range(num_groups // 2):
+            a = group_letters[i]
+            b = group_letters[num_groups - 1 - i]
+            r16_matches.append(("R16", f"Winner Group {a}", f"Runner-up Group {b}"))
+            r16_matches.append(("R16", f"Winner Group {b}", f"Runner-up Group {a}"))
+            used.update([a, b])
+        unused = [g for g in group_letters if g not in used]
+        for i in range(0, len(unused), 2):
+            if i + 1 < len(unused):
+                r16_matches.append(("R16", f"Winner Group {unused[i]}", f"Runner-up Group {unused[i+1]}"))
+        matches.extend(r16_matches)
+
+        # Quarter-finals
+        qfs = []
+        for i in range(len(r16_matches) // 2):
+            qfs.append((f"QF{i+1}", f"Winner R16-{2*i+1}", f"Winner R16-{2*i+2}"))
+        matches.extend(qfs)
+
+        # Semi-finals
+        matches.append(("SF1", "Winner QF1", "Winner QF2"))
+        matches.append(("SF2", "Winner QF3", "Winner QF4"))
+
+        # Final
+        matches.append(("F", "Winner SF1", "Winner SF2"))
+
+    return matches
 
 def render_match_generation(event_id):
     with st.expander("🎾 Match Generation & Scoring"):
-        # 1. Check existing matches
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM EVENT_MATCHES WHERE event_id = %s", (event_id,))
             match_count = cursor.fetchone()[0]
         except Exception as e:
-            
             st.error(f"❌ Could not check match state: {e}")
             return
         finally:
@@ -38,7 +98,6 @@ def render_match_generation(event_id):
                     cursor.close()
                     conn.close()
 
-        # 2. Load registration
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
@@ -61,29 +120,30 @@ def render_match_generation(event_id):
             st.info("ℹ️ No groupings found for this event.")
             return
 
-        # 3. Generate matches
         if match_count == 0 and st.button("⚙️ Generate Round-Robin Matches"):
             try:
                 match_rows = []
+                group_letters = {}
+                letter_iter = iter(string.ascii_uppercase)
+
                 for comp in df["COMPETITION_TYPE"].unique():
-                    for group in df[df["COMPETITION_TYPE"] == comp]["GROUP_NO"].unique():
-                        group_df = df[(df["COMPETITION_TYPE"] == comp) & (df["GROUP_NO"] == group)]
+                    comp_df = df[df["COMPETITION_TYPE"] == comp]
+                    comp_groups = sorted(comp_df["GROUP_NO"].unique())
+                    group_map = {group: next(letter_iter) for group in comp_groups}
+                    group_letters[comp] = group_map
+
+                    for group in comp_groups:
+                        group_df = comp_df[comp_df["GROUP_NO"] == group]
                         players = group_df.to_dict("records")
 
                         if len(players) % 2 != 0:
-                            players.append({
-                                "ID": None,
-                                "USER_ID": None,
-                                "CLUB_ID": None,
-                                "GROUP_NO": group,
-                                "COMPETITION_TYPE": comp
-                            })
+                            players.append({"ID": None, "USER_ID": None, "CLUB_ID": None, "GROUP_NO": group, "COMPETITION_TYPE": comp})
 
                         n = len(players)
                         rounds = n - 1
                         half = n // 2
-
                         rotation = players[:]
+
                         for round_no in range(1, rounds + 1):
                             for i in range(half):
                                 p1 = rotation[i]
@@ -92,7 +152,7 @@ def render_match_generation(event_id):
                                     "EVENT_ID": event_id,
                                     "COMPETITION_TYPE": comp,
                                     "GROUP_NO": group,
-                                    "ROUND_NO": round_no,
+                                    "ROUND_NO": str(round_no),
                                     "PLAYER1_ID": p1["USER_ID"],
                                     "PLAYER1_CLUB_ID": p1["CLUB_ID"],
                                     "PLAYER2_ID": p2["USER_ID"],
@@ -100,6 +160,23 @@ def render_match_generation(event_id):
                                     "STATUS": "Scheduled"
                                 })
                             rotation = [rotation[0]] + [rotation[-1]] + rotation[1:-1]
+
+                    # Add knockout placeholder matches
+                    knockout_placeholders = generate_knockout_placeholders(len(comp_groups))
+                    for idx, (round_label, p1, p2) in enumerate(knockout_placeholders):
+                        match_rows.append({
+                            "EVENT_ID": event_id,
+                            "COMPETITION_TYPE": comp,
+                            "GROUP_NO": None,
+                            "ROUND_NO": round_label,
+                            "PLAYER1_ID": None,
+                            "PLAYER1_CLUB_ID": None,
+                            "PLAYER2_ID": None,
+                            "PLAYER2_CLUB_ID": None,
+                            "STATUS": "Pending",
+                            "PLAYER1": p1,
+                            "PLAYER2": p2
+                        })
 
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
@@ -112,12 +189,12 @@ def render_match_generation(event_id):
                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
                         row["EVENT_ID"], row["COMPETITION_TYPE"], row["GROUP_NO"], row["ROUND_NO"],
-                        row["PLAYER1_ID"], row["PLAYER1_CLUB_ID"],
-                        row["PLAYER2_ID"], row["PLAYER2_CLUB_ID"],
+                        row.get("PLAYER1_ID"), row.get("PLAYER1_CLUB_ID"),
+                        row.get("PLAYER2_ID"), row.get("PLAYER2_CLUB_ID"),
                         row["STATUS"]
                     ))
                 conn.commit()
-                st.success(f"✅ {len(match_rows)} matches generated.")
+                st.success(f"✅ {len(match_rows)} matches generated including knockouts.")
             except Exception as e:
                 st.error(f"❌ Failed to generate matches: {e}")
             finally:
