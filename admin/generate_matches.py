@@ -7,7 +7,6 @@ import string
 def generate_knockout_placeholders(num_groups):
     conn = get_snowflake_connection()
     cursor = conn.cursor()
-
     try:
         cursor.execute("""
             SELECT ROUND, ROUND_NO, P1_ID, P2_ID
@@ -16,7 +15,7 @@ def generate_knockout_placeholders(num_groups):
             ORDER BY ID
         """, (num_groups,))
         rows = cursor.fetchall()
-        return [(row[0], row[1], row[2], row[3]) for row in rows]  # (round_label, round_no, p1_id, p2_id)
+        return [(row[0], row[1], row[2], row[3]) for row in rows]
     except Exception as e:
         st.error(f"Error loading knockout rules: {e}")
         return []
@@ -42,20 +41,20 @@ def render_match_generation(event_id):
             st.warning(f"⚠️ {match_count} matches already exist. Re-generating will **DELETE all matches and scores**.")
             if not st.button("🔁 Re-Generate Matches (This will delete all existing!)"):
                 st.info("⚠️ Skipped regeneration. Existing matches below:")
-            else:
-                try:
-                    conn = get_snowflake_connection()
-                    cursor = conn.cursor()
-                    cursor.execute("DELETE FROM EVENT_MATCHES WHERE event_id = %s", (event_id,))
-                    conn.commit()
-                    st.success("✅ Old matches deleted. You can now generate new ones.")
-                    match_count = 0
-                except Exception as e:
-                    st.error(f"❌ Failed to delete old matches: {e}")
-                    return
-                finally:
-                    cursor.close()
-                    conn.close()
+                return
+            try:
+                conn = get_snowflake_connection()
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM EVENT_MATCHES WHERE event_id = %s", (event_id,))
+                conn.commit()
+                st.success("✅ Old matches deleted. You can now generate new ones.")
+                match_count = 0
+            except Exception as e:
+                st.error(f"❌ Failed to delete old matches: {e}")
+                return
+            finally:
+                cursor.close()
+                conn.close()
 
         try:
             conn = get_snowflake_connection()
@@ -96,7 +95,10 @@ def render_match_generation(event_id):
                         players = group_df.to_dict("records")
 
                         if len(players) % 2 != 0:
-                            players.append({"ID": None, "USER_ID": -1, "CLUB_ID": None, "GROUP_NO": group, "COMPETITION_TYPE": comp})
+                            players.append({
+                                "ID": None, "USER_ID": -1, "CLUB_ID": None,
+                                "GROUP_NO": group, "COMPETITION_TYPE": comp
+                            })
 
                         n = len(players)
                         rounds = n - 1
@@ -120,13 +122,12 @@ def render_match_generation(event_id):
                                 })
                             rotation = [rotation[0]] + [rotation[-1]] + rotation[1:-1]
 
-                    # Add knockout placeholder matches
                     knockout_placeholders = generate_knockout_placeholders(len(comp_groups))
                     for round_label, round_no, p1_id, p2_id in knockout_placeholders:
                         match_rows.append({
                             "EVENT_ID": event_id,
                             "COMPETITION_TYPE": comp,
-                            "GROUP_NO": round_label,  # store ROUND into GROUP_NO
+                            "GROUP_NO": round_label,
                             "ROUND_NO": round_no,
                             "PLAYER1_ID": p1_id,
                             "PLAYER1_CLUB_ID": None,
@@ -146,8 +147,8 @@ def render_match_generation(event_id):
                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
                         row["EVENT_ID"], row["COMPETITION_TYPE"], row["GROUP_NO"], row["ROUND_NO"],
-                        row.get("PLAYER1_ID"), row.get("PLAYER1_CLUB_ID"),
-                        row.get("PLAYER2_ID"), row.get("PLAYER2_CLUB_ID"),
+                        row["PLAYER1_ID"], row["PLAYER1_CLUB_ID"],
+                        row["PLAYER2_ID"], row["PLAYER2_CLUB_ID"],
                         row["STATUS"]
                     ))
                 conn.commit()
@@ -158,4 +159,50 @@ def render_match_generation(event_id):
                 cursor.close()
                 conn.close()
 
-        # Remaining logic unchanged (group completion check, display and update match scores)...
+        if st.button("🔄 Update Knockout Player IDs Based on Group Results"):
+            try:
+                conn = get_snowflake_connection()
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT competition_type, group_no, user_id, rank
+                    FROM event_tables_v
+                    WHERE event_id = %s AND rank IN (1, 2)
+                """, (event_id,))
+                table_rows = cursor.fetchall()
+                df_results = pd.DataFrame(table_rows, columns=["COMPETITION_TYPE", "GROUP_NO", "USER_ID", "RANK"])
+
+                seed_map = {}
+                for _, row in df_results.iterrows():
+                    key = f"{row['GROUP_NO']}_{row['RANK']}"
+                    seed_map[key] = row["USER_ID"]
+
+                cursor.execute("""
+                    SELECT id, group_no, round_no, competition_type
+                    FROM event_matches
+                    WHERE event_id = %s AND status = 'Pending'
+                """, (event_id,))
+                matches = cursor.fetchall()
+
+                updated = 0
+                for match_id, group_no, round_no, comp_type in matches:
+                    p1_key = f"{group_no}_1"
+                    p2_key = f"{group_no}_2"
+                    p1 = seed_map.get(p1_key)
+                    p2 = seed_map.get(p2_key)
+                    if p1 is not None or p2 is not None:
+                        cursor.execute("""
+                            UPDATE event_matches
+                            SET player_1_id = %s,
+                                player_2_id = %s,
+                                updated_timestamp = current_timestamp
+                            WHERE id = %s
+                        """, (p1, p2, match_id))
+                        updated += 1
+
+                conn.commit()
+                st.success(f"✅ Knockout player IDs updated for {updated} matches.")
+            except Exception as e:
+                st.error(f"❌ Failed to update knockout match players: {e}")
+            finally:
+                cursor.close()
+                conn.close()
