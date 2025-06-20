@@ -99,7 +99,7 @@ def render_match_generation(event_id):
                         players = group_df.to_dict("records")
 
                         if len(players) % 2 != 0:
-                            players.append({"ID": None, "USER_ID": None, "CLUB_ID": None, "GROUP_NO": group, "COMPETITION_TYPE": comp})
+                            players.append({"ID": None, "USER_ID": -1, "CLUB_ID": None, "GROUP_NO": group, "COMPETITION_TYPE": comp})
 
                         n = len(players)
                         rounds = n - 1
@@ -131,13 +131,11 @@ def render_match_generation(event_id):
                             "COMPETITION_TYPE": comp,
                             "GROUP_NO": None,
                             "ROUND_NO": round_label,
-                            "PLAYER1_ID": None,
+                            "PLAYER1_ID": p1,
                             "PLAYER1_CLUB_ID": None,
-                            "PLAYER2_ID": None,
+                            "PLAYER2_ID": p2,
                             "PLAYER2_CLUB_ID": None,
-                            "STATUS": "Pending",
-                            "PLAYER1": p1,
-                            "PLAYER2": p2
+                            "STATUS": "Pending"
                         })
 
                 conn = get_snowflake_connection()
