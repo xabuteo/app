@@ -42,11 +42,18 @@ def page(selected_event):
                 # Highlight the winner's player cell with light cyan
                 def highlight_winner(row):
                     style = [''] * len(row)
-                    if row["PLAYER1_GOALS"] > row["PLAYER2_GOALS"]:
-                        style[1] = 'background-color: lightcyan'
-                    elif row["PLAYER2_GOALS"] > row["PLAYER1_GOALS"]:
-                        style[4] = 'background-color: lightcyan'
+                
+                    p1_goals = row["PLAYER1_GOALS"]
+                    p2_goals = row["PLAYER2_GOALS"]
+                
+                    # Only highlight if both scores are valid numbers
+                    if pd.notna(p1_goals) and pd.notna(p2_goals):
+                        if p1_goals > p2_goals:
+                            style[1] = 'background-color: lightcyan'  # PLAYER1_GOALS
+                        elif p2_goals > p1_goals:
+                            style[4] = 'background-color: lightcyan'  # PLAYER2
                     return style
+
 
                 styled_df = group_df.style.apply(highlight_winner, axis=1)
 
