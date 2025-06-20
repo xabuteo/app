@@ -5,65 +5,27 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import string
 
 def generate_knockout_placeholders(num_groups):
-    group_letters = list(string.ascii_uppercase[:num_groups])
-    matches = []
-    next_round = []
+    # Use Snowflake KNOCKOUT_MATCHES table to get placeholder matches
+    import snowflake.connector
 
-    if num_groups < 2:
+    conn = get_snowflake_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT ROUND_NO, P1_ID, P2_ID
+            FROM KNOCKOUT_MATCHES
+            WHERE %s BETWEEN MIN_GROUP AND MAX_GROUP
+            ORDER BY ID
+        """, (num_groups,))
+        rows = cursor.fetchall()
+        return [(row[0], row[1], row[2]) for row in rows]  # (round_no, p1_id, p2_id)
+    except Exception as e:
+        st.error(f"Error loading knockout rules: {e}")
         return []
-
-    # Determine initial knockout round and pairings
-    if num_groups == 2:
-        matches = [
-            ("SF", "Winner Group A", "Runner-up Group B"),
-            ("SF", "Winner Group B", "Runner-up Group A"),
-            ("F", "Winner SF1", "Winner SF2")
-        ]
-    elif num_groups == 3:
-        matches = [
-            ("SF", "Winner Group A", "Best Runner-up"),
-            ("SF", "Winner Group B", "Winner Group C"),
-            ("F", "Winner SF1", "Winner SF2")
-        ]
-    elif num_groups == 4:
-        matches = [
-            ("QF", "Winner Group A", "Runner-up Group C"),
-            ("QF", "Winner Group B", "Runner-up Group D"),
-            ("QF", "Winner Group C", "Runner-up Group A"),
-            ("QF", "Winner Group D", "Runner-up Group B"),
-            ("SF", "Winner QF1", "Winner QF2"),
-            ("SF", "Winner QF3", "Winner QF4"),
-            ("F", "Winner SF1", "Winner SF2")
-        ]
-    elif num_groups >= 5 and num_groups <= 8:
-        r16_matches = []
-        used = set()
-        for i in range(num_groups // 2):
-            a = group_letters[i]
-            b = group_letters[num_groups - 1 - i]
-            r16_matches.append(("R16", f"Winner Group {a}", f"Runner-up Group {b}"))
-            r16_matches.append(("R16", f"Winner Group {b}", f"Runner-up Group {a}"))
-            used.update([a, b])
-        unused = [g for g in group_letters if g not in used]
-        for i in range(0, len(unused), 2):
-            if i + 1 < len(unused):
-                r16_matches.append(("R16", f"Winner Group {unused[i]}", f"Runner-up Group {unused[i+1]}"))
-        matches.extend(r16_matches)
-
-        # Quarter-finals
-        qfs = []
-        for i in range(len(r16_matches) // 2):
-            qfs.append((f"QF{i+1}", f"Winner R16-{2*i+1}", f"Winner R16-{2*i+2}"))
-        matches.extend(qfs)
-
-        # Semi-finals
-        matches.append(("SF1", "Winner QF1", "Winner QF2"))
-        matches.append(("SF2", "Winner QF3", "Winner QF4"))
-
-        # Final
-        matches.append(("F", "Winner SF1", "Winner SF2"))
-
-    return matches
+    finally:
+        cursor.close()
+        conn.close()
 
 def render_match_generation(event_id):
     with st.expander("🎾 Match Generation & Scoring"):
