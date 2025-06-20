@@ -23,6 +23,83 @@ def generate_knockout_placeholders(num_groups):
         cursor.close()
         conn.close()
 
+def update_knockout_players(event_id):
+    conn = get_snowflake_connection()
+    cursor = conn.cursor()
+    try:
+        # Determine current knockout round where all matches are final
+        cursor.execute("""
+            SELECT ROUND_NO, COMPETITION_TYPE
+            FROM EVENT_MATCHES
+            WHERE EVENT_ID = %s AND GROUP_NO LIKE 'R%%'
+            GROUP BY ROUND_NO, COMPETITION_TYPE
+            HAVING MIN(STATUS) = 'Final'
+            ORDER BY ROUND_NO
+        """, (event_id,))
+        finished_rounds = cursor.fetchall()
+        if not finished_rounds:
+            return 0
+
+        # Only take the first completed round (next stage to populate)
+        current_round_no, comp_type = finished_rounds[0]
+
+        cursor.execute("""
+            SELECT ID, PLAYER_1_ID, P1_GOALS, PLAYER_2_ID, P2_GOALS
+            FROM EVENT_MATCHES
+            WHERE EVENT_ID = %s AND ROUND_NO = %s AND COMPETITION_TYPE = %s
+        """, (event_id, current_round_no, comp_type))
+        matches = cursor.fetchall()
+
+        winners = []
+        for mid, p1, g1, p2, g2 in matches:
+            if g1 is None or g2 is None:
+                continue
+            winner = p1 if g1 > g2 else p2
+            winners.append(winner)
+
+        if not winners:
+            return 0
+
+        # Get next round to populate
+        next_round = {
+            "R64": "R32", "R32": "R16", "R16": "QF",
+            "QF": "SF", "SF": "F"
+        }.get(current_round_no)
+        if not next_round:
+            return 0
+
+        # Get placeholder matches
+        cursor.execute("""
+            SELECT ID
+            FROM EVENT_MATCHES
+            WHERE EVENT_ID = %s AND COMPETITION_TYPE = %s AND ROUND_NO = %s AND STATUS = 'Pending'
+            ORDER BY ID
+        """, (event_id, comp_type, next_round))
+        next_matches = cursor.fetchall()
+
+        updates = 0
+        for i, (mid,) in enumerate(next_matches):
+            if i * 2 + 1 >= len(winners):
+                break
+            p1 = winners[i * 2]
+            p2 = winners[i * 2 + 1]
+            cursor.execute("""
+                UPDATE EVENT_MATCHES
+                SET PLAYER_1_ID = %s, PLAYER_2_ID = %s,
+                    UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                WHERE ID = %s
+            """, (p1, p2, mid))
+            updates += 1
+
+        conn.commit()
+        return updates
+    except Exception as e:
+        st.error(f"❌ Failed to auto-advance knockout matches: {e}")
+        return 0
+    finally:
+        cursor.close()
+        conn.close()
+
 def render_match_generation(event_id):
     with st.expander("🎾 Match Generation & Scoring"):
         try:
