@@ -353,3 +353,5 @@ def render_match_generation(event_id):
             finally:
                 cursor.close()
                 conn.close()
+        if st.button("🔁 Update Knockout Placeholders"):
+            update_knockout_placeholders(event_id)
