@@ -96,6 +96,56 @@ def update_knockout_players(event_id):
         cursor.close()
         conn.close()
 
+def update_knockout_placeholders(event_id):
+    conn = get_snowflake_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            UPDATE EVENT_MATCHES em
+            SET PLAYER_1_ID = (
+                SELECT ek.PLAYER_ID FROM EVENT_KO_ROUND_V ek
+                WHERE ek.EVENT_ID = em.EVENT_ID
+                  AND ek.COMPETITION_TYPE = em.COMPETITION_TYPE
+                  AND ek.PLACEHOLDER_ID = em.PLAYER_1_ID
+            ),
+            PLAYER_1_CLUB_ID = (
+                SELECT ek.CLUB_ID FROM EVENT_KO_ROUND_V ek
+                WHERE ek.EVENT_ID = em.EVENT_ID
+                  AND ek.COMPETITION_TYPE = em.COMPETITION_TYPE
+                  AND ek.PLACEHOLDER_ID = em.PLAYER_1_ID
+            )
+            WHERE em.EVENT_ID = %s
+              AND em.STATUS = 'Pending'
+              AND em.PLAYER_1_ID < 0;
+        """, (event_id,))
+
+        cursor.execute("""
+            UPDATE EVENT_MATCHES em
+            SET PLAYER_2_ID = (
+                SELECT ek.PLAYER_ID FROM EVENT_KO_ROUND_V ek
+                WHERE ek.EVENT_ID = em.EVENT_ID
+                  AND ek.COMPETITION_TYPE = em.COMPETITION_TYPE
+                  AND ek.PLACEHOLDER_ID = em.PLAYER_2_ID
+            ),
+            PLAYER_2_CLUB_ID = (
+                SELECT ek.CLUB_ID FROM EVENT_KO_ROUND_V ek
+                WHERE ek.EVENT_ID = em.EVENT_ID
+                  AND ek.COMPETITION_TYPE = em.COMPETITION_TYPE
+                  AND ek.PLACEHOLDER_ID = em.PLAYER_2_ID
+            )
+            WHERE em.EVENT_ID = %s
+              AND em.STATUS = 'Pending'
+              AND em.PLAYER_2_ID < 0;
+        """, (event_id,))
+
+        conn.commit()
+        st.success("✅ Knockout matches updated with actual player IDs")
+    except Exception as e:
+        st.error(f"❌ Failed to update knockout matches: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
 def render_match_generation(event_id):
     with st.expander("🎾 Match Generation & Scoring"):
         try:
@@ -303,53 +353,3 @@ def render_match_generation(event_id):
             finally:
                 cursor.close()
                 conn.close()
-
-            if st.button("🔁 Update Knockout Matches"):
-                conn = get_snowflake_connection()
-                cursor = conn.cursor()
-                try:
-                    cursor.execute("""
-                        UPDATE EVENT_MATCHES em
-                        SET PLAYER_1_ID = (
-                            SELECT ek.PLAYER_ID FROM EVENT_KO_ROUND_V ek
-                            WHERE ek.EVENT_ID = em.EVENT_ID
-                              AND ek.COMPETITION_TYPE = em.COMPETITION_TYPE
-                              AND ek.PLACEHOLDER_ID = em.PLAYER_1_ID
-                        ),
-                        PLAYER_1_CLUB_ID = (
-                            SELECT ek.CLUB_ID FROM EVENT_KO_ROUND_V ek
-                            WHERE ek.EVENT_ID = em.EVENT_ID
-                              AND ek.COMPETITION_TYPE = em.COMPETITION_TYPE
-                              AND ek.PLACEHOLDER_ID = em.PLAYER_1_ID
-                        )
-                        WHERE em.EVENT_ID = %s
-                          AND em.STATUS = 'Pending'
-                          AND em.PLAYER_1_ID < 0;
-                    """, (event_id,))
-        
-                    cursor.execute("""
-                        UPDATE EVENT_MATCHES em
-                        SET PLAYER_2_ID = (
-                            SELECT ek.PLAYER_ID FROM EVENT_KO_ROUND_V ek
-                            WHERE ek.EVENT_ID = em.EVENT_ID
-                              AND ek.COMPETITION_TYPE = em.COMPETITION_TYPE
-                              AND ek.PLACEHOLDER_ID = em.PLAYER_2_ID
-                        ),
-                        PLAYER_2_CLUB_ID = (
-                            SELECT ek.CLUB_ID FROM EVENT_KO_ROUND_V ek
-                            WHERE ek.EVENT_ID = em.EVENT_ID
-                              AND ek.COMPETITION_TYPE = em.COMPETITION_TYPE
-                              AND ek.PLACEHOLDER_ID = em.PLAYER_2_ID
-                        )
-                        WHERE em.EVENT_ID = %s
-                          AND em.STATUS = 'Pending'
-                          AND em.PLAYER_2_ID < 0;
-                    """, (event_id,))
-        
-                    conn.commit()
-                    st.success("✅ Knockout matches updated with actual player IDs")
-                except Exception as e:
-                    st.error(f"❌ Failed to update knockout matches: {e}")
-                finally:
-                    cursor.close()
-                    conn.close()
