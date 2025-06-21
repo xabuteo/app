@@ -248,12 +248,10 @@ def render_match_generation(event_id):
             finally:
                 cursor.close()
                 conn.close()
-
-        # Only render the match table once, and cache it in session state
-        if "match_df" not in st.session_state or st.session_state["match_df"] is None:
-            st.session_state["match_df"] = render_match_table(event_id)
         
-        updated_df = st.session_state["match_df"]
+        updated_df = render_match_table(event_id)
+        if updated_df is not None:
+            st.session_state["match_df"] = updated_df
         
         # Only allow saving if table loaded
         if updated_df is not None and st.button("💾 Save Scores"):    
