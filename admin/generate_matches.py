@@ -74,13 +74,13 @@ def render_match_table(event_id):
                    player1, player1_goals, player2_goals, player2
             FROM EVENT_MATCHES_V
             WHERE event_id = %s
-            ORDER BY case when group_no like 'M%' then 100
-                          when group_no like 'R64%' then 101
-                          when group_no like 'R32%' then 102
-                          when group_no like 'R16%' then 103
-                          when group_no like 'QF%' then 104
-                          when group_no like 'SF%' then 105
-                          when group_no like 'F%' then 106
+            ORDER BY case when group_no like 'M%%' then 100
+                          when group_no like 'R64%%' then 101
+                          when group_no like 'R32%%' then 102
+                          when group_no like 'R16%%' then 103
+                          when group_no like 'QF%%' then 104
+                          when group_no like 'SF%%' then 105
+                          when group_no like 'F%%' then 106
                           else round_no end, group_no
         """, (event_id,))
         matches = cursor.fetchall()
