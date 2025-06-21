@@ -206,7 +206,7 @@ def render_match_generation(event_id):
                                     "PLAYER1_CLUB_ID": p1["CLUB_ID"],
                                     "PLAYER2_ID": p2["USER_ID"],
                                     "PLAYER2_CLUB_ID": p2["CLUB_ID"],
-                                    "STATUS": "Scheduled"
+                                    "STATUS": "Scheduled",
                                     "ROUND_TYPE": "Group"
                                 })
                             rotation = [rotation[0]] + [rotation[-1]] + rotation[1:-1]
