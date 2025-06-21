@@ -151,7 +151,7 @@ def render_match_generation(event_id):
             conn = get_snowflake_connection()
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT id, user_id, club_id, group_no, round_type, competition_type
+                SELECT id, user_id, club_id, group_no, competition_type
                 FROM event_registration
                 WHERE event_id = %s AND group_no IS NOT NULL
             """, (event_id,))
