@@ -248,13 +248,15 @@ def render_match_generation(event_id):
             finally:
                 cursor.close()
                 conn.close()
-        
-        df_state = st.session_state.get("match_df", None)
-        if df_state is None:
+
+        # Only render the match table once, and cache it in session state
+        if "match_df" not in st.session_state or st.session_state["match_df"] is None:
             st.session_state["match_df"] = render_match_table(event_id)
         
         updated_df = st.session_state["match_df"]
-        if updated_df is not None and st.button("💾 Save Scores"):
+        
+        # Only allow saving if table loaded
+        if updated_df is not None and st.button("💾 Save Scores"):    
             try:
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
@@ -275,8 +277,13 @@ def render_match_generation(event_id):
                     ))
                 conn.commit()
                 st.success("✅ Scores updated and matches marked as 'Final'.")
+        
+                # Automatically update placeholders
                 update_knockout_placeholders(event_id)
-                st.session_state["match_df"] = render_match_table(event_id)
+        
+                # Clear and rerun to reload match table cleanly
+                st.session_state["match_df"] = None
+                st.rerun()
 
             except Exception as e:
                 st.error(f"❌ Failed to save scores: {e}")
