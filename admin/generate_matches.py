@@ -275,7 +275,7 @@ def render_match_generation(event_id):
                     ))
                 conn.commit()
                 st.success("✅ Scores updated and matches marked as 'Final'.")
-                update_knockout_placeholders(event_id):
+                update_knockout_placeholders(event_id)
                 st.session_state["match_df"] = render_match_table(event_id)
 
             except Exception as e:
