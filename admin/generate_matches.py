@@ -100,50 +100,40 @@ def update_knockout_placeholders(event_id):
     conn = get_snowflake_connection()
     cursor = conn.cursor()
     try:
-        # PLAYER_1_ID and CLUB_ID
+        # Update PLAYER_1
         cursor.execute("""
-            WITH updates AS (
-                SELECT em.ID, ek.PLAYER_ID, ek.CLUB_ID
-                FROM EVENT_MATCHES em
-                JOIN EVENT_KO_ROUND_V ek
-                  ON em.EVENT_ID = ek.EVENT_ID
-                 AND em.COMPETITION_TYPE = ek.COMPETITION_TYPE
-                 AND em.PLAYER_1_ID = ek.PLACEHOLDER_ID
-                WHERE em.EVENT_ID = %s
-                  AND em.STATUS = 'Pending'
-                  AND em.PLAYER_1_ID < 0
-            )
             UPDATE EVENT_MATCHES
-            SET PLAYER_1_ID = updates.PLAYER_ID,
-                PLAYER_1_CLUB_ID = updates.CLUB_ID,
+            SET PLAYER_1_ID = ek.PLAYER_ID,
+                PLAYER_1_CLUB_ID = ek.CLUB_ID,
+                STATUS = 'Scheduled',
                 UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-            FROM updates
-            WHERE EVENT_MATCHES.ID = updates.ID;
+            FROM EVENT_KO_ROUND_V ek
+            WHERE EVENT_MATCHES.EVENT_ID = %s
+              AND EVENT_MATCHES.STATUS = 'Pending'
+              AND EVENT_MATCHES.PLAYER_1_ID < 0
+              AND EVENT_MATCHES.EVENT_ID = ek.EVENT_ID
+              AND EVENT_MATCHES.COMPETITION_TYPE = ek.COMPETITION_TYPE
+              AND EVENT_MATCHES.PLAYER_1_ID = ek.PLACEHOLDER_ID;
         """, (event_id,))
 
-        # PLAYER_2_ID and CLUB_ID
+        # Update PLAYER_2
         cursor.execute("""
-            WITH updates AS (
-                SELECT em.ID, ek.PLAYER_ID, ek.CLUB_ID
-                FROM EVENT_MATCHES em
-                JOIN EVENT_KO_ROUND_V ek
-                  ON em.EVENT_ID = ek.EVENT_ID
-                 AND em.COMPETITION_TYPE = ek.COMPETITION_TYPE
-                 AND em.PLAYER_2_ID = ek.PLACEHOLDER_ID
-                WHERE em.EVENT_ID = %s
-                  AND em.STATUS = 'Pending'
-                  AND em.PLAYER_2_ID < 0
-            )
             UPDATE EVENT_MATCHES
-            SET PLAYER_2_ID = updates.PLAYER_ID,
-                PLAYER_2_CLUB_ID = updates.CLUB_ID,
+            SET PLAYER_2_ID = ek.PLAYER_ID,
+                PLAYER_2_CLUB_ID = ek.CLUB_ID,
+                STATUS = 'Scheduled',
                 UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-            FROM updates
-            WHERE EVENT_MATCHES.ID = updates.ID;
+            FROM EVENT_KO_ROUND_V ek
+            WHERE EVENT_MATCHES.EVENT_ID = %s
+              AND EVENT_MATCHES.STATUS = 'Pending'
+              AND EVENT_MATCHES.PLAYER_2_ID < 0
+              AND EVENT_MATCHES.EVENT_ID = ek.EVENT_ID
+              AND EVENT_MATCHES.COMPETITION_TYPE = ek.COMPETITION_TYPE
+              AND EVENT_MATCHES.PLAYER_2_ID = ek.PLACEHOLDER_ID;
         """, (event_id,))
 
         conn.commit()
-        st.success("✅ Knockout matches updated with actual player IDs.")
+        st.success("✅ Knockout matches updated with actual player IDs and set to Scheduled")
     except Exception as e:
         st.error(f"❌ Failed to update knockout matches: {e}")
     finally:
