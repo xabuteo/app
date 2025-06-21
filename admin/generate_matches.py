@@ -134,9 +134,10 @@ def update_knockout_placeholders(event_id):
 
         conn.commit()
         st.success("✅ Knockout matches updated with actual player IDs and set to Scheduled")
-        st.rerun()
+        return True
     except Exception as e:
         st.error(f"❌ Failed to update knockout matches: {e}")
+        return False
     finally:
         cursor.close()
         conn.close()
