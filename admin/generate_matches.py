@@ -109,8 +109,8 @@ def update_knockout_placeholders(event_id):
                 UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
             FROM EVENT_KO_ROUND_V ek
             WHERE EVENT_MATCHES.EVENT_ID = %s
-              AND EVENT_MATCHES.STATUS = 'Pending'
-              AND EVENT_MATCHES.PLAYER_1_ID < 0
+              --AND EVENT_MATCHES.STATUS = 'Pending'
+              --AND EVENT_MATCHES.PLAYER_1_ID < 0
               AND EVENT_MATCHES.EVENT_ID = ek.EVENT_ID
               AND EVENT_MATCHES.COMPETITION_TYPE = ek.COMPETITION_TYPE
               AND EVENT_MATCHES.PLAYER_1_ID = ek.PLACEHOLDER_ID;
@@ -125,8 +125,8 @@ def update_knockout_placeholders(event_id):
                 UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
             FROM EVENT_KO_ROUND_V ek
             WHERE EVENT_MATCHES.EVENT_ID = %s
-              AND EVENT_MATCHES.STATUS = 'Pending'
-              AND EVENT_MATCHES.PLAYER_2_ID < 0
+              --AND EVENT_MATCHES.STATUS = 'Pending'
+              --AND EVENT_MATCHES.PLAYER_2_ID < 0
               AND EVENT_MATCHES.EVENT_ID = ek.EVENT_ID
               AND EVENT_MATCHES.COMPETITION_TYPE = ek.COMPETITION_TYPE
               AND EVENT_MATCHES.PLAYER_2_ID = ek.PLACEHOLDER_ID;
@@ -134,6 +134,7 @@ def update_knockout_placeholders(event_id):
 
         conn.commit()
         st.success("✅ Knockout matches updated with actual player IDs and set to Scheduled")
+        st.rerun()
     except Exception as e:
         st.error(f"❌ Failed to update knockout matches: {e}")
     finally:
