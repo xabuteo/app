@@ -29,7 +29,7 @@ def main():
         with col3:
             if st.button("➡️ View", key=f"view_{row['ID']}"):
                 # Option 1: Set query params and reload
-                st.experimental_set_query_params(event_id=row['ID'])
+                st.query_params(event_id=row['ID'])
                 # Option 2: Switch to detail page (if using multipage setup)
                 switch_page("event_detail")  # assumes pages/event_detail.py
 
