@@ -75,8 +75,8 @@ def show():
     row_count = len(df_display)
     max_rows_to_show = 8
     # style:material 48 & 113 (6 rows) 
-    row_height = 30
-    header_height = 30
+    row_height = 38
+    header_height = 38
     grid_height = min(row_count, max_rows_to_show) * row_height + header_height
 
     grid_response = AgGrid(
@@ -85,7 +85,7 @@ def show():
         update_mode=GridUpdateMode.SELECTION_CHANGED,
         enable_enterprise_modules=False,
         height=grid_height,
-        theme="balham"
+        theme="alpine"
     )
     selected_rows = grid_response["selected_rows"]
 
