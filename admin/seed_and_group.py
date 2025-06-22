@@ -75,7 +75,7 @@ def render(event_id):
             fit_columns_on_grid_load=False,
             enable_enterprise_modules=False,
             height=grid_height,
-            theme="material"
+            theme="alpine"
         )
 
         updated_data = pd.DataFrame(grid_response["data"])
