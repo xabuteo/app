@@ -1,37 +1,40 @@
 import streamlit as st
 import pandas as pd
-from utils import get_snowflake_connection
-from streamlit_extras.switch_page_button import switch_page  # optional
+from st_aggrid import AgGrid, GridOptionsBuilder
 
-def get_data():
-    conn = get_snowflake_connection()
-    query = "SELECT ID, EVENT_TITLE, EVENT_START_DATE FROM EVENTS ORDER BY EVENT_START_DATE DESC"
-    df = pd.read_sql(query, conn)
-    return df
+# Sample data
+df = pd.DataFrame({
+    "Name": ["Alice", "Bob", "Charlie"],
+    "Score": [85, 92, 78],
+    "Passed": [True, True, False]
+})
 
-def main():
-    st.title("📋 Event List")
+# Theme options
+themes = [
+    "streamlit",     # default
+    "material",
+    "balham",
+    "balham-dark",
+    "alpine",
+    "alpine-dark"
+]
 
-    df = get_data()
+# UI - theme selector
+st.title("🎨 AgGrid Theme Showcase")
+selected_theme = st.selectbox("Choose a theme", themes)
 
-    # Display table header manually
-    st.markdown("### Events")
-    st.write("| Name | Event Date | Action |")
-    st.write("|------|------------|--------|")
+# Grid configuration
+gb = GridOptionsBuilder.from_dataframe(df)
+gb.configure_default_column(filterable=True, sortable=True, resizable=True)
+gb.configure_selection("single", use_checkbox=True)
+grid_options = gb.build()
 
-    # Display each row with a button
-    for idx, row in df.iterrows():
-        col1, col2, col3 = st.columns([3, 2, 1])
-        with col1:
-            st.write(row["EVENT_TITLE"])
-        with col2:
-            st.write(row["EVENT_START_DATE"])
-        with col3:
-            if st.button("➡️ View", key=f"view_{row['ID']}"):
-                # Option 1: Set query params and reload
-                st.query_params(event_id=row['ID'])
-                # Option 2: Switch to detail page (if using multipage setup)
-                switch_page("event_detail")  # assumes pages/event_detail.py
-
-if __name__ == "__main__":
-    main()
+# Display the table
+st.subheader(f"Theme: `{selected_theme}`")
+AgGrid(
+    df,
+    gridOptions=grid_options,
+    theme=selected_theme,
+    fit_columns_on_grid_load=True,
+    height=250
+)
