@@ -12,6 +12,7 @@ def page(selected_event):
             SELECT *
             FROM EVENT_TABLE_V
             WHERE EVENT_ID = %s
+            AND ROUND_TYPE = 'Group'
             ORDER BY competition_type, group_no, rank
         """, (event_id,))
         rows = cursor.fetchall()
