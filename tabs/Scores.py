@@ -12,7 +12,17 @@ def page(selected_event):
             SELECT *, case when round_type = 'Group' then 'Group '||GROUP_NO else ROUND_TYPE end as GROUP_LABEL
             FROM EVENT_MATCHES_V
             WHERE EVENT_ID = %s
-            ORDER BY competition_type, group_no, round_no
+            ORDER BY competition_type, 
+                case when round_type = 'Group' then 1
+                     when round_type = 'Round of 64' then 2
+                     when round_type = 'Round of 32' then 3
+                     when round_type = 'Round of 16' then 4
+                     when round_type = 'Quarter-final' then 5
+                     when round_type = 'Semi-final' then 6
+                     when round_type = 'Final' then 7
+                     else 99 end,
+                group_no, 
+                round_no
         """, (event_id,))
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
@@ -56,22 +66,3 @@ def page(selected_event):
                 styled_df = group_df.style.apply(highlight_winner, axis=1)
                 st.markdown(f"#### {group}")
                 st.dataframe(styled_df, use_container_width=True, hide_index=True)
-
-            # ➤ Knockout Matches (no group_no)
-            knockout_df = comp_df[comp_df["GROUP_NO"].isna()].copy()
-
-            if not knockout_df.empty:
-                # Sort round order: R64 → R32 → R16 → QF → SF → F
-                round_order = ["R64", "R32", "R16", "QF", "SF", "F"]
-                knockout_df["ROUND_STAGE"] = knockout_df["ROUND_NO"].str.extract(r'([A-Z]+)')
-                knockout_df["ROUND_INDEX"] = knockout_df["ROUND_STAGE"].apply(lambda x: round_order.index(x) if x in round_order else 99)
-                knockout_df.sort_values(by=["ROUND_INDEX", "ROUND_NO"], inplace=True)
-
-                for round_label in knockout_df["ROUND_STAGE"].dropna().unique():
-                    round_matches = knockout_df[knockout_df["ROUND_STAGE"] == round_label][[
-                        "ROUND_NO", "PLAYER1", "PLAYER1_GOALS", "PLAYER2_GOALS", "PLAYER2", "STATUS"
-                    ]]
-
-                    styled_knockout = round_matches.style.apply(highlight_winner, axis=1)
-                    st.markdown(f"#### Knockout: {round_label}")
-                    st.dataframe(styled_knockout, use_container_width=True, hide_index=True)
