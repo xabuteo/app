@@ -76,7 +76,7 @@ def show():
     max_rows_to_show = 6
     # style:material 48 & 113 (6 rows) 
     row_height = 42
-    header_height = 98
+    header_height = 99
     grid_height = min(row_count, max_rows_to_show) * row_height + header_height
 
     grid_response = AgGrid(
