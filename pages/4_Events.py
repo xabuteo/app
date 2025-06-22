@@ -84,7 +84,7 @@ def show():
         update_mode=GridUpdateMode.SELECTION_CHANGED,
         enable_enterprise_modules=False,
         height=grid_height,
-        theme="material"
+        theme="balham"
     )
     selected_rows = grid_response["selected_rows"]
 
