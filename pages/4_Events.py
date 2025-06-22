@@ -73,10 +73,10 @@ def show():
     grid_options = gb.build()
 
     row_count = len(df_display)
-    max_rows_to_show = 8
+    max_rows_to_show = 6
     # style:material 48 & 113 (6 rows) 
-    row_height = 38
-    header_height = 38
+    row_height = 48
+    header_height = 113
     grid_height = min(row_count, max_rows_to_show) * row_height + header_height
 
     grid_response = AgGrid(
