@@ -6,3 +6,4 @@ Authlib
 snowflake-connector-python
 #bcrypt
 #requests
+streamlit-extras
