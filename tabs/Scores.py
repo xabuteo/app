@@ -12,12 +12,13 @@ def page(selected_event):
             SELECT *, 
                 case when round_type = 'Group' then 'Group '||GROUP_NO else ROUND_TYPE end as GROUP_LABEL,
                 case when round_type = 'Group' then 1
-                     when round_type = 'Round of 64' then 2
-                     when round_type = 'Round of 32' then 3
-                     when round_type = 'Round of 16' then 4
-                     when round_type = 'Quarter-final' then 5
-                     when round_type = 'Semi-final' then 6
-                     when round_type = 'Final' then 7
+                     when round_type = 'Barrage' then 2
+                     when round_type = 'Round of 64' then 3
+                     when round_type = 'Round of 32' then 4
+                     when round_type = 'Round of 16' then 5
+                     when round_type = 'Quarter-final' then 6
+                     when round_type = 'Semi-final' then 7
+                     when round_type = 'Final' then 8
                      else 99 end as sort_order
             FROM EVENT_MATCHES_V
             WHERE EVENT_ID = %s
