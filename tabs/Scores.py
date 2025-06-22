@@ -58,9 +58,9 @@ def page(selected_event):
                     p2_goals = row["PLAYER2_GOALS"]
                     if pd.notna(p1_goals) and pd.notna(p2_goals):
                         if p1_goals > p2_goals:
-                            style[1] = 'background-color: lightcyan'
+                            style[1] = 'background-color: lightblue'
                         elif p2_goals > p1_goals:
-                            style[4] = 'background-color: lightcyan'
+                            style[4] = 'background-color: lightblue'
                     return style
 
                 styled_df = group_df.style.apply(highlight_winner, axis=1)
