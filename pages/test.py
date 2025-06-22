@@ -5,7 +5,7 @@ from streamlit_extras.switch_page_button import switch_page  # optional: for pag
 
 def get_data():
     conn = get_snowflake_connection()
-    query = "SELECT ID, EVENT_NAME, EVENT_START_DATE FROM EVENTS ORDER BY EVENT_START_DATE DESC"
+    query = "SELECT ID, EVENT_TITLE, EVENT_START_DATE FROM EVENTS ORDER BY EVENT_START_DATE DESC"
     df = pd.read_sql(query, conn)
     return df
 
@@ -16,7 +16,7 @@ def main():
 
     st.dataframe(df, use_container_width=True)
 
-    selected_index = st.radio("Select an event:", df.index, format_func=lambda i: f"{df.loc[i, 'EVENT_NAME']} ({df.loc[i, 'EVENT_START_DATE']})")
+    selected_index = st.radio("Select an event:", df.index, format_func=lambda i: f"{df.loc[i, 'EVENT_TITLE']} ({df.loc[i, 'EVENT_START_DATE']})")
 
     if st.button("Go to Event Page"):
         selected_row = df.loc[selected_index]
