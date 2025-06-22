@@ -9,7 +9,7 @@ def page(selected_event):
         conn = get_snowflake_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT *
+            SELECT *, case when round_type = 'Group' then 'Group '||GROUP_NO else ROUND_TYPE end as GROUP_LABEL
             FROM EVENT_MATCHES_V
             WHERE EVENT_ID = %s
             ORDER BY competition_type, group_no, round_no
@@ -34,11 +34,11 @@ def page(selected_event):
         comp_df = df[df["COMPETITION_TYPE"] == comp]
         with st.expander(f"🏆 {comp} Competition", expanded=(comp == "Open")):
             # ➤ Group Matches
-            groups = comp_df["GROUP_NO"].dropna().unique()
+            groups = comp_df["GROUP_LABEL"].dropna().unique()
             groups.sort()
 
             for group in groups:
-                group_df = comp_df[comp_df["GROUP_NO"] == group][[
+                group_df = comp_df[comp_df["GROUP_LABEL"] == group][[
                     "ROUND_NO", "PLAYER1", "PLAYER1_GOALS", "PLAYER2_GOALS", "PLAYER2", "STATUS"
                 ]]
 
@@ -54,7 +54,7 @@ def page(selected_event):
                     return style
 
                 styled_df = group_df.style.apply(highlight_winner, axis=1)
-                st.markdown(f"#### Group {group}")
+                st.markdown(f"#### {group}")
                 st.dataframe(styled_df, use_container_width=True, hide_index=True)
 
             # ➤ Knockout Matches (no group_no)
