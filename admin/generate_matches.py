@@ -110,7 +110,7 @@ def render_match_table(event_id):
         update_mode=GridUpdateMode.VALUE_CHANGED,
         fit_columns_on_grid_load=False,
         enable_enterprise_modules=False,
-        theme="material"
+        theme="alpine"
     )
 
     return pd.DataFrame(grid_response["data"])
