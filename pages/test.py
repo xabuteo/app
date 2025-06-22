@@ -5,7 +5,7 @@ from streamlit_extras.switch_page_button import switch_page  # optional
 
 def get_data():
     conn = get_snowflake_connection()
-    query = "SELECT ID, EVENT_TITLE, EVENT_START_DATE FROM MY_TABLE ORDER BY EVENT_START_DATE DESC"
+    query = "SELECT ID, EVENT_TITLE, EVENT_START_DATE FROM EVENTS ORDER BY EVENT_START_DATE DESC"
     df = pd.read_sql(query, conn)
     return df
 
