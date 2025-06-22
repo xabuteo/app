@@ -9,10 +9,8 @@ def page(selected_event):
         conn = get_snowflake_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT *, case when round_type = 'Group' then 'Group '||GROUP_NO else ROUND_TYPE end as GROUP_LABEL
-            FROM EVENT_MATCHES_V
-            WHERE EVENT_ID = %s
-            ORDER BY competition_type, 
+            SELECT *, 
+                case when round_type = 'Group' then 'Group '||GROUP_NO else ROUND_TYPE end as GROUP_LABEL,
                 case when round_type = 'Group' then 1
                      when round_type = 'Round of 64' then 2
                      when round_type = 'Round of 32' then 3
@@ -20,9 +18,10 @@ def page(selected_event):
                      when round_type = 'Quarter-final' then 5
                      when round_type = 'Semi-final' then 6
                      when round_type = 'Final' then 7
-                     else 99 end,
-                group_no, 
-                round_no
+                     else 99 end as sort_order
+            FROM EVENT_MATCHES_V
+            WHERE EVENT_ID = %s
+            ORDER BY competition_type, sort_order, group_no, round_no
         """, (event_id,))
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
@@ -45,7 +44,7 @@ def page(selected_event):
         with st.expander(f"🏆 {comp} Competition", expanded=(comp == "Open")):
             # ➤ Group Matches
             groups = comp_df["GROUP_LABEL"].dropna().unique()
-            groups.sort()
+            # groups.sort()
 
             for group in groups:
                 group_df = comp_df[comp_df["GROUP_LABEL"] == group][[
