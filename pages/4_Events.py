@@ -83,8 +83,8 @@ def show():
 
     # Height
     row_height = 42
-    header_height = 50
-    footer_height = 50
+    header_height = 51
+    footer_height = 48
     row_count = len(df_display)
     grid_height = min(row_count, 6) * row_height + header_height + footer_height if not selected_event_id else row_height + header_height
 
