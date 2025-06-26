@@ -8,6 +8,7 @@ st.set_page_config(page_title="Events", layout="wide")
 
 def show():
     st.title("📅 Events")
+    selected_event_id = st.session_state.get("selected_event_id", None)
 
     # Load events
     try:
