@@ -98,17 +98,22 @@ def show():
 
     # Handle new selection
     selected_rows = grid_response["selected_rows"]
-    if selected_rows:
+    
+    # Convert to list of dicts if needed
+    if isinstance(selected_rows, pd.DataFrame):
+        selected_rows = selected_rows.to_dict(orient="records")
+    
+    if isinstance(selected_rows, list) and len(selected_rows) > 0:
         new_selection = selected_rows[0].get("ID")
         if new_selection != selected_event_id:
             st.session_state["selected_event_id"] = new_selection
             st.rerun()
     else:
         if selected_event_id:
-            # Show reset button
             if st.button("🔙 Back to Event List"):
                 st.session_state.pop("selected_event_id")
                 st.rerun()
+
 
     # Render tabs if selected
     if selected_event_id:
