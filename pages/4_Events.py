@@ -40,7 +40,6 @@ def show():
     else:
         st.markdown("###")
         st.button("🔙 Back to Event List", on_click=lambda: st.session_state.pop("selected_event_id"))
-        st.rerun()
 
     if title_filter:
         df = df[df["EVENT_TITLE"].str.contains(title_filter, case=False, na=False)]
