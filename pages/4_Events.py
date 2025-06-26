@@ -37,16 +37,15 @@ def show():
             type_filter = st.selectbox("Event Type", ["All"] + sorted(df["EVENT_TYPE"].dropna().unique()))
         with col3:
             status_filter = st.selectbox("Event Status", ["All"] + sorted(df["EVENT_STATUS"].dropna().unique()))
+        if title_filter:
+            df = df[df["EVENT_TITLE"].str.contains(title_filter, case=False, na=False)]
+        if type_filter != "All":
+            df = df[df["EVENT_TYPE"] == type_filter]
+        if status_filter != "All":
+            df = df[df["EVENT_STATUS"] == status_filter]
     else:
         st.markdown("###")
         st.button("🔙 Back to Event List", on_click=lambda: st.session_state.pop("selected_event_id"))
-
-    if title_filter:
-        df = df[df["EVENT_TITLE"].str.contains(title_filter, case=False, na=False)]
-    if type_filter != "All":
-        df = df[df["EVENT_TYPE"] == type_filter]
-    if status_filter != "All":
-        df = df[df["EVENT_STATUS"] == status_filter]
 
     display_cols = [
         "ID", "EVENT_TITLE", "EVENT_TYPE", "EVENT_START_DATE", "EVENT_END_DATE",
