@@ -117,20 +117,6 @@ def show():
         st.session_state["selected_event_id"] = selected_event_id
     else:
         st.session_state.pop("selected_event_id", None)
-
-    grid_response = AgGrid(
-        df_display,
-        gridOptions=grid_options,
-        update_mode=GridUpdateMode.SELECTION_CHANGED,
-        fit_columns_on_grid_load=True,
-        enable_enterprise_modules=False,
-        height=grid_height,
-        theme="alpine"
-    )
-    selected_rows = grid_response["selected_rows"]
-
-    if isinstance(selected_rows, pd.DataFrame):
-        selected_rows = selected_rows.to_dict(orient="records")
     
     # if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
     #    selected_id = selected_rows[0].get("ID")
