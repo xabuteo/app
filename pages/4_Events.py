@@ -28,14 +28,18 @@ def show():
         st.info("No events found.")
         return
 
-    # Filters
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        title_filter = st.text_input("Search by Title")
-    with col2:
-        type_filter = st.selectbox("Event Type", ["All"] + sorted(df["EVENT_TYPE"].dropna().unique()))
-    with col3:
-        status_filter = st.selectbox("Event Status", ["All"] + sorted(df["EVENT_STATUS"].dropna().unique()))
+    if not selected_event_id:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            title_filter = st.text_input("Search by Title")
+        with col2:
+            type_filter = st.selectbox("Event Type", ["All"] + sorted(df["EVENT_TYPE"].dropna().unique()))
+        with col3:
+            status_filter = st.selectbox("Event Status", ["All"] + sorted(df["EVENT_STATUS"].dropna().unique()))
+    else:
+        st.markdown("###")
+        st.button("🔙 Back to Event List", on_click=lambda: st.session_state.pop("selected_event_id"))
+        st.rerun()
 
     if title_filter:
         df = df[df["EVENT_TITLE"].str.contains(title_filter, case=False, na=False)]
@@ -108,12 +112,6 @@ def show():
         if new_selection != selected_event_id:
             st.session_state["selected_event_id"] = new_selection
             st.rerun()
-    else:
-        if selected_event_id:
-            if st.button("🔙 Back to Event List"):
-                st.session_state.pop("selected_event_id")
-                st.rerun()
-
 
     # Render tabs if selected
     if selected_event_id:
