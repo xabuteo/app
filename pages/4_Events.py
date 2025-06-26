@@ -44,7 +44,6 @@ def show():
         if status_filter != "All":
             df = df[df["EVENT_STATUS"] == status_filter]
     else:
-        st.markdown("###")
         st.button("🔙 Back to Event List", on_click=lambda: st.session_state.pop("selected_event_id"))
 
     display_cols = [
@@ -84,9 +83,10 @@ def show():
 
     # Height
     row_height = 42
-    header_height = 99
+    header_height = 48
+    footer_height = 51
     row_count = len(df_display)
-    grid_height = min(row_count, 6) * row_height + header_height if not selected_event_id else row_height + header_height
+    grid_height = min(row_count, 6) * row_height + header_height + footer_height if not selected_event_id else row_height + header_height
 
     # Display grid
     grid_response = AgGrid(
