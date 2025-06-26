@@ -57,27 +57,66 @@ def show():
 
     #st.markdown("### 📋 Event List (Click a row to view details)")
 
-    # AgGrid config
+    selected_event_id = None  # predefine
+    
+    # Rebuild AgGrid config depending on whether event is selected
+    selected_rows = []
+    
+    # Check if already selected event in session
+    if "selected_event_id" in st.session_state:
+        selected_event_id = st.session_state["selected_event_id"]
+    
+    # Limit to single row if event is selected
+    if selected_event_id:
+        df_display = df_display[df_display["ID"] == selected_event_id]
+    
     gb = GridOptionsBuilder.from_dataframe(df_display)
     gb.configure_selection(selection_mode="single", use_checkbox=True)
-    gb.configure_pagination(paginationAutoPageSize=False)
-    gb.configure_pagination(paginationPageSize=0)
-
+    
+    # Toggle pagination and filters based on selection
+    if selected_event_id:
+        gb.configure_pagination(enabled=False)
+        gb.configure_default_column(filter=False)
+    else:
+        gb.configure_pagination(paginationAutoPageSize=True)
+        gb.configure_default_column(filter=True)
+    
+    # Column widths
     gb.configure_column("ID", width=70)
     gb.configure_column("EVENT_TITLE", minWidth=200, maxWidth=300)
     gb.configure_column("EVENT_TYPE", width=150)
     gb.configure_column("EVENT_START_DATE", width=120)
     gb.configure_column("EVENT_END_DATE", width=120)
     gb.configure_column("EVENT_STATUS", width=130)
-
+    
     grid_options = gb.build()
-
+    
+    # Adjust height depending on row count
     row_count = len(df_display)
-    max_rows_to_show = 6
-    # style:material 48 & 113 (6 rows) 
     row_height = 42
     header_height = 99
-    grid_height = min(row_count, max_rows_to_show) * row_height + header_height
+    grid_height = min(row_count, 6) * row_height + header_height if not selected_event_id else row_height + header_height
+    
+    grid_response = AgGrid(
+        df_display,
+        gridOptions=grid_options,
+        update_mode=GridUpdateMode.SELECTION_CHANGED,
+        fit_columns_on_grid_load=True,
+        enable_enterprise_modules=False,
+        height=grid_height,
+        theme="alpine"
+    )
+    
+    # Process selection
+    selected_rows = grid_response["selected_rows"]
+    if isinstance(selected_rows, pd.DataFrame):
+        selected_rows = selected_rows.to_dict(orient="records")
+    
+    if selected_rows:
+        selected_event_id = selected_rows[0].get("ID")
+        st.session_state["selected_event_id"] = selected_event_id
+    else:
+        st.session_state.pop("selected_event_id", None)
 
     grid_response = AgGrid(
         df_display,
@@ -93,13 +132,16 @@ def show():
     if isinstance(selected_rows, pd.DataFrame):
         selected_rows = selected_rows.to_dict(orient="records")
     
-    if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
-        selected_id = selected_rows[0].get("ID")
-        selected_event = df[df["ID"] == selected_id].iloc[0].to_dict()
+    # if selected_rows and isinstance(selected_rows, list) and len(selected_rows) > 0:
+    #    selected_id = selected_rows[0].get("ID")
+    
+    if selected_event_id:
+        selected_event = df[df["ID"] == selected_event_id].iloc[0].to_dict()
         TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT", "ADMIN"])
         PAGES = [Details, Register, Tables, Scores, Result, Admin]
         
         for tab, page_module in zip(TABS, PAGES):
             with tab:
-                page_module.page(selected_event)      
+                page_module.page(selected_event)
+
 show()
