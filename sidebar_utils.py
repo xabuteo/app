@@ -63,14 +63,14 @@ def render_sidebar_widgets():
             st.markdown(f"**{group}**")
             for _, row in steps.iterrows():
                 key = f"step_{int(row['Step No'])}"
-                if key not in st.session_state:
-                    st.session_state[key] = persistent_state.get(key, False)
-                new_val = st.checkbox(
+                default = st.session_state.get(key, False)
+                st.checkbox(
                     label=row["Step"],
+                    value=default,
                     key=key,
-                    value=st.session_state[key],
                     help=row["Notes"] if row["Notes"] else None
                 )
+
                 persistent_state[key] = new_val  # persist across pages
 
     # Bug Report
