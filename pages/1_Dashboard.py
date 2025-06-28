@@ -1,4 +1,7 @@
 import streamlit as st
+from sidebar_utils import render_sidebar_widgets
+
+render_sidebar_widgets()
 
 # Page content
 st.title("📊 Dashboard")
