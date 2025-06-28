@@ -211,7 +211,6 @@ def render_match_generation(event_id):
                     ko_round_map = {}
                     ko_counter = max_round_no
                     for round_type, group_no, p1_id, p2_id in knockout_placeholders:
-                    for round_type, group_no, p1_id, p2_id in knockout_placeholders:
                         if round_type not in ko_round_map:
                             ko_counter += 1
                             ko_round_map[round_type] = str(ko_counter)
