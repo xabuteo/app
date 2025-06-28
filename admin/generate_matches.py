@@ -212,21 +212,28 @@ def render_match_generation(event_id):
                             rotation = [rotation[0]] + [rotation[-1]] + rotation[1:-1]
 
                     # Add knockout matches from rules
+                    max_round_no = round_no
                     knockout_placeholders = generate_knockout_placeholders(len(comp_groups))
+                    ko_round_map = {}
+                    ko_counter = max_round_no
                     for round_type, group_no, p1_id, p2_id in knockout_placeholders:
+                    for round_type, group_no, p1_id, p2_id in knockout_placeholders:
+                        if round_type not in ko_round_map:
+                            ko_counter += 1
+                            ko_round_map[round_type] = str(ko_counter)
                         match_rows.append({
                             "EVENT_ID": event_id,
                             "COMPETITION_TYPE": comp,
                             "GROUP_NO": group_no,
                             "ROUND_TYPE": round_type,
-                            "ROUND_NO": round_no,
+                            "ROUND_NO": ko_round_map[round_type],
                             "PLAYER1_ID": p1_id,
                             "PLAYER1_CLUB_ID": None,
                             "PLAYER2_ID": p2_id,
                             "PLAYER2_CLUB_ID": None,
                             "STATUS": "Pending"
                         })
-
+                        
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
                 for row in match_rows:
@@ -253,7 +260,7 @@ def render_match_generation(event_id):
         updated_df = render_match_table(event_id)
         if updated_df is not None:
             st.session_state["match_df"] = updated_df
-        
+                
         # Only allow saving if table loaded
         if updated_df is not None and st.button("💾 Save Scores"):    
             try:
@@ -286,6 +293,39 @@ def render_match_generation(event_id):
 
             except Exception as e:
                 st.error(f"❌ Failed to save scores: {e}")
+            finally:
+                cursor.close()
+                conn.close()
+
+        # Simulate scores for scheduled matches
+        if st.button("🎲 Simulate Scores"):
+            try:
+                conn = get_snowflake_connection()
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT ID FROM EVENT_MATCHES
+                    WHERE EVENT_ID = %s AND STATUS = 'Scheduled'
+                """, (event_id,))
+                match_ids = [row[0] for row in cursor.fetchall()]
+        
+                for match_id in match_ids:
+                    p1_score = random.randint(0, 5)
+                    p2_score = random.randint(0, 5)
+                    cursor.execute("""
+                        UPDATE EVENT_MATCHES
+                        SET P1_GOALS = %s,
+                            P2_GOALS = %s,
+                            STATUS = 'Final',
+                            UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                        WHERE ID = %s
+                    """, (p1_score, p2_score, match_id))
+        
+                conn.commit()
+                st.success(f"✅ Simulated scores for {len(match_ids)} matches.")
+                update_knockout_placeholders(event_id)
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to simulate scores: {e}")
             finally:
                 cursor.close()
                 conn.close()
