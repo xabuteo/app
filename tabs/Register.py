@@ -153,7 +153,7 @@ def page(selected_event):
                 comp_df = df[df["COMPETITION_TYPE"] == comp][["USER_ID", "EMAIL", "FIRST_NAME", "LAST_NAME", "CLUB_NAME"]]
                 st.markdown(f"### 🏆 {comp} Competition ({len(comp_df)} registered)")
                 st.dataframe(comp_df, use_container_width=True)
-    
+        
                 # Add CSV download
                 csv = comp_df.to_csv(index=False).encode("utf-8")
                 st.download_button(
@@ -162,3 +162,24 @@ def page(selected_event):
                     file_name=f"{comp.lower()}_registrations_event_{event_id}.csv",
                     mime="text/csv"
                 )
+
+            # ✅ Populate test competitors button
+            comp_to_copy = st.selectbox("Select competition to copy from test event (1001)", competitions)
+            if st.button("🧪 Populate Test Competitors"):
+                try:
+                    conn = get_snowflake_connection()
+                    cursor = conn.cursor()
+                    cursor.execute(f"""
+                        INSERT INTO EVENT_REGISTRATION(user_id, club_id, event_id, competition_type)
+                        SELECT user_id, club_id, %s, %s
+                        FROM EVENT_REGISTRATION
+                        WHERE event_id = 1001 AND competition_type = %s
+                    """, (event_id, comp_to_copy, comp_to_copy))
+                    conn.commit()
+                    st.success(f"✅ Test competitors for '{comp_to_copy}' added to event {event_id}.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Failed to populate test competitors: {e}")
+                finally:
+                    cursor.close()
+                    conn.close()
