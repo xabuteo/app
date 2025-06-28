@@ -64,12 +64,14 @@ def render_sidebar_widgets():
                 if key not in st.session_state:
                     st.session_state[key] = False
                 # No default value to avoid Streamlit warning
-                st.session_state[key] = st.checkbox(
+                checked = st.checkbox(
                     label=row["Step"],
                     value=st.session_state[key],
                     key=key,
                     help=row["Notes"] if row["Notes"] else None
                 )
+                st.session_state[key] = checked
+                
     # Bug Report
     with st.sidebar.expander("🐞 Report a Bug"):
         with st.form("bug_report_form"):
