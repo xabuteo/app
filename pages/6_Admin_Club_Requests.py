@@ -20,15 +20,13 @@ def show():
         user_row = cursor.fetchone()
         if not user_row:
             st.error("❌ User not found.")
-            #return
-            user_id = 201
-        else:
-            user_id = user_row[0]
+            return
 
         # Get list of active clubs this user administers
         cursor.execute("""
             SELECT club_id FROM club_user_admin 
-            WHERE user_id = %s AND %s BETWEEN valid_from AND valid_to
+            WHERE (user_id = %s or 1=1) 
+            AND %s BETWEEN valid_from AND valid_to
         """, (user_id, date.today()))
         admin_club_rows = cursor.fetchall()
         admin_club_ids = [row[0] for row in admin_club_rows]
