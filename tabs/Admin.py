@@ -1,6 +1,6 @@
 import streamlit as st
 from utils import get_snowflake_connection
-from admin import event_status, seed_and_group, auto_group, generate_matches, new_event
+from admin import event_status, seed_and_group, auto_group, generate_matches
 
 def page(selected_event):
     st.subheader("Event Admin")
@@ -15,4 +15,3 @@ def page(selected_event):
     seed_and_group.render(event_id)
     auto_group.render(event_id, user_email)
     generate_matches.render_match_generation(event_id)
-    new_event.add_new_event()
