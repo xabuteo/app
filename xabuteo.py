@@ -91,6 +91,7 @@ with st.sidebar.expander("🧪 Testing Checklist"):
     ]
 
     df = pd.DataFrame(data, columns=["Step No", "Group", "Step", "Notes"])
+    df = df.sort_values("Step No")  # Ensure steps are ordered
     grouped = df.groupby("Group")
 
     for group, steps in grouped:
