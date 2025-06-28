@@ -1,6 +1,9 @@
 import streamlit as st
 from datetime import date
 from utils import get_snowflake_connection
+from sidebar_utils import render_sidebar_widgets
+
+render_sidebar_widgets()
 
 def show():
     st.title("🗂️ Club Requests")
