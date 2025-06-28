@@ -10,12 +10,62 @@ st.set_page_config(
     layout="centered",
 )
 
+import streamlit as st
+import pandas as pd
+import datetime
+from utils import get_snowflake_connection
+
+# ---------- BUG LOGGING ----------
+with st.sidebar.expander("🐞 Report a Bug"):
+    st.markdown("Use the form below to log a bug.")
+    with st.form("bug_form"):
+        bug_summary = st.text_input("Summary", max_chars=100)
+        bug_description = st.text_area("Description")
+        page = st.text_input("Page / Feature (optional)")
+        severity = st.selectbox("Severity", ["Low", "Medium", "High", "Critical"])
+        submitted = st.form_submit_button("Submit Bug")
+
+        if submitted:
+            try:
+                conn = get_snowflake_connection()
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO APP_BUGS (SUMMARY, DESCRIPTION, PAGE, SEVERITY, REPORTED_AT)
+                    VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
+                """, (bug_summary, bug_description, page, severity))
+                conn.commit()
+                st.success("✅ Bug logged successfully.")
+            except Exception as e:
+                st.error(f"❌ Failed to submit bug: {e}")
+            finally:
+                cursor.close()
+                conn.close()
+
+
+# ---------- TESTING CHECKLIST ----------
+with st.sidebar.expander("🧪 Testing Checklist"):
+    # Replace this with your actual table if dynamically loading from DB or CSV
+    data = [
+        (1, "Access app", "https://xabuteo.streamlit.app/", "If the app hasn't been accessed for a while, you might need to 'wake it up'"),
+        (2, "Sign-up", "Click on login/sign-up button", ""),
+        (3, "Sign-up", "Click on sign-up link, enter email and password and click continue", "Currently, logins in all users immediately. Can change this behaviour..."),
+        # Add all remaining steps here...
+    ]
+
+    df = pd.DataFrame(data, columns=["Step No", "Group", "Step", "Notes"])
+    grouped = df.groupby("Group")
+
+    for group, steps in grouped:
+        st.markdown(f"**{group}**")
+        for _, row in steps.iterrows():
+            st.checkbox(
+                label=row["Step"],
+                key=f"step_{int(row['Step No'])}",
+                help=row["Notes"] if row["Notes"] else None
+            )
+
 # Page content
 st.title("Xabuteo")
-
-#dashboard_page = st.Page("./pages/1_Dashboard.py", title="Dashboard", icon=":material/home:")
-#profile_page = st.Page("./pages/2_Profile.py", title="Profile", icon=":material/play_arrow:")
-#club_page = st.Page("./pages/3_Clubs.py", title="Clubs", icon=":material/admin_panel_settings:")
 
 if not st.user.is_logged_in:
     # Not yet logged in: show login link and stop
