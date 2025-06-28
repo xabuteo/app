@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 from utils import get_snowflake_connection, ensure_profile_complete
 from datetime import date
+from sidebar_utils import render_sidebar_widgets
+
+render_sidebar_widgets()
 
 def show():
     st.title("🏟️ My Clubs")
