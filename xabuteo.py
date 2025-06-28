@@ -2,7 +2,6 @@
 
 import streamlit as st
 from utils import get_snowflake_connection, ensure_profile_complete
-from sidebar_utils import render_sidebar_widgets
 
 st.set_page_config(
     page_title="Xabuteo",
@@ -78,4 +77,5 @@ else:
     ):
         st.logout()
 
+from sidebar_utils import render_sidebar_widgets
 render_sidebar_widgets()
