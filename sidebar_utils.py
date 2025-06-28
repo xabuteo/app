@@ -59,12 +59,10 @@ def render_sidebar_widgets():
             st.markdown(f"**{group}**")
             for _, row in steps.iterrows():
                 key = f"step_{int(row['Step No'])}"
-                if key not in st.session_state:
-                    st.session_state[key] = False
-                st.session_state[key] = st.checkbox(
+                st.checkbox(
                     label=row["Step"],
-                    value=st.session_state[key],
                     key=key,
+                    value=st.session_state.get(key, False),
                     help=row["Notes"] if row["Notes"] else None
                 )
 
