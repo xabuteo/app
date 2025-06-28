@@ -217,8 +217,9 @@ def render_match_generation(event_id):
                         match_rows.append({
                             "EVENT_ID": event_id,
                             "COMPETITION_TYPE": comp,
-                            "ROUND_TYPE": round_type,
                             "GROUP_NO": group_no,
+                            "ROUND_TYPE": round_type,
+                            "ROUND_NO": round_no,
                             "PLAYER1_ID": p1_id,
                             "PLAYER1_CLUB_ID": None,
                             "PLAYER2_ID": p2_id,
@@ -231,12 +232,12 @@ def render_match_generation(event_id):
                 for row in match_rows:
                     cursor.execute("""
                         INSERT INTO EVENT_MATCHES (
-                            EVENT_ID, COMPETITION_TYPE, GROUP_NO, ROUND_TYPE,
+                            EVENT_ID, COMPETITION_TYPE, GROUP_NO, ROUND_TYPE, ROUND_NO,
                             PLAYER_1_ID, PLAYER_1_CLUB_ID, PLAYER_2_ID, PLAYER_2_CLUB_ID,
                             STATUS
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
-                        row["EVENT_ID"], row["COMPETITION_TYPE"], row["GROUP_NO"], row["ROUND_TYPE"],
+                        row["EVENT_ID"], row["COMPETITION_TYPE"], row["GROUP_NO"], row["ROUND_TYPE"], row["ROUND_NO"],
                         row["PLAYER1_ID"], row["PLAYER1_CLUB_ID"],
                         row["PLAYER2_ID"], row["PLAYER2_CLUB_ID"],
                         row["STATUS"]
