@@ -21,6 +21,7 @@ def show():
         if not user_row:
             st.error("❌ User not found.")
             return
+        user_id = user_row[0]
 
         # Get list of active clubs this user administers
         cursor.execute("""
