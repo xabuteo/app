@@ -54,24 +54,22 @@ def render_sidebar_widgets():
             (43, "Run event", "Click on Result tab to view final results", ""),
             (44, "Logout", "Click on logout in menu", "")
         ]
-        df = pd.DataFrame(data, columns=["Step No", "Group", "Step", "Notes"])
-        df = df.sort_values("Step No")
+        df = pd.DataFrame(data, columns=["Step No", "Group", "Step", "Notes"]).sort_values("Step No")
         grouped = df.groupby("Group", sort=False)
 
         for group, steps in grouped:
             st.markdown(f"**{group}**")
             for _, row in steps.iterrows():
                 key = f"step_{int(row['Step No'])}"
-                default = st.session_state.get(key, False)
-                st.checkbox(
+                if key not in st.session_state:
+                    st.session_state[key] = False
+                # No default value to avoid Streamlit warning
+                st.session_state[key] = st.checkbox(
                     label=row["Step"],
-                    value=default,
+                    value=st.session_state[key],
                     key=key,
                     help=row["Notes"] if row["Notes"] else None
                 )
-
-                persistent_state[key] = new_val  # persist across pages
-
     # Bug Report
     with st.sidebar.expander("🐞 Report a Bug"):
         with st.form("bug_report_form"):
