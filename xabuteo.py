@@ -89,10 +89,11 @@ with st.sidebar.expander("🧪 Testing Checklist"):
         (43, "Run event", "Click on Result tab to view final results", ""),
         (44, "Logout", "Click on logout in menu", "")
     ]
-
+    
     df = pd.DataFrame(data, columns=["Step No", "Group", "Step", "Notes"])
     df = df.sort_values("Step No")  # Ensure steps are ordered
-    grouped = df.groupby("Group")
+
+    grouped = df.groupby("Group", sort=False)  # Maintain first occurrence order of groups
 
     for group, steps in grouped:
         st.markdown(f"**{group}**")
@@ -102,7 +103,7 @@ with st.sidebar.expander("🧪 Testing Checklist"):
                 key=f"step_{int(row['Step No'])}",
                 help=row["Notes"] if row["Notes"] else None
             )
-
+            
 # Page content
 st.title("Xabuteo")
 
