@@ -3,9 +3,7 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
 from tabs import Details, Register, Tables, Scores, Result, Admin
-from sidebar_utils import render_sidebar_widgets
-
-render_sidebar_widgets()
+from admin import new_event
 
 st.set_page_config(page_title="Events", layout="wide")
 
@@ -123,5 +121,9 @@ def show():
         for tab, page_module in zip(TABS, PAGES):
             with tab:
                 page_module.page(selected_event)
+                
+    new_event.add_new_event()
 
 show()
+from sidebar_utils import render_sidebar_widgets
+render_sidebar_widgets()
