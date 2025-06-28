@@ -1,5 +1,8 @@
 import streamlit as st
 from utils import get_snowflake_connection
+from sidebar_utils import render_sidebar_widgets
+
+render_sidebar_widgets()
 
 def get_initials(first, last):
     if not first or not last:
