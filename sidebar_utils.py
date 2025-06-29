@@ -87,7 +87,7 @@ def render_sidebar_widgets():
                     cursor = conn.cursor()
 
                     # Get email if logged in
-                    user_email = st.session_state.get("user_email", None)
+                    user_email = getattr(st.user, "email", None)
 
                     cursor.execute("""
                         INSERT INTO APP_BUGS (PAGE, DESCRIPTION, SEVERITY, SUBMITTED_AT, USER_EMAIL)
