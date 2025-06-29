@@ -1,12 +1,9 @@
 import streamlit as st
 import pandas as pd
 
-@st.cache_resource
-def get_persistent_step_state():
-    return {}
-
 def render_sidebar_widgets():
-    persistent_state = get_persistent_step_state()
+    if "testing_checklist" not in st.session_state:
+        st.session_state["testing_checklist"] = {}
 
     # Testing Checklist
     with st.sidebar.expander("🧪 Testing Checklist"):
@@ -54,6 +51,7 @@ def render_sidebar_widgets():
             (43, "Run event", "Click on Result tab to view final results", ""),
             (44, "Logout", "Click on logout in menu", "")
         ]
+
         df = pd.DataFrame(data, columns=["Step No", "Group", "Step", "Notes"]).sort_values("Step No")
         grouped = df.groupby("Group", sort=False)
 
@@ -61,16 +59,14 @@ def render_sidebar_widgets():
             st.markdown(f"**{group}**")
             for _, row in steps.iterrows():
                 key = f"step_{int(row['Step No'])}"
-                if key not in st.session_state:
-                    st.session_state[key] = False
-        
-                st.checkbox(
+                saved = st.session_state["testing_checklist"].get(key, False)
+                checked = st.checkbox(
                     label=row["Step"],
-                    value=st.session_state[key],
+                    value=saved,
                     key=key,
                     help=row["Notes"] if row["Notes"] else None
                 )
-
+                st.session_state["testing_checklist"][key] = checked
                 
     # Bug Report
     with st.sidebar.expander("🐞 Report a Bug"):
