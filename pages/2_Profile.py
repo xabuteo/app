@@ -1,8 +1,10 @@
 import streamlit as st
+import datetime
 from utils import get_snowflake_connection
 from sidebar_utils import render_sidebar_widgets
 
-render_sidebar_widgets()
+today = datetime.date.today()
+hundred_years_ago = today.replace(year=today.year - 100)
 
 def get_initials(first, last):
     if not first or not last:
@@ -82,7 +84,12 @@ def show():
             with st.form("update_profile_form", clear_on_submit=False):
                 new_first = st.text_input("First Name", value=first_name)
                 new_last = st.text_input("Last Name", value=last_name)
-                new_dob = st.date_input("Date of Birth", value=dob)
+                new_dob = st.date_input(
+                    "Date of Birth",
+                    value=dob,
+                    min_value=hundred_years_ago,
+                    max_value=today
+                )
                 gender_options = ["M", "F", "Other"]
                 index = gender_options.index(gender) if gender in gender_options else 0
                 new_gender = st.selectbox("Gender", gender_options, index=index)
@@ -123,3 +130,4 @@ def show():
         conn.close()
 
 show()
+render_sidebar_widgets()
