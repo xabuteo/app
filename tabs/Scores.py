@@ -52,6 +52,10 @@ def page(selected_event):
                     "ROUND_NO", "PLAYER1", "PLAYER1_GOALS", "PLAYER2_GOALS", "PLAYER2", "STATUS"
                 ]]
 
+                # Convert goal columns to Int64 for clean integer display
+                group_df["PLAYER1_GOALS"] = group_df["PLAYER1_GOALS"].astype("Int64")
+                group_df["PLAYER2_GOALS"] = group_df["PLAYER2_GOALS"].astype("Int64")
+    
                 def highlight_winner(row):
                     style = [''] * len(row)
                     p1_goals = row["PLAYER1_GOALS"]
