@@ -96,6 +96,12 @@ def render_sidebar_widgets():
                     conn.commit()
 
                     st.success("✅ Bug report submitted.")
+    
+                    # 🔁 Clear form inputs
+                    del st.session_state["bug_page"]
+                    del st.session_state["bug_description"]
+                    del st.session_state["bug_severity_index"]
+    
                 except Exception as e:
                     st.error(f"❌ Failed to submit bug: {e}")
                 finally:
