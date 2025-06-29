@@ -35,8 +35,7 @@ def render(event_id):
             st.session_state.selected_competition = selected_comp
 
             cursor.execute("""
-                SELECT id, user_id, event_id, first_name, last_name, email,
-                       club_name, club_code, seed_no, group_no
+                SELECT group_no, seed_no, first_name, last_name, club_code, id, user_id, event_id
                 FROM EVENT_REGISTRATION_V
                 WHERE event_id = %s AND competition_type = %s
                 ORDER BY last_name, first_name
