@@ -6,7 +6,7 @@ def render_sidebar_widgets():
         st.session_state["testing_checklist"] = {}
 
     # Testing Checklist
-    with st.sidebar.expander("🧪 Testing Checklist"):
+    with st.sidebar.expander("🧪 Testing Checklist", expanded=True):
         data = [
             (2, "Sign-up", "Click on login/sign-up button", ""),
             (3, "Sign-up", "Click on sign-up link, enter email and password and click contiunue", "Currently, logins in all users immediately. Can change this behaviour to require email confirmation and/or approval"),
