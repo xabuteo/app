@@ -214,11 +214,12 @@ def render_match_generation(event_id):
                         "Semi-final",
                         "Final"
                     ]
-                    
-                    # Create a mapping for sorting
                     round_order_map = {rt: i for i, rt in enumerate(knockout_order)}
                     
-                    # Sort the knockout placeholders by round_type using the defined order
+                    # ✅ Fetch placeholders FIRST
+                    knockout_placeholders = generate_knockout_placeholders(len(comp_groups))
+                    
+                    # ✅ Sort based on round type importance
                     knockout_placeholders.sort(key=lambda x: round_order_map.get(x[0], 999))
                     
                     # Add knockout matches with consistent ROUND_NO assignment
