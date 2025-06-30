@@ -208,6 +208,7 @@ def render_match_generation(event_id):
                     # Define desired knockout round order
                     max_round_no = round_no
                     knockout_order = [
+                        "Barrage",
                         "Round of 64",
                         "Round of 32",
                         "Round of 16",
