@@ -32,7 +32,7 @@ def update_knockout_placeholders(event_id):
             UPDATE EVENT_MATCHES
             SET PLAYER_1_ID = ek.PLAYER_ID,
                 PLAYER_1_CLUB_ID = ek.CLUB_ID,
-                STATUS = 'Scheduled',
+                STATUS = case when PLAYER_2_ID > 0 then 'Scheduled' else STATUS end,
                 UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
             FROM EVENT_KO_ROUND_V ek
             WHERE EVENT_MATCHES.EVENT_ID = %s
@@ -46,7 +46,7 @@ def update_knockout_placeholders(event_id):
             UPDATE EVENT_MATCHES
             SET PLAYER_2_ID = ek.PLAYER_ID,
                 PLAYER_2_CLUB_ID = ek.CLUB_ID,
-                STATUS = 'Scheduled',
+                STATUS = case when PLAYER_1_ID > 0 then 'Scheduled' else STATUS end,
                 UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
             FROM EVENT_KO_ROUND_V ek
             WHERE EVENT_MATCHES.EVENT_ID = %s
