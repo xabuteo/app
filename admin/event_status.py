@@ -8,6 +8,9 @@ def render(event_id, event_status, user_email):
     if event_status != "Cancelled":
         if st.button("❌ Cancel"):
             update_status(event_id, user_email, "Cancelled")
+    if event_status != "Cancelled" and event_status != "Pending":
+        if st.button("✅ Complete"):
+            update_status(event_id, user_email, "Complete")
 
 def update_status(event_id, user_email, new_status):
     try:
