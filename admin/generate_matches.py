@@ -205,15 +205,30 @@ def render_match_generation(event_id):
                                 })
                             rotation = [rotation[0]] + [rotation[-1]] + rotation[1:-1]
 
-                    # Add knockout matches from rules
-                    max_round_no = round_no
-                    knockout_placeholders = generate_knockout_placeholders(len(comp_groups))
+                    # Define desired knockout round order
+                    knockout_order = [
+                        "Round of 64",
+                        "Round of 32",
+                        "Round of 16",
+                        "Quarter-final",
+                        "Semi-final",
+                        "Final"
+                    ]
+                    
+                    # Create a mapping for sorting
+                    round_order_map = {rt: i for i, rt in enumerate(knockout_order)}
+                    
+                    # Sort the knockout placeholders by round_type using the defined order
+                    knockout_placeholders.sort(key=lambda x: round_order_map.get(x[0], 999))
+                    
+                    # Add knockout matches with consistent ROUND_NO assignment
                     ko_round_map = {}
                     ko_counter = max_round_no
                     for round_type, group_no, p1_id, p2_id in knockout_placeholders:
                         if round_type not in ko_round_map:
                             ko_counter += 1
                             ko_round_map[round_type] = str(ko_counter)
+                        
                         match_rows.append({
                             "EVENT_ID": event_id,
                             "COMPETITION_TYPE": comp,
