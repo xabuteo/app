@@ -2,15 +2,23 @@ import streamlit as st
 from utils import get_snowflake_connection
 
 def render(event_id, event_status, user_email):
+    cols = st.columns(5)  
+
     if event_status == "Pending":
-        if st.button("✅ Approve"):
-            update_status(event_id, user_email, "Approved")
+        with cols[0]:
+            if st.button("✅ Approve"):
+                update_status(event_id, user_email, "Approved")
+
     if event_status != "Cancelled":
-        if st.button("❌ Cancel"):
-            update_status(event_id, user_email, "Cancelled")
-    if event_status != "Cancelled" and event_status != "Pending":
-        if st.button("✅ Complete"):
-            update_status(event_id, user_email, "Complete")
+        with cols[1]:
+            if st.button("❌ Cancel"):
+                update_status(event_id, user_email, "Cancelled")
+
+    if event_status not in ["Cancelled", "Pending"]:
+        with cols[2]:
+            if st.button("✅ Complete"):
+                update_status(event_id, user_email, "Complete")
+
 
 def update_status(event_id, user_email, new_status):
     try:
