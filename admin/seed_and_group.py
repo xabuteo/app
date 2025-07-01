@@ -4,7 +4,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from utils import get_snowflake_connection
 
 def render(event_id):
-    with st.expander("➕ Seeding and Group Assignment", expanded=True):
+    with st.expander("➕ Seeding and Group Assignment", expanded=False):
         # Persist selected competition
         if "selected_competition" not in st.session_state:
             st.session_state.selected_competition = "Open"
