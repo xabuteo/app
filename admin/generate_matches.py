@@ -124,10 +124,7 @@ def render_match_generation(event_id):
             conn.close()
 
         if match_count > 0:
-            st.warning(f"⚠️ {match_count} matches already exist. Re-generating will **DELETE all matches and scores**.")
-            if not st.button("🔁 Re-Generate Matches (This will delete all existing!)"):
-                st.info("⚠️ Skipped regeneration. Existing matches below:")
-            else:
+            if st.button("🔁 Re-Generate Matches (This will delete all existing!)"):
                 try:
                     conn = get_snowflake_connection()
                     cursor = conn.cursor()
