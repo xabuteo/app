@@ -5,7 +5,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import string
 import random
 
-def generate_knockout_placeholders(num_groups, competition_type):
+def generate_knockout_placeholders(num_groups):
     conn = get_snowflake_connection()
     cursor = conn.cursor()
     try:
@@ -13,9 +13,8 @@ def generate_knockout_placeholders(num_groups, competition_type):
             SELECT ROUND_TYPE, GROUP_NO, P1_ID, P2_ID
             FROM KNOCKOUT_MATCHES
             WHERE %s BETWEEN MIN_GROUP AND MAX_GROUP
-              AND COMPETITION_TYPE = %s
             ORDER BY ID
-        """, (num_groups, competition_type))
+        """, (num_groups)
         rows = cursor.fetchall()
         return [(row[0], row[1], row[2], row[3]) for row in rows]
     except Exception as e:
@@ -223,7 +222,7 @@ def render_match_generation(event_id):
                 ]
                 round_order_map = {rt: i for i, rt in enumerate(knockout_order)}
 
-                knockout_placeholders = generate_knockout_placeholders(len(comp_groups), comp)
+                knockout_placeholders = generate_knockout_placeholders(len(comp_groups))
                 knockout_placeholders.sort(key=lambda x: round_order_map.get(x[0], 999))
 
                 ko_round_map = {}
