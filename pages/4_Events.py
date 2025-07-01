@@ -121,8 +121,8 @@ def show():
         for tab, page_module in zip(TABS, PAGES):
             with tab:
                 page_module.page(selected_event)
-                
-    new_event.add_new_event()
+    elif:            
+        new_event.add_new_event()
 
 show()
 from sidebar_utils import render_sidebar_widgets
