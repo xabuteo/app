@@ -14,7 +14,7 @@ def generate_knockout_placeholders(num_groups):
             FROM KNOCKOUT_MATCHES
             WHERE %s BETWEEN MIN_GROUP AND MAX_GROUP
             ORDER BY ID
-        """, (num_groups)
+        """, (num_groups,))
         rows = cursor.fetchall()
         return [(row[0], row[1], row[2], row[3]) for row in rows]
     except Exception as e:
@@ -23,7 +23,7 @@ def generate_knockout_placeholders(num_groups):
     finally:
         cursor.close()
         conn.close()
-
+        
 def update_knockout_placeholders(event_id):
     conn = get_snowflake_connection()
     cursor = conn.cursor()
