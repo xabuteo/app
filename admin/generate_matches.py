@@ -5,7 +5,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import string
 import random
 
-def generate_knockout_placeholders(num_groups):
+def generate_knockout_placeholders(num_groups, competition_type):
     conn = get_snowflake_connection()
     cursor = conn.cursor()
     try:
@@ -13,8 +13,9 @@ def generate_knockout_placeholders(num_groups):
             SELECT ROUND_TYPE, GROUP_NO, P1_ID, P2_ID
             FROM KNOCKOUT_MATCHES
             WHERE %s BETWEEN MIN_GROUP AND MAX_GROUP
+              AND COMPETITION_TYPE = %s
             ORDER BY ID
-        """, (num_groups,))
+        """, (num_groups, competition_type))
         rows = cursor.fetchall()
         return [(row[0], row[1], row[2], row[3]) for row in rows]
     except Exception as e:
@@ -66,7 +67,7 @@ def update_knockout_placeholders(event_id):
         cursor.close()
         conn.close()
 
-def render_match_table(event_id):
+def render_match_table(event_id, selected_comp):
     try:
         conn = get_snowflake_connection()
         cursor = conn.cursor()
@@ -74,9 +75,9 @@ def render_match_table(event_id):
             SELECT id, competition_type, round_no, group_no,
                    player1, player1_goals, player2_goals, player2
             FROM EVENT_MATCHES_V
-            WHERE event_id = %s
+            WHERE event_id = %s AND competition_type = %s
             ORDER BY round_no, group_no
-        """, (event_id,))
+        """, (event_id, selected_comp))
         matches = cursor.fetchall()
         cols = [desc[0].upper() for desc in cursor.description]
         df_matches = pd.DataFrame(matches, columns=cols)
@@ -210,7 +211,6 @@ def render_match_generation(event_id):
                             })
                         rotation = [rotation[0]] + [rotation[-1]] + rotation[1:-1]
 
-                # Define desired knockout round order
                 max_round_no = rounds
                 knockout_order = [
                     "Barrage",
@@ -223,7 +223,7 @@ def render_match_generation(event_id):
                 ]
                 round_order_map = {rt: i for i, rt in enumerate(knockout_order)}
 
-                knockout_placeholders = generate_knockout_placeholders(len(comp_groups))
+                knockout_placeholders = generate_knockout_placeholders(len(comp_groups), comp)
                 knockout_placeholders.sort(key=lambda x: round_order_map.get(x[0], 999))
 
                 ko_round_map = {}
@@ -269,7 +269,7 @@ def render_match_generation(event_id):
                 cursor.close()
                 conn.close()
 
-        updated_df = render_match_table(event_id)
+        updated_df = render_match_table(event_id, selected_comp)
         if updated_df is not None:
             st.session_state["match_df"] = updated_df
 
@@ -309,8 +309,8 @@ def render_match_generation(event_id):
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT ID FROM EVENT_MATCHES
-                    WHERE EVENT_ID = %s AND STATUS = 'Scheduled'
-                """, (event_id,))
+                    WHERE EVENT_ID = %s AND STATUS = 'Scheduled' AND COMPETITION_TYPE = %s
+                """, (event_id, selected_comp))
                 match_ids = [row[0] for row in cursor.fetchall()]
 
                 for match_id in match_ids:
