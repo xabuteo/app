@@ -88,7 +88,6 @@ def render_match_table(event_id):
         conn.close()
 
     if df_matches.empty:
-        # st.info("ℹ️ No matches to show.")
         return None
 
     st.markdown("### 📋 Match Results")
@@ -110,11 +109,19 @@ def render_match_table(event_id):
     return pd.DataFrame(grid_response["data"])
 
 def render_match_generation(event_id):
-     with st.expander("🎾 Match Generation & Scoring"):
+    with st.expander("🎾 Match Generation & Scoring"):
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM EVENT_MATCHES WHERE event_id = %s", (event_id,))
+            cursor.execute("SELECT DISTINCT competition_type FROM event_registration WHERE event_id = %s", (event_id,))
+            competitions = [row[0] for row in cursor.fetchall()]
+            if not competitions:
+                st.info("ℹ️ No competitions found for this event.")
+                return
+
+            selected_comp = st.radio("🏆 Select Competition", competitions, key="match_gen_competition")
+
+            cursor.execute("SELECT COUNT(*) FROM EVENT_MATCHES WHERE event_id = %s AND competition_type = %s", (event_id, selected_comp))
             match_count = cursor.fetchone()[0]
         except Exception as e:
             st.error(f"❌ Could not check match state: {e}")
@@ -128,7 +135,7 @@ def render_match_generation(event_id):
                 try:
                     conn = get_snowflake_connection()
                     cursor = conn.cursor()
-                    cursor.execute("DELETE FROM EVENT_MATCHES WHERE event_id = %s", (event_id,))
+                    cursor.execute("DELETE FROM EVENT_MATCHES WHERE event_id = %s AND competition_type = %s", (event_id, selected_comp))
                     conn.commit()
                     st.success("✅ Old matches deleted. You can now generate new ones.")
                     match_count = 0
@@ -138,14 +145,15 @@ def render_match_generation(event_id):
                 finally:
                     cursor.close()
                     conn.close()
+
         try:
             conn = get_snowflake_connection()
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT id, user_id, club_id, group_no, competition_type
                 FROM event_registration
-                WHERE event_id = %s AND group_no IS NOT NULL
-            """, (event_id,))
+                WHERE event_id = %s AND group_no IS NOT NULL AND competition_type = %s
+            """, (event_id, selected_comp))
             rows = cursor.fetchall()
             cols = [desc[0].upper() for desc in cursor.description]
             df = pd.DataFrame(rows, columns=cols)
@@ -157,7 +165,7 @@ def render_match_generation(event_id):
             conn.close()
 
         if df.empty:
-            st.info("ℹ️ No groupings found for this event.")
+            st.info("ℹ️ No groupings found for this competition.")
             return
 
         if match_count == 0 and st.button("⚙️ Generate Round-Robin Matches"):
@@ -166,82 +174,78 @@ def render_match_generation(event_id):
                 group_letters = {}
                 letter_iter = iter(string.ascii_uppercase)
 
-                for comp in df["COMPETITION_TYPE"].unique():
-                    comp_df = df[df["COMPETITION_TYPE"] == comp]
-                    comp_groups = sorted(comp_df["GROUP_NO"].unique())
-                    group_map = {group: next(letter_iter) for group in comp_groups}
-                    group_letters[comp] = group_map
+                comp = selected_comp
+                comp_df = df[df["COMPETITION_TYPE"] == comp]
+                comp_groups = sorted(comp_df["GROUP_NO"].unique())
+                group_map = {group: next(letter_iter) for group in comp_groups}
+                group_letters[comp] = group_map
 
-                    for group in comp_groups:
-                        group_df = comp_df[comp_df["GROUP_NO"] == group]
-                        players = group_df.to_dict("records")
+                for group in comp_groups:
+                    group_df = comp_df[comp_df["GROUP_NO"] == group]
+                    players = group_df.to_dict("records")
 
-                        if len(players) % 2 != 0:
-                            players.append({"ID": None, "USER_ID": -1, "CLUB_ID": None, "GROUP_NO": group, "COMPETITION_TYPE": comp})
+                    if len(players) % 2 != 0:
+                        players.append({"ID": None, "USER_ID": -1, "CLUB_ID": None, "GROUP_NO": group, "COMPETITION_TYPE": comp})
 
-                        n = len(players)
-                        rounds = n - 1
-                        half = n // 2
-                        rotation = players[:]
+                    n = len(players)
+                    rounds = n - 1
+                    half = n // 2
+                    rotation = players[:]
 
-                        for round_no in range(1, rounds + 1):
-                            for i in range(half):
-                                p1 = rotation[i]
-                                p2 = rotation[n - 1 - i]
-                                match_rows.append({
-                                    "EVENT_ID": event_id,
-                                    "COMPETITION_TYPE": comp,
-                                    "GROUP_NO": group,
-                                    "ROUND_NO": str(round_no),
-                                    "PLAYER1_ID": p1["USER_ID"],
-                                    "PLAYER1_CLUB_ID": p1["CLUB_ID"],
-                                    "PLAYER2_ID": p2["USER_ID"],
-                                    "PLAYER2_CLUB_ID": p2["CLUB_ID"],
-                                    "STATUS": "Scheduled",
-                                    "ROUND_TYPE": "Group"
-                                })
-                            rotation = [rotation[0]] + [rotation[-1]] + rotation[1:-1]
+                    for round_no in range(1, rounds + 1):
+                        for i in range(half):
+                            p1 = rotation[i]
+                            p2 = rotation[n - 1 - i]
+                            match_rows.append({
+                                "EVENT_ID": event_id,
+                                "COMPETITION_TYPE": comp,
+                                "GROUP_NO": group,
+                                "ROUND_NO": str(round_no),
+                                "PLAYER1_ID": p1["USER_ID"],
+                                "PLAYER1_CLUB_ID": p1["CLUB_ID"],
+                                "PLAYER2_ID": p2["USER_ID"],
+                                "PLAYER2_CLUB_ID": p2["CLUB_ID"],
+                                "STATUS": "Scheduled",
+                                "ROUND_TYPE": "Group"
+                            })
+                        rotation = [rotation[0]] + [rotation[-1]] + rotation[1:-1]
 
-                    # Define desired knockout round order
-                    max_round_no = round_no
-                    knockout_order = [
-                        "Barrage",
-                        "Round of 64",
-                        "Round of 32",
-                        "Round of 16",
-                        "Quarter-final",
-                        "Semi-final",
-                        "Final"
-                    ]
-                    round_order_map = {rt: i for i, rt in enumerate(knockout_order)}
-                    
-                    # ✅ Fetch placeholders FIRST
-                    knockout_placeholders = generate_knockout_placeholders(len(comp_groups))
-                    
-                    # ✅ Sort based on round type importance
-                    knockout_placeholders.sort(key=lambda x: round_order_map.get(x[0], 999))
-                    
-                    # Add knockout matches with consistent ROUND_NO assignment
-                    ko_round_map = {}
-                    ko_counter = max_round_no
-                    for round_type, group_no, p1_id, p2_id in knockout_placeholders:
-                        if round_type not in ko_round_map:
-                            ko_counter += 1
-                            ko_round_map[round_type] = str(ko_counter)
-                        
-                        match_rows.append({
-                            "EVENT_ID": event_id,
-                            "COMPETITION_TYPE": comp,
-                            "GROUP_NO": group_no,
-                            "ROUND_TYPE": round_type,
-                            "ROUND_NO": ko_round_map[round_type],
-                            "PLAYER1_ID": p1_id,
-                            "PLAYER1_CLUB_ID": None,
-                            "PLAYER2_ID": p2_id,
-                            "PLAYER2_CLUB_ID": None,
-                            "STATUS": "Pending"
-                        })
-                        
+                # Define desired knockout round order
+                max_round_no = rounds
+                knockout_order = [
+                    "Barrage",
+                    "Round of 64",
+                    "Round of 32",
+                    "Round of 16",
+                    "Quarter-final",
+                    "Semi-final",
+                    "Final"
+                ]
+                round_order_map = {rt: i for i, rt in enumerate(knockout_order)}
+
+                knockout_placeholders = generate_knockout_placeholders(len(comp_groups))
+                knockout_placeholders.sort(key=lambda x: round_order_map.get(x[0], 999))
+
+                ko_round_map = {}
+                ko_counter = max_round_no
+                for round_type, group_no, p1_id, p2_id in knockout_placeholders:
+                    if round_type not in ko_round_map:
+                        ko_counter += 1
+                        ko_round_map[round_type] = str(ko_counter)
+
+                    match_rows.append({
+                        "EVENT_ID": event_id,
+                        "COMPETITION_TYPE": comp,
+                        "GROUP_NO": group_no,
+                        "ROUND_TYPE": round_type,
+                        "ROUND_NO": ko_round_map[round_type],
+                        "PLAYER1_ID": p1_id,
+                        "PLAYER1_CLUB_ID": None,
+                        "PLAYER2_ID": p2_id,
+                        "PLAYER2_CLUB_ID": None,
+                        "STATUS": "Pending"
+                    })
+
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
                 for row in match_rows:
@@ -264,13 +268,12 @@ def render_match_generation(event_id):
             finally:
                 cursor.close()
                 conn.close()
-        
+
         updated_df = render_match_table(event_id)
         if updated_df is not None:
             st.session_state["match_df"] = updated_df
-                
-        # Only allow saving if table loaded
-        if updated_df is not None and st.button("💾 Save Scores"):    
+
+        if updated_df is not None and st.button("💾 Save Scores"):
             try:
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
@@ -291,21 +294,15 @@ def render_match_generation(event_id):
                     ))
                 conn.commit()
                 st.success("✅ Scores updated and matches marked as 'Final'.")
-        
-                # Automatically update placeholders
                 update_knockout_placeholders(event_id)
-        
-                # Clear and rerun to reload match table cleanly
                 st.session_state["match_df"] = None
                 st.rerun()
-
             except Exception as e:
                 st.error(f"❌ Failed to save scores: {e}")
             finally:
                 cursor.close()
                 conn.close()
 
-        # Simulate scores for scheduled matches
         if updated_df is not None and st.button("🎲 Simulate Scores"):
             try:
                 conn = get_snowflake_connection()
@@ -315,7 +312,7 @@ def render_match_generation(event_id):
                     WHERE EVENT_ID = %s AND STATUS = 'Scheduled'
                 """, (event_id,))
                 match_ids = [row[0] for row in cursor.fetchall()]
-        
+
                 for match_id in match_ids:
                     p1_score = random.randint(0, 5)
                     p2_score = random.randint(0, 5)
@@ -327,7 +324,7 @@ def render_match_generation(event_id):
                             UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
                         WHERE ID = %s
                     """, (p1_score, p2_score, match_id))
-        
+
                 conn.commit()
                 st.success(f"✅ Simulated scores for {len(match_ids)} matches.")
                 update_knockout_placeholders(event_id)
