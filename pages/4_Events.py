@@ -121,7 +121,7 @@ def show():
         for tab, page_module in zip(TABS, PAGES):
             with tab:
                 page_module.page(selected_event)
-    elif:            
+    else:            
         new_event.add_new_event()
 
 show()
