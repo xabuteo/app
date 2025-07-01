@@ -39,7 +39,7 @@ def page(selected_event):
             def highlight_winner(row):
                 style = [''] * len(row)
                 w = row["FINAL_RESULT"]
-                if w = 'Winner':
+                if w = "Winner":
                     style[1] = 'background-color: #cce4ff'
                 return style
 
