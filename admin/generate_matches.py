@@ -88,7 +88,7 @@ def render_match_table(event_id):
         conn.close()
 
     if df_matches.empty:
-        st.info("ℹ️ No matches to show.")
+        # st.info("ℹ️ No matches to show.")
         return None
 
     st.markdown("### 📋 Match Results")
@@ -309,7 +309,7 @@ def render_match_generation(event_id):
                 conn.close()
 
         # Simulate scores for scheduled matches
-        if st.button("🎲 Simulate Scores"):
+        if updated_df is not None and st.button("🎲 Simulate Scores"):
             try:
                 conn = get_snowflake_connection()
                 cursor = conn.cursor()
