@@ -12,7 +12,7 @@ def page(selected_event):
             SELECT *
             FROM EVENT_RESULT_V
             WHERE EVENT_ID = %s
-            ORDER BY order by event_id, competition_type, round_no desc, Final
+            ORDER BY event_id, competition_type, round_no DESC, FINAL
         """, (event_id,))
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
@@ -31,17 +31,14 @@ def page(selected_event):
     competitions = sorted(df["COMPETITION_TYPE"].dropna().unique(), key=lambda x: (x != "Open", x))
 
     for comp in competitions:
-        comp_df = df[df["COMPETITION_TYPE"] == comp][[
-                    "PLAYER", "FINAL_RESULT"
-                ]]
+        comp_df = df[df["COMPETITION_TYPE"] == comp][["PLAYER", "FINAL_RESULT"]]
         with st.expander(f"🏆 {comp} Competition", expanded=(comp == "Open")):
 
             def highlight_winner(row):
                 style = [''] * len(row)
-                w = row["FINAL_RESULT"]
-                if w = "Winner":
+                if row["FINAL_RESULT"] == "Winner":
                     style[1] = 'background-color: #cce4ff'
                 return style
 
-                styled_df = comp_df.style.apply(highlight_winner, axis=1)
-                st.dataframe(styled_df, use_container_width=True, hide_index=True)
+            styled_df = comp_df.style.apply(highlight_winner, axis=1)
+            st.dataframe(styled_df, use_container_width=True, hide_index=True)
