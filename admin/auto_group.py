@@ -57,7 +57,7 @@ def render(event_id, user_email):
             st.info("No registrations for this competition.")
             return
 
-        num_groups = st.selectbox("Select number of groups", list(range(2, 11)), index=2)
+        num_groups = st.selectbox("Select number of groups", list(range(2, 32)), index=2)
 
         if st.button("🎲 Auto-Assign Competitors to Groups"):
             try:
@@ -91,34 +91,25 @@ def render(event_id, user_email):
                 final_df = pd.DataFrame(final_rows).sort_values(["GROUP_NO", "SEED_NO", "LAST_NAME"])
                 st.session_state.final_group_df = final_df
 
-                st.success("✅ Groups assigned. Review below:")
+                # Save to DB immediately
+                conn = get_snowflake_connection()
+                cursor = conn.cursor()
+                for _, row in final_df.iterrows():
+                    cursor.execute("""
+                        UPDATE EVENT_REGISTRATION
+                        SET GROUP_NO = %s,
+                            UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                        WHERE id = %s
+                    """, (
+                        row["GROUP_NO"],
+                        row["ID"]
+                    ))
+                conn.commit()
+                st.success(f"✅ {len(final_df)} participants assigned and saved to DB.")
                 st.dataframe(final_df[["FIRST_NAME", "LAST_NAME", "SEED_NO", "GROUP_NO"]], use_container_width=True)
 
             except Exception as e:
-                st.error(f"❌ Grouping error: {e}")
-
-        # Save to DB
-        if "final_group_df" in st.session_state and st.session_state.final_group_df is not None:
-            final_df = st.session_state.final_group_df
-            if st.button("💾 Save Assigned Groups to DB"):
-                try:
-                    conn = get_snowflake_connection()
-                    cursor = conn.cursor()
-                    for _, row in final_df.iterrows():
-                        cursor.execute("""
-                            UPDATE EVENT_REGISTRATION
-                            SET GROUP_NO = %s,
-                                UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                            WHERE id = %s
-                        """, (
-                            row["GROUP_NO"],
-                            row["ID"]
-                        ))
-                    conn.commit()
-                    st.success(f"✅ {len(final_df)} participants updated.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Failed to update: {e}")
-                finally:
-                    cursor.close()
-                    conn.close()
+                st.error(f"❌ Grouping or DB update error: {e}")
+            finally:
+                cursor.close()
+                conn.close()
