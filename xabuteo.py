@@ -8,6 +8,7 @@ query_params = st.query_params
 # Set test mode in session state based on URL param
 if "test" in query_params and query_params["test"][0] == "1":
     st.session_state["test_mode"] = True
+    st.write("Test Mode:", st.session_state.get("test_mode", False))
 else:
     st.session_state["test_mode"] = False
 
@@ -86,5 +87,4 @@ else:
         st.logout()
 
 from sidebar_utils import render_sidebar_widgets
-st.write("Test Mode:", st.session_state.get("test_mode", False))
 render_sidebar_widgets()
