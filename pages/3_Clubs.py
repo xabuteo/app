@@ -56,59 +56,59 @@ def show():
         else:
             st.warning("⚠️ View is missing required columns.")
             st.info("Columns found: " + ", ".join(actual_cols))
-
-        # --- Request New Club ---
-        st.markdown("---")
-        with st.expander("➕ Request New Club"):
-            # Associations dropdown
-            cursor.execute("""
-                SELECT id, association_name 
-                FROM associations 
-                ORDER BY association_name
-            """)
-            assoc_data = cursor.fetchall()
-            if assoc_data:
-                assoc_options = {name: id for id, name in assoc_data}
-                assoc_name = st.selectbox("Select Association", list(assoc_options.keys()))
-
-                if assoc_name:
-                    assoc_id = assoc_options[assoc_name]
-                    cursor.execute("""
-                        SELECT id, club_name 
-                        FROM clubs 
-                        WHERE association_id = %s 
-                        ORDER BY club_name
-                    """, (assoc_id,))
-                    club_data = cursor.fetchall()
-
-                    if club_data:
-                        club_options = {name: id for id, name in club_data}
-                        club_name = st.selectbox("Select Club", list(club_options.keys()))
-                        valid_from = st.date_input("Valid From", date.today())
-                        valid_to = st.date_input("Valid To", date.today())
-
-                        if st.button("Submit Club Request"):
-                            club_id = club_options[club_name]
-                            try:
-                                cursor.execute("""
-                                    INSERT INTO PLAYER_CLUB 
-                                    (PLAYER_ID, CLUB_ID, VALID_FROM, VALID_TO)
-                                    VALUES (%s, %s, %s, %s)
-                                """, (player_id, club_id, valid_from, valid_to))
-                                conn.commit()
-                                st.success("✅ Club request submitted successfully.")
-                            except Exception as e:
-                                st.error(f"❌ Failed to submit request: {e}")
-                    else:
-                        st.info("ℹ️ No clubs found for the selected association.")
-            else:
-                st.info("ℹ️ No associations available at the moment.")
-
     except Exception as e:
         st.error(f"❌ Error loading clubs: {e}")
     finally:
         cursor.close()
         conn.close()
+
+def show_request_club():
+    # --- Request New Club ---
+    st.markdown("---")
+    with st.expander("➕ Request New Club"):
+        # Associations dropdown
+        cursor.execute("""
+            SELECT id, association_name 
+            FROM associations 
+            ORDER BY association_name
+        """)
+        assoc_data = cursor.fetchall()
+        if assoc_data:
+            assoc_options = {name: id for id, name in assoc_data}
+            assoc_name = st.selectbox("Select Association", list(assoc_options.keys()))
+
+            if assoc_name:
+                assoc_id = assoc_options[assoc_name]
+                cursor.execute("""
+                    SELECT id, club_name 
+                    FROM clubs 
+                    WHERE association_id = %s 
+                    ORDER BY club_name
+                """, (assoc_id,))
+                club_data = cursor.fetchall()
+
+                if club_data:
+                    club_options = {name: id for id, name in club_data}
+                    club_name = st.selectbox("Select Club", list(club_options.keys()))
+                    valid_from = st.date_input("Valid From", date.today())
+                    valid_to = st.date_input("Valid To", date.today())
+
+                    if st.button("Submit Club Request"):
+                        club_id = club_options[club_name]
+                        try:
+                            cursor.execute("""
+                                INSERT INTO PLAYER_CLUB 
+                                (PLAYER_ID, CLUB_ID, VALID_FROM, VALID_TO)
+                                VALUES (%s, %s, %s, %s)
+                            """, (player_id, club_id, valid_from, valid_to))
+                            conn.commit()
+                            st.success("✅ Club request submitted successfully.")
+                        except Exception as e:
+                            st.error(f"❌ Failed to submit request: {e}")
+                else:
+                    st.info("ℹ️ No clubs found for the selected association.")
+        else:
+            st.info("ℹ️ No associations available at the moment.")
 
 def show_admin():
     if not st.user.is_logged_in:
@@ -211,6 +211,7 @@ def show_admin():
 if __name__ == "__main__":
     show()
     if st.session_state.get("test_mode"):
+        show_request_club()
         show_admin()
         from sidebar_utils import render_sidebar_widgets
         render_sidebar_widgets()
