@@ -210,6 +210,7 @@ def show_admin():
 # Required for multipage apps
 if __name__ == "__main__":
     show()
+    st.write("If you need to register or change clubs, please contact the club administrator.")
     if st.session_state.get("test_mode"):
         show_request_club()
         show_admin()
