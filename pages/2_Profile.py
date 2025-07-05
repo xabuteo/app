@@ -25,7 +25,7 @@ def show():
         cursor = conn.cursor()
 
         cursor.execute("""
-            SELECT first_name, last_name, date_of_birth, gender, email
+            SELECT first_name, last_name, date_of_birth, gender, email, fistf
             FROM registrations
             WHERE email = %s
         """, (current_email,))
@@ -35,7 +35,7 @@ def show():
             st.error("⚠️ No profile found for this user.")
             return
 
-        first_name, last_name, dob, gender, email = row
+        first_name, last_name, dob, gender, email, fistf = row
         initials = get_initials(first_name, last_name)
 
         # --- Avatar ---
@@ -78,6 +78,7 @@ def show():
         profile_row("Date of Birth", dob)
         profile_row("Gender", gender)
         profile_row("Email", email)
+        profile_row("FISTF Code", fistf)
 
         # --- Update Profile Form ---
         with st.expander("✏️ Update Profile"):
@@ -93,7 +94,8 @@ def show():
                 gender_options = ["M", "F", "Other"]
                 index = gender_options.index(gender) if gender in gender_options else 0
                 new_gender = st.selectbox("Gender", gender_options, index=index)
-
+                new_fistf = st.text_input("FISTF Code", value=fistf)
+                
                 submitted = st.form_submit_button("Update")
 
                 if submitted:
@@ -107,6 +109,7 @@ def show():
                                     last_name = %s,
                                     date_of_birth = %s,
                                     gender = %s,
+                                    fistf = %s,
                                     updated_at = CURRENT_TIMESTAMP(),
                                     updated_by = %s
                                 WHERE email = %s
@@ -115,6 +118,7 @@ def show():
                                 new_last,
                                 new_dob.strftime('%Y-%m-%d'),
                                 new_gender,
+                                new_fistf,
                                 current_email,  # updated_by
                                 current_email
                             ))
