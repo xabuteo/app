@@ -28,6 +28,7 @@ def show():
 
     if df.empty:
         st.info("No events found.")
+        new_event.add_new_event()
         return
 
     if not selected_event_id:
@@ -125,5 +126,6 @@ def show():
         new_event.add_new_event()
 
 show()
-from sidebar_utils import render_sidebar_widgets
-render_sidebar_widgets()
+if st.session_state.get("test_mode"):
+    from sidebar_utils import render_sidebar_widgets
+    render_sidebar_widgets()
