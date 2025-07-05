@@ -86,6 +86,6 @@ else:
     ):
         st.logout()
 
-if st.session_state["test_mode"] = Test:
+if st.session_state["test_mode"] = True:
     from sidebar_utils import render_sidebar_widgets
     render_sidebar_widgets()
