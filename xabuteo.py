@@ -3,6 +3,14 @@
 import streamlit as st
 from utils import get_snowflake_connection, ensure_profile_complete
 
+query_params = st.experimental_get_query_params()
+
+# Set test mode in session state based on URL param
+if "test" in query_params and query_params["test"][0] == "1":
+    st.session_state["test_mode"] = True
+else:
+    st.session_state["test_mode"] = False
+
 st.set_page_config(
     page_title="Xabuteo",
     page_icon="☝️",
@@ -78,4 +86,5 @@ else:
         st.logout()
 
 from sidebar_utils import render_sidebar_widgets
+st.write("Test Mode:", st.session_state.get("test_mode", False))
 render_sidebar_widgets()
