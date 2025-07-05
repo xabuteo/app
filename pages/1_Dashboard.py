@@ -1,8 +1,6 @@
 import streamlit as st
 from sidebar_utils import render_sidebar_widgets
 
-render_sidebar_widgets()
-
 # Page content
 st.title("📊 Dashboard")
 # Access control
@@ -25,3 +23,6 @@ else:
         use_container_width=True,
     ):
         st.logout()
+
+if st.session_state.get("test_mode"):
+    render_sidebar_widgets()
