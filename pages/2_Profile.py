@@ -130,4 +130,5 @@ def show():
         conn.close()
 
 show()
-render_sidebar_widgets()
+if st.session_state.get("test_mode"):
+    render_sidebar_widgets()
