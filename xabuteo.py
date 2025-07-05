@@ -3,7 +3,7 @@
 import streamlit as st
 from utils import get_snowflake_connection, ensure_profile_complete
 
-query_params = st.query_params()
+query_params = st.query_params
 
 # Set test mode in session state based on URL param
 if "test" in query_params and query_params["test"][0] == "1":
