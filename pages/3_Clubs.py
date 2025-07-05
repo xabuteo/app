@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 from utils import get_snowflake_connection, ensure_profile_complete
 from datetime import date
-from sidebar_utils import render_sidebar_widgets
-
-render_sidebar_widgets()
 
 def show():
     st.title("🏟️ My Clubs")
@@ -213,4 +210,8 @@ def show_admin():
 # Required for multipage apps
 if __name__ == "__main__":
     show()
-    show_admin()
+    if st.session_state.get("test_mode"):
+        show_admin()
+        from sidebar_utils import render_sidebar_widgets
+        render_sidebar_widgets()
+
