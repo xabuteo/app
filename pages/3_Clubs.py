@@ -111,39 +111,17 @@ def show_request_club():
             st.info("ℹ️ No associations available at the moment.")
 
 def show_admin():
-    if not st.user.is_logged_in:
-        st.warning("🔒 Please log in to access this page.")
+    club_ids = get_admin_club_ids()
+    if not club_ids:
+        st.warning("⛔ You are not currently an active club admin.")
         return
 
     conn = get_snowflake_connection()
     cursor = conn.cursor()
 
     try:
-        # Get user ID
-        cursor.execute("""
-            SELECT id FROM registrations WHERE email = %s
-        """, (st.user.email,))
-        user_row = cursor.fetchone()
-        if not user_row:
-            st.error("❌ User not found.")
-            return
-        user_id = user_row[0]
-
-        # Get list of active clubs this user administers
-        cursor.execute("""
-            SELECT club_id FROM club_user_admin 
-            WHERE (user_id = %s or 1=1) 
-            AND %s BETWEEN valid_from AND valid_to
-        """, (user_id, date.today()))
-        admin_club_rows = cursor.fetchall()
-        admin_club_ids = [row[0] for row in admin_club_rows]
-
-        if not admin_club_ids:
-            st.warning("⛔ You are not currently an active club admin.")
-            return
-
         # Fetch pending player club requests only for the admin's clubs
-        format_ids = ",".join(["%s"] * len(admin_club_ids))
+        format_ids = ",".join(["%s"] * len(club_ids))
         query = f"""
             SELECT pc.id, r.first_name || ' ' || r.last_name AS player_name, 
                    c.club_name, pc.valid_from, pc.valid_to, pc.player_status
@@ -153,7 +131,7 @@ def show_admin():
             WHERE pc.player_status = 'Pending' AND pc.club_id IN ({format_ids})
             ORDER BY pc.valid_from DESC
         """
-        cursor.execute(query, tuple(admin_club_ids))
+        cursor.execute(query, tuple(club_ids))
         rows = cursor.fetchall()
         cols = [desc[0].lower() for desc in cursor.description]
 
@@ -201,8 +179,6 @@ def show_admin():
                         st.warning(f"❌ Rejected {request['club_name']} for {request['player_name']}")
                         st.rerun()
 
-    except Exception as e:
-        st.error(f"❌ Error loading requests: {e}")
     finally:
         cursor.close()
         conn.close()
