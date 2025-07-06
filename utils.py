@@ -1,6 +1,7 @@
 import os
 import snowflake.connector
 import streamlit as st
+from datetime import date
 
 SNOWFLAKE_CONFIG = {
     'user': os.environ.get('user'),
