@@ -69,13 +69,13 @@ def add_new_event():
             
             col1, col2 = st.columns(2)
             with col1:
-                location = st.text_input("📍 Location")
+                location = st.text_input("Location")
             with col2:
                 club_names = list(club_name_to_id.keys())
             
                 if len(club_names) == 1:
                     selected_club_name = club_names[0]
-                    st.markdown(f"🏟️ **Host Club:** {selected_club_name}")
+                    st.markdown(f"Host Club:<br>{selected_club_name}", unsafe_allow_html=True)
                 else:
                     selected_club_name = st.selectbox("🏟️ Host Club", club_names)
             
