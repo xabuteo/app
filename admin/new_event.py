@@ -73,11 +73,14 @@ def add_new_event():
             with col2:
                 club_names = list(club_name_to_id.keys())
             
-                if len(club_names) == 1:
-                    selected_club_name = club_names[0]
-                    st.markdown(f"Host Club:<br>{selected_club_name}", unsafe_allow_html=True)
-                else:
-                    selected_club_name = st.selectbox("🏟️ Host Club", club_names)
+                # Auto-select if only one club
+                default_index = 0 if len(club_names) == 1 else None
+            
+                selected_club_name = st.selectbox(
+                    "Host Club", 
+                    club_names, 
+                    index=default_index
+                )
             
                 host_club_id = club_name_to_id[selected_club_name]
                 
