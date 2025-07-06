@@ -82,4 +82,30 @@ def get_userid():
         except:
             pass
 
+def get_admin_club_ids() -> list:
+    conn = get_snowflake_connection()
+    cursor = conn.cursor()
+    try:
+        # Get user ID from registrations table
+        cursor.execute("""
+            SELECT id FROM registrations WHERE email = %s
+        """, (st.user.email,))
+        user_row = cursor.fetchone()
+        if not user_row:
+            return []  # User not found
 
+        user_id = user_row[0]
+
+        # Get active admin club_ids
+        cursor.execute("""
+            SELECT club_id FROM club_user_admin 
+            WHERE user_id = %s
+            AND %s BETWEEN valid_from AND valid_to
+        """, (user_id, date.today()))
+        admin_club_rows = cursor.fetchall()
+
+        return [row[0] for row in admin_club_rows]
+
+    finally:
+        cursor.close()
+        conn.close()
