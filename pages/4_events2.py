@@ -65,13 +65,12 @@ def show():
     selection = st.data_editor(
         df_display,
         key="event_table",
-        disabled=True,
         hide_index=True,
-        selection_mode="single-row",
+        selection_mode=["multi-row", "multi-column"],
         on_select="rerun",
         use_container_width=True,
     )
-
+    
     # Handle new selection
     if selection and selection.get("rows"):
         selected_row_index = selection["rows"][0]
