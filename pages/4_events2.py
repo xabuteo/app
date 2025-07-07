@@ -18,7 +18,6 @@ if "df" not in st.session_state:
         st.session_state.df = pd.DataFrame(rows, columns=cols)
     except Exception as e:
         st.error(f"Error loading events: {e}")
-        return
     finally:
         cursor.close()
         conn.close()
