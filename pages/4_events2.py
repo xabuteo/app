@@ -5,7 +5,6 @@ from tabs import Details, Register, Tables, Scores, Result, Admin
 from admin import new_event
 
 st.set_page_config(page_title="Events", layout="wide")
-
 st.title("📅 Events")
 
 # Load events
@@ -18,74 +17,81 @@ try:
     df = pd.DataFrame(rows, columns=cols)
 except Exception as e:
     st.error(f"Error loading events: {e}")
-    return
+    df = pd.DataFrame()
 finally:
     cursor.close()
     conn.close()
 
+# Handle no data
 if df.empty:
     st.info("No events found.")
     new_event.add_new_event()
-    return
 
-# Filter controls (only when not viewing specific event)
-if "selected_event_id" not in st.session_state:
-    st.session_state.selected_event_id = None
-
-if not st.session_state.selected_event_id:
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        title_filter = st.text_input("Search by Title")
-    with col2:
-        type_filter = st.selectbox("Event Type", ["All"] + sorted(df["EVENT_TYPE"].dropna().unique()))
-    with col3:
-        status_filter = st.selectbox("Event Status", ["All"] + sorted(df["EVENT_STATUS"].dropna().unique()))
-
-    if title_filter:
-        df = df[df["EVENT_TITLE"].str.contains(title_filter, case=False, na=False)]
-    if type_filter != "All":
-        df = df[df["EVENT_TYPE"] == type_filter]
-    if status_filter != "All":
-        df = df[df["EVENT_STATUS"] == status_filter]
-
-    display_cols = [
-        "ID", "EVENT_TITLE", "EVENT_TYPE", "EVENT_START_DATE", "EVENT_END_DATE",
-        "EVENT_LOCATION", "EVENT_STATUS"
-    ]
-    df_display = df[display_cols].copy()
-    df_display["EVENT_START_DATE"] = pd.to_datetime(df_display["EVENT_START_DATE"]).dt.strftime('%Y-%m-%d')
-    df_display["EVENT_END_DATE"] = pd.to_datetime(df_display["EVENT_END_DATE"]).dt.strftime('%Y-%m-%d')
-
-    # Display editable table with single-row selection
-    selection = st.dataframe(
-        df_display,
-        key="event_table",
-        hide_index=True,
-        selection_mode="single-row",  # single row selection
-        on_select="rerun",
-        use_container_width=True,
-    )
-
-# Handle new selection
-if selection and selection.get("rows"):
-    selected_row_index = selection["rows"][0]
-    selected_event_id = df_display.iloc[selected_row_index]["ID"]
-    if selected_event_id != st.session_state.get("selected_event_id"):
-        st.session_state["selected_event_id"] = selected_event_id
-        st.rerun()
-
-selected_event_id = st.session_state.get("selected_event_id")
 else:
-    # Show Back button when event is selected
-    st.button("🔙 Back to Event List", on_click=lambda: st.session_state.pop("selected_event_id"))
+    if "selected_event_id" not in st.session_state:
+        st.session_state.selected_event_id = None
 
-    selected_event = df[df["ID"] == selected_event_id].iloc[0].to_dict()
-    TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT", "ADMIN"])
-    PAGES = [Details, Register, Tables, Scores, Result, Admin]
-    for tab, page_module in zip(TABS, PAGES):
-        with tab:
-            page_module.page(selected_event)
+    selected_event_id = st.session_state.selected_event_id
 
+    if not selected_event_id:
+        # Filters
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            title_filter = st.text_input("Search by Title")
+        with col2:
+            type_filter = st.selectbox("Event Type", ["All"] + sorted(df["EVENT_TYPE"].dropna().unique()))
+        with col3:
+            status_filter = st.selectbox("Event Status", ["All"] + sorted(df["EVENT_STATUS"].dropna().unique()))
+
+        df_filtered = df.copy()
+
+        if title_filter:
+            df_filtered = df_filtered[df_filtered["EVENT_TITLE"].str.contains(title_filter, case=False, na=False)]
+        if type_filter != "All":
+            df_filtered = df_filtered[df_filtered["EVENT_TYPE"] == type_filter]
+        if status_filter != "All":
+            df_filtered = df_filtered[df_filtered["EVENT_STATUS"] == status_filter]
+
+        if df_filtered.empty:
+            st.info("No events match the filters.")
+        else:
+            display_cols = [
+                "ID", "EVENT_TITLE", "EVENT_TYPE", "EVENT_START_DATE", "EVENT_END_DATE",
+                "EVENT_LOCATION", "EVENT_STATUS"
+            ]
+            df_display = df_filtered[display_cols].copy()
+            df_display["EVENT_START_DATE"] = pd.to_datetime(df_display["EVENT_START_DATE"]).dt.strftime('%Y-%m-%d')
+            df_display["EVENT_END_DATE"] = pd.to_datetime(df_display["EVENT_END_DATE"]).dt.strftime('%Y-%m-%d')
+
+            selection = st.dataframe(
+                df_display,
+                selection_mode="single-row",
+                on_select="rerun",
+                hide_index=True,
+                use_container_width=True,
+                key="event_table"
+            )
+
+            if selection and selection.get("rows"):
+                row_index = selection["rows"][0]
+                selected_id = df_display.iloc[row_index]["ID"]
+                st.session_state.selected_event_id = selected_id
+                st.rerun()
+
+            new_event.add_new_event()
+
+    else:
+        # Back button
+        st.button("🔙 Back to Event List", on_click=lambda: st.session_state.pop("selected_event_id"))
+
+        selected_event = df[df["ID"] == selected_event_id].iloc[0].to_dict()
+        TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT", "ADMIN"])
+        PAGES = [Details, Register, Tables, Scores, Result, Admin]
+        for tab, page_module in zip(TABS, PAGES):
+            with tab:
+                page_module.page(selected_event)
+
+# Optional test mode
 if st.session_state.get("test_mode"):
     from sidebar_utils import render_sidebar_widgets
     render_sidebar_widgets()
