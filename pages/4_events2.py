@@ -62,7 +62,7 @@ else:
             df_display = df_filtered[display_cols].copy()
             df_display["EVENT_START_DATE"] = pd.to_datetime(df_display["EVENT_START_DATE"]).dt.strftime('%Y-%m-%d')
             df_display["EVENT_END_DATE"] = pd.to_datetime(df_display["EVENT_END_DATE"]).dt.strftime('%Y-%m-%d')
-
+            
             selection = st.dataframe(
                 df_display,
                 selection_mode="single-row",
@@ -73,12 +73,12 @@ else:
             )
             
             if selection and selection.get("rows"):
-                row_index = selection["rows"][0]  # Row index in df
-                selected_id = df_display.iloc[row_index]["ID"]
+                row_index = selection["rows"][0]  # Row index in df_display
+                selected_id = df_display.iloc[row_index]["ID"]  # ✅ Use df_display here!
                 st.session_state["selected_event_id"] = selected_id
             
-            selection.selection
-            st.write("Selected Event:", st.session_state.get("selected_event_id", False))
+            # Optional: debug output
+            st.write("Selected Event ID:", st.session_state.get("selected_event_id", "None"))
 
             new_event.add_new_event()
 
