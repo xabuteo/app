@@ -1,6 +1,10 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+from utils import get_snowflake_connection
+from tabs import Details, Register, Tables, Scores, Result, Admin
+from admin import new_event
+
+st.set_page_config(page_title="Events", layout="wide")
 
 if "df" not in st.session_state:
     st.session_state.df = pd.DataFrame(
