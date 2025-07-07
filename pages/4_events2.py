@@ -11,7 +11,7 @@ event = st.dataframe(
     st.session_state.df,
     key="data",
     on_select="rerun",
-    selection_mode=["multi-row", "multi-column"],
+    selection_mode="single-row",
 )
 
 event.selection
