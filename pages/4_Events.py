@@ -3,6 +3,7 @@ import pandas as pd
 from utils import get_snowflake_connection
 from tabs import Details, Register, Tables, Scores, Result, Admin
 from admin import new_event
+from utils import get_admin_club_ids
 
 st.set_page_config(page_title="Events", layout="wide")
 st.title("📅 Events")
@@ -19,6 +20,7 @@ def load_events():
     return pd.DataFrame(rows, columns=cols)
 
 df = load_events()
+admin_club_ids = get_admin_club_ids()
 
 if df.empty:
     st.info("No events found.")
@@ -37,9 +39,17 @@ else:
             title_filter = st.text_input("Search by Title")
         with col2:
             type_filter = st.selectbox("Event Type", ["All"] + sorted(df["EVENT_TYPE"].dropna().unique()))
+        # Determine status options
+        if admin_club_ids:
+            # Admin user – show all statuses
+            status_options = sorted(df["EVENT_STATUS"].dropna().unique())
+        else:
+            # Not admin – exclude 'Pending' and 'Cancelled'
+            status_options = sorted(df[~df["EVENT_STATUS"].isin(["Pending", "Cancelled"])]["EVENT_STATUS"].dropna().unique())
+        
         with col3:
-            status_filter = st.selectbox("Event Status", ["All"] + sorted(df["EVENT_STATUS"].dropna().unique()))
-
+            status_filter = st.selectbox("Event Status", ["All"] + status_options)
+            
         df_filtered = df.copy()
 
         if title_filter:
