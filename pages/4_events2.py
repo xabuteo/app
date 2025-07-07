@@ -71,13 +71,14 @@ else:
                 use_container_width=True,
                 key="event_table"
             )
+            
             if selection and selection.get("rows"):
-                row_index = selection["rows"][0]
-                selected_id = df_display.iloc[row_index]["ID"]
-                st.session_state.selected_event_id = selected_id
-                st.rerun()
+                row_index = selection["rows"][0]  # Row index in df
+                selected_id = df.iloc[row_index]["ID"]
+                st.session_state["selected_event_id"] = selected_id
+            
             selection.selection
-            st.write("Selected Event:", st.session_state.get("selected_event_id", False), row_index)
+            st.write("Selected Event:", st.session_state.get("selected_event_id", False))
 
             new_event.add_new_event()
 
