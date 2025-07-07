@@ -71,11 +71,18 @@ else:
                 use_container_width=True,
                 key="event_table"
             )
-            
-            if selection and selection.get("rows"):
-                row_index = selection["rows"][0]  # Row index in df_display
-                selected_id = df_display.iloc[row_index]["ID"]  # ✅ Use df_display here!
-                st.session_state["selected_event_id"] = selected_id
+
+            # Capture selection only on the first interaction (store it in session_state)
+            if (
+                selection
+                and "event_table" in st.session_state
+                and selection.get("rows")
+                and st.session_state.selected_event_id is None
+            ):
+                row_index = selection["rows"][0]
+                selected_id = df_display.iloc[row_index]["ID"]
+                st.session_state.selected_event_id = selected_id
+                st.rerun()
             
             # Optional: debug output
             st.write("Selected Event ID:", st.session_state.get("selected_event_id", "None"))
