@@ -72,16 +72,18 @@ else:
                 key="event_table"
             )
 
-            # Capture selection only on the first interaction (store it in session_state)
+            # Detect selection and store in session state (only during select event)
+            selection_data = st.session_state.get("event_table")
+
             if (
-                selection
-                and "event_table" in st.session_state
-                and selection.get("rows")
-                and st.session_state.selected_event_id is None
+                selection_data
+                and "selection" in selection_data
+                and selection_data["selection"].get("rows")
+                and st.session_state.get("selected_event_id") is None
             ):
-                row_index = selection["rows"][0]
+                row_index = selection_data["selection"]["rows"][0]
                 selected_id = df_display.iloc[row_index]["ID"]
-                st.session_state.selected_event_id = selected_id
+                st.session_state["selected_event_id"] = selected_id
                 st.rerun()
             
             # Optional: debug output
