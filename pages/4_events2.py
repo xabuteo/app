@@ -7,22 +7,19 @@ from admin import new_event
 st.set_page_config(page_title="Events", layout="wide")
 st.title("📅 Events")
 
-# Load events
-try:
+@st.cache_data(show_spinner=False)
+def load_events():
     conn = get_snowflake_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM events_v ORDER BY EVENT_START_DATE DESC")
     rows = cursor.fetchall()
     cols = [desc[0] for desc in cursor.description]
-    df = pd.DataFrame(rows, columns=cols)
-except Exception as e:
-    st.error(f"Error loading events: {e}")
-    df = pd.DataFrame()
-finally:
     cursor.close()
     conn.close()
+    return pd.DataFrame(rows, columns=cols)
 
-# Handle no data
+df = load_events()
+
 if df.empty:
     st.info("No events found.")
     new_event.add_new_event()
@@ -72,7 +69,6 @@ else:
                 key="event_table"
             )
 
-            # Detect selection and store in session state (only during select event)
             selection_data = st.session_state.get("event_table")
 
             if (
@@ -83,26 +79,22 @@ else:
             ):
                 row_index = selection_data["selection"]["rows"][0]
                 selected_id = df_display.iloc[row_index]["ID"]
-                st.session_state["selected_event_id"] = selected_id
+                st.session_state.selected_event_id = selected_id
                 st.rerun()
-            
-            # Optional: debug output
-            st.write("Selected Event ID:", st.session_state.get("selected_event_id", "None"))
 
             new_event.add_new_event()
 
     else:
-        # Back button
         st.button("🔙 Back to Event List", on_click=lambda: st.session_state.pop("selected_event_id"))
 
         selected_event = df[df["ID"] == selected_event_id].iloc[0].to_dict()
-        TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT", "ADMIN"])
-        PAGES = [Details, Register, Tables, Scores, Result, Admin]
-        for tab, page_module in zip(TABS, PAGES):
-            with tab:
-                page_module.page(selected_event)
+        with st.spinner("Loading event details..."):
+            TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT", "ADMIN"])
+            PAGES = [Details, Register, Tables, Scores, Result, Admin]
+            for tab, page_module in zip(TABS, PAGES):
+                with tab:
+                    page_module.page(selected_event)
 
-# Optional test mode
 if st.session_state.get("test_mode"):
     from sidebar_utils import render_sidebar_widgets
     render_sidebar_widgets()
