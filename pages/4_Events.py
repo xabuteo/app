@@ -21,6 +21,7 @@ def load_events():
 
 df = load_events()
 admin_club_ids = get_admin_club_ids()
+is_admin = bool(admin_club_ids)
 
 if df.empty:
     st.info("No events found.")
@@ -49,8 +50,12 @@ else:
         
         with col3:
             status_filter = st.selectbox("Event Status", ["All"] + status_options)
+                        
+            df_filtered = df.copy()
             
-        df_filtered = df.copy()
+            # For non-admins, exclude Pending and Cancelled events
+            if not is_admin:
+                df_filtered = df_filtered[~df_filtered["EVENT_STATUS"].isin(["Pending", "Cancelled"])]
 
         if title_filter:
             df_filtered = df_filtered[df_filtered["EVENT_TITLE"].str.contains(title_filter, case=False, na=False)]
