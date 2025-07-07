@@ -74,7 +74,7 @@ else:
             
             if selection and selection.get("rows"):
                 row_index = selection["rows"][0]  # Row index in df
-                selected_id = df.iloc[row_index]["ID"]
+                selected_id = df_display.iloc[row_index]["ID"]
                 st.session_state["selected_event_id"] = selected_id
             
             selection.selection
