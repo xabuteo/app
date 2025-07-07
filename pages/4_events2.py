@@ -71,7 +71,7 @@ else:
                 use_container_width=True,
                 key="event_table"
             )
-
+            selection.selection
             if selection and selection.get("rows"):
                 row_index = selection["rows"][0]
                 selected_id = df_display.iloc[row_index]["ID"]
