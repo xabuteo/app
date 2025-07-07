@@ -65,7 +65,6 @@ def show():
     selection = st.dataframe(
         df_display,
         key="event_table",
-        disabled=True,
         hide_index=True,
         selection_mode="single-row",  # single row selection
         on_select="rerun",
