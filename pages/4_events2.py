@@ -77,7 +77,7 @@ else:
                 st.session_state.selected_event_id = selected_id
                 st.rerun()
             selection.selection
-            st.write("Selected Event:", st.session_state.get("selected_event_id", False))
+            st.write("Selected Event:", st.session_state.get("selected_event_id", False), row_index)
 
             new_event.add_new_event()
 
