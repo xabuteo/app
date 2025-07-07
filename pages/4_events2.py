@@ -67,7 +67,7 @@ def show():
         key="event_table",
         disabled=True,
         hide_index=True,
-        selection_mode="single-row"
+        selection_mode="single-row",
         on_select="rerun",
         use_container_width=True,
     )
