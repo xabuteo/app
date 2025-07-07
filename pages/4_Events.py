@@ -8,18 +8,20 @@ from utils import get_admin_club_ids
 st.set_page_config(page_title="Events", layout="wide")
 st.title("📅 Events")
 
-@st.cache_data(show_spinner=False)
-def load_events():
+try:
     conn = get_snowflake_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM events_v ORDER BY EVENT_START_DATE DESC")
     rows = cursor.fetchall()
     cols = [desc[0] for desc in cursor.description]
+    df = pd.DataFrame(rows, columns=cols)
+except Exception as e:
+    st.error(f"Error loading events: {e}")
+    df = pd.DataFrame()
+finally:
     cursor.close()
     conn.close()
-    return pd.DataFrame(rows, columns=cols)
 
-df = load_events()
 admin_club_ids = get_admin_club_ids()
 is_admin = bool(admin_club_ids)
 
