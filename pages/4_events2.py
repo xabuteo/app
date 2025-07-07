@@ -5,11 +5,23 @@ from tabs import Details, Register, Tables, Scores, Result, Admin
 from admin import new_event
 
 st.set_page_config(page_title="Events", layout="wide")
+st.title("📅 Events")
 
 if "df" not in st.session_state:
-    st.session_state.df = pd.DataFrame(
-        np.random.randn(12, 5), columns=["a", "b", "c", "d", "e"]
-    )
+    # Load events
+    try:
+        conn = get_snowflake_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM events_v ORDER BY EVENT_START_DATE DESC")
+        rows = cursor.fetchall()
+        cols = [desc[0] for desc in cursor.description]
+        st.session_state.df = pd.DataFrame(rows, columns=cols)
+    except Exception as e:
+        st.error(f"Error loading events: {e}")
+        return
+    finally:
+        cursor.close()
+        conn.close()
 
 event = st.dataframe(
     st.session_state.df,
