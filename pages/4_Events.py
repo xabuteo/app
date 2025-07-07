@@ -65,7 +65,7 @@ else:
             df_filtered = df_filtered[df_filtered["EVENT_STATUS"] == status_filter]
 
         if df_filtered.empty:
-            st.info("No events match the filters.")
+            st.info("No events found.")
         else:
             display_cols = [
                 "ID", "EVENT_TITLE", "EVENT_TYPE", "EVENT_START_DATE", "EVENT_END_DATE",
@@ -104,8 +104,12 @@ else:
 
         selected_event = df[df["ID"] == selected_event_id].iloc[0].to_dict()
         with st.spinner("Loading event details..."):
-            TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT", "ADMIN"])
-            PAGES = [Details, Register, Tables, Scores, Result, Admin]
+            if is_admin:
+                TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT", "ADMIN"])
+                PAGES = [Details, Register, Tables, Scores, Result, Admin]
+            else:
+                TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT"])
+                PAGES = [Details, Register, Tables, Scores, Result]                
             for tab, page_module in zip(TABS, PAGES):
                 with tab:
                     page_module.page(selected_event)
