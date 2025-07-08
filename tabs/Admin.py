@@ -1,5 +1,4 @@
 import streamlit as st
-from utils import get_snowflake_connection
 from admin import event_status, seed_and_group, auto_group, generate_matches
 
 def page(selected_event):
