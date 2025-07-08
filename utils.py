@@ -31,7 +31,7 @@ def ensure_profile_complete():
         st.warning("🔐 You are not logged in.")
         st.stop()
 
-    conn = get_snowflake_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
@@ -53,16 +53,13 @@ def ensure_profile_complete():
         cursor.close()
         conn.close()
 
-import streamlit as st
-from utils import get_snowflake_connection
-
 def get_userid():
     try:
         if not getattr(st, "user", None) or not getattr(st.user, "email", None):
             st.warning("User not logged in or email not available.")
             return None
 
-        conn = get_snowflake_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         query = """
@@ -87,7 +84,7 @@ def get_userid():
             pass
 
 def get_admin_club_ids() -> list:
-    conn = get_snowflake_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
     try:
         # Get user ID from registrations table
