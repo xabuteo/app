@@ -4,6 +4,7 @@ streamlit-aggrid
 streamlit-auth0
 Authlib
 snowflake-connector-python
+mysql-connector-python
 #bcrypt
 #requests
 streamlit-extras
