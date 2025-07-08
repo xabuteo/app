@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from utils import get_snowflake_connection, ensure_profile_complete, get_admin_club_ids
+from utils import get_db_connection, ensure_profile_complete, get_admin_club_ids
 from datetime import date
 
 def show():
@@ -8,7 +8,7 @@ def show():
 
     ensure_profile_complete()
 
-    conn = get_snowflake_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
@@ -116,7 +116,7 @@ def show_admin():
         st.warning("⛔ You are not currently an active club admin.")
         return
 
-    conn = get_snowflake_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
