@@ -1,6 +1,6 @@
 import streamlit as st
 import datetime
-from utils import get_snowflake_connection
+from utils import get_db_connection
 from sidebar_utils import render_sidebar_widgets
 
 today = datetime.date.today()
@@ -21,7 +21,7 @@ def show():
     current_email = st.user.email
 
     try:
-        conn = get_snowflake_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         cursor.execute("""
