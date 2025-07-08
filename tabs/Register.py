@@ -34,7 +34,7 @@ def page(selected_event):
                     SELECT first_name, last_name, date_of_birth, gender, club_id, club_name
                     FROM player_club_v
                     WHERE id = %s
-                      AND player_status = 'Approved'
+                      AND player_status in ('Active', 'Approved')
                       AND %s BETWEEN valid_from AND valid_to
                     LIMIT 1
                 """, (user_id, event_start_date))
