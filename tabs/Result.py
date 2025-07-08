@@ -1,12 +1,12 @@
 import streamlit as st
 import pandas as pd
-from utils import get_snowflake_connection, get_userid
+from utils import get_db_connection, get_userid
 
 def page(selected_event):
     event_id = selected_event.get("ID")
 
     try:
-        conn = get_snowflake_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
             SELECT *
