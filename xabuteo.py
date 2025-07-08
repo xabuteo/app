@@ -1,7 +1,7 @@
 # xabuteo.py
 
 import streamlit as st
-from utils import get_snowflake_connection, ensure_profile_complete
+from utils import get_db_connection, ensure_profile_complete
 
 query_params = st.query_params
 
@@ -46,7 +46,7 @@ else:
         last_name = ""
 
     # Insert into Snowflake (if new)
-    conn = get_snowflake_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
