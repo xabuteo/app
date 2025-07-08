@@ -1,25 +1,28 @@
 import os
 import snowflake.connector
+import mysql.connector
 import streamlit as st
 from datetime import date
 
-SNOWFLAKE_CONFIG = {
-    'user': os.environ.get('user'),
-    'password': os.environ.get('password'),
-    'account': os.environ.get('account'),
-    'warehouse': os.environ.get('warehouse'),
-    'database': os.environ.get('database'),
-    'schema': os.environ.get('schema')
-}
-
+# Snowflake connection from st.secrets
 def get_snowflake_connection():
     return snowflake.connector.connect(
-        user=SNOWFLAKE_CONFIG['user'],
-        password=SNOWFLAKE_CONFIG['password'],
-        account=SNOWFLAKE_CONFIG['account'],
-        warehouse=SNOWFLAKE_CONFIG['warehouse'],
-        database=SNOWFLAKE_CONFIG['database'],
-        schema=SNOWFLAKE_CONFIG['schema']
+        user=st.secrets["snowflake"]["user"],
+        password=st.secrets["snowflake"]["password"],
+        account=st.secrets["snowflake"]["account"],
+        warehouse=st.secrets["snowflake"]["warehouse"],
+        database=st.secrets["snowflake"]["database"],
+        schema=st.secrets["snowflake"]["schema"]
+    )
+
+# MySQL connection from st.secrets
+def get_mysql_connection():
+    return mysql.connector.connect(
+        host=st.secrets["mysql"]["host"],
+        port=st.secrets["mysql"]["port"],
+        user=st.secrets["mysql"]["user"],
+        password=st.secrets["mysql"]["password"],
+        database=st.secrets["mysql"]["database"]
     )
 
 def ensure_profile_complete():
