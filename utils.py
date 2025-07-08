@@ -16,7 +16,7 @@ def get_snowflake_connection():
     )
 
 # MySQL connection from st.secrets
-def get_mysql_connection():
+def get_db_connection():
     return mysql.connector.connect(
         host=st.secrets["mysql"]["host"],
         port=st.secrets["mysql"]["port"],
