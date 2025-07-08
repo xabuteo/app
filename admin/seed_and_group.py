@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
-from utils import get_snowflake_connection
+from utils import get_db_connection
 
 def render(event_id):
     with st.expander("➕ Seeding and Group Assignment", expanded=False):
@@ -10,7 +10,7 @@ def render(event_id):
             st.session_state.selected_competition = "Open"
 
         try:
-            conn = get_snowflake_connection()
+            conn = get_db_connection()
             cursor = conn.cursor()
 
             # Get competition list
@@ -91,7 +91,7 @@ def render(event_id):
                 if changed_rows.empty:
                     st.warning("No changes detected.")
                 else:
-                    conn = get_snowflake_connection()
+                    conn = get_db_connection()
                     cursor = conn.cursor()
                     for _, row in changed_rows.iterrows():
                         try:
