@@ -1,5 +1,5 @@
 import streamlit as st
-from utils import get_snowflake_connection
+from utils import get_db_connection
 
 def render(event_id, event_status, user_email):
     cols = st.columns(5)  
@@ -21,7 +21,7 @@ def render(event_id, event_status, user_email):
 
 def update_status(event_id, user_email, new_status):
     try:
-        conn = get_snowflake_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
             UPDATE EVENTS
