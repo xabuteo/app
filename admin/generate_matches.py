@@ -1,12 +1,12 @@
 import streamlit as st
 import pandas as pd
-from utils import get_snowflake_connection
+from utils import get_db_connection
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import string
 import random
 
 def generate_knockout_placeholders(num_groups):
-    conn = get_snowflake_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("""
@@ -25,7 +25,7 @@ def generate_knockout_placeholders(num_groups):
         conn.close()
         
 def update_knockout_placeholders(event_id):
-    conn = get_snowflake_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("""
@@ -68,7 +68,7 @@ def update_knockout_placeholders(event_id):
 
 def render_match_table(event_id, selected_comp):
     try:
-        conn = get_snowflake_connection()
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
             SELECT id, competition_type, round_no, group_no,
@@ -111,7 +111,7 @@ def render_match_table(event_id, selected_comp):
 def render_match_generation(event_id):
     with st.expander("🎾 Match Generation & Scoring"):
         try:
-            conn = get_snowflake_connection()
+            conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("SELECT DISTINCT competition_type FROM event_registration WHERE event_id = %s", (event_id,))
             competitions = [row[0] for row in cursor.fetchall()]
@@ -133,7 +133,7 @@ def render_match_generation(event_id):
         if match_count > 0:
             if st.button("🔁 Re-Generate Matches (This will delete all existing!)"):
                 try:
-                    conn = get_snowflake_connection()
+                    conn = get_db_connection()
                     cursor = conn.cursor()
                     cursor.execute("DELETE FROM EVENT_MATCHES WHERE event_id = %s AND competition_type = %s", (event_id, selected_comp))
                     conn.commit()
@@ -147,7 +147,7 @@ def render_match_generation(event_id):
                     conn.close()
 
         try:
-            conn = get_snowflake_connection()
+            conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT id, user_id, club_id, group_no, competition_type
@@ -245,7 +245,7 @@ def render_match_generation(event_id):
                         "STATUS": "Pending"
                     })
 
-                conn = get_snowflake_connection()
+                conn = get_db_connection()
                 cursor = conn.cursor()
                 for row in match_rows:
                     cursor.execute("""
@@ -274,7 +274,7 @@ def render_match_generation(event_id):
 
         if updated_df is not None and st.button("💾 Save Scores"):
             try:
-                conn = get_snowflake_connection()
+                conn = get_db_connection()
                 cursor = conn.cursor()
                 for _, row in updated_df.iterrows():
                     if pd.isna(row["PLAYER1_GOALS"]) or pd.isna(row["PLAYER2_GOALS"]):
@@ -304,7 +304,7 @@ def render_match_generation(event_id):
 
         if updated_df is not None and st.button("🎲 Simulate Scores"):
             try:
-                conn = get_snowflake_connection()
+                conn = get_db_connection()
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT ID FROM EVENT_MATCHES
