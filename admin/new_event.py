@@ -1,5 +1,5 @@
 import streamlit as st
-from utils import get_snowflake_connection, get_admin_club_ids
+from utils import get_db_connection, get_admin_club_ids
 
 def add_new_event():
     club_ids = get_admin_club_ids()
@@ -12,7 +12,7 @@ def add_new_event():
         with st.form("add_event_form"):
             # Fetch host clubs
             try:
-                conn = get_snowflake_connection()
+                conn = get_db_connection()
                 cursor = conn.cursor()
                 format_ids = ",".join(["%s"] * len(club_ids))
                 cursor.execute(
@@ -38,7 +38,7 @@ def add_new_event():
                 title = st.text_input("Event Title")
             with col2:
                 try:
-                    conn = get_snowflake_connection()
+                    conn = get_db_connection()
                     cursor = conn.cursor()
                     cursor.execute("""
                         SELECT list_value
@@ -101,7 +101,7 @@ def add_new_event():
 
             if submit:
                 try:
-                    conn = get_snowflake_connection()
+                    conn = get_db_connection()
                     cursor = conn.cursor()
                     cursor.execute("""
                         INSERT INTO events (
