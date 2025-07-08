@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import string
-from utils import get_snowflake_connection
+from utils import get_db_connection
 
 def render(event_id, user_email):
     with st.expander("🎯 Auto Grouping"):
@@ -10,7 +10,7 @@ def render(event_id, user_email):
             st.session_state.selected_competition = "Open"
 
         try:
-            conn = get_snowflake_connection()
+            conn = get_db_connection()
             cursor = conn.cursor()
 
             # Fetch competition types
@@ -92,7 +92,7 @@ def render(event_id, user_email):
                 st.session_state.final_group_df = final_df
 
                 # Save to DB immediately
-                conn = get_snowflake_connection()
+                conn = get_db_connection()
                 cursor = conn.cursor()
                 for _, row in final_df.iterrows():
                     cursor.execute("""
