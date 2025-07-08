@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from utils import get_snowflake_connection, get_userid
+from utils import get_db_connection, get_userid
 
 def page(selected_event):
     event_status = selected_event.get("EVENT_STATUS", "")
@@ -28,7 +28,7 @@ def page(selected_event):
 
             # Fetch player info
             try:
-                conn = get_snowflake_connection()
+                conn = get_db_connection()
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT first_name, last_name, date_of_birth, gender, club_id, club_name
@@ -78,7 +78,7 @@ def page(selected_event):
                     return
             
                 try:
-                    conn = get_snowflake_connection()
+                    conn = get_db_connection()
                     cs = conn.cursor()
             
                     registered_comps = []
@@ -127,7 +127,7 @@ def page(selected_event):
     # ✅ Second expander: show registration view
     with st.expander(f"📑 View Registered Competitors", expanded=(event_status in ("Closed", "Complete"))):
         try:
-            conn = get_snowflake_connection()
+            conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT user_id, email, first_name, last_name, club_name, competition_type
@@ -167,7 +167,7 @@ def page(selected_event):
             comp_to_copy = st.selectbox("Select competition to copy from test event (1001)", competitions)
             if st.button("🧪 Populate Test Competitors"):
                 try:
-                    conn = get_snowflake_connection()
+                    conn = get_db_connection()
                     cursor = conn.cursor()
                     cursor.execute(f"""
                         INSERT INTO EVENT_REGISTRATION(user_id, club_id, event_id, competition_type)
