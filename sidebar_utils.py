@@ -82,8 +82,8 @@ def render_sidebar_widgets():
                 st.session_state["bug_severity_index"] = ["Low", "Medium", "High"].index(severity)
 
                 try:
-                    from utils import get_snowflake_connection
-                    conn = get_snowflake_connection()
+                    from utils import get_db_connection
+                    conn = get_db_connection()
                     cursor = conn.cursor()
 
                     # Get email if logged in
