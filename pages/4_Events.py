@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from utils import get_snowflake_connection
+from utils import get_db_connection
 from tabs import Details, Register, Tables, Scores, Result, Admin
 from admin import new_event
 from utils import get_admin_club_ids
@@ -9,7 +9,7 @@ st.set_page_config(page_title="Events", layout="wide")
 st.title("📅 Events")
 
 try:
-    conn = get_snowflake_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM events_v ORDER BY EVENT_START_DATE DESC")
     rows = cursor.fetchall()
