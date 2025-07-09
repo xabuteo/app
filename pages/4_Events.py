@@ -95,7 +95,7 @@ else:
                 and st.session_state.get("selected_event_id") is None
             ):
                 row_index = selection_data["selection"]["rows"][0]
-                selected_id = df_display.iloc[row_index]["ID"]
+                selected_id = df_display.iloc[row_index]["id"]
                 st.session_state.selected_event_id = selected_id
                 st.rerun()
 
@@ -104,7 +104,7 @@ else:
     else:
         st.button("🔙 Back to Event List", on_click=lambda: st.session_state.pop("selected_event_id"))
 
-        selected_event = df[df["ID"] == selected_event_id].iloc[0].to_dict()
+        selected_event = df[df["id"] == selected_event_id].iloc[0].to_dict()
         with st.spinner("Loading event details..."):
             if is_admin:
                 TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT", "ADMIN"])
