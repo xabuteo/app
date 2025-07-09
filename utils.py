@@ -5,7 +5,7 @@ import streamlit as st
 from datetime import date
 
 # Snowflake connection from st.secrets
-def get_db_connectionX():
+def get_db_connection():
     return snowflake.connector.connect(
         user=st.secrets["snowflake"]["user"],
         password=st.secrets["snowflake"]["password"],
@@ -16,7 +16,7 @@ def get_db_connectionX():
     )
 
 # MySQL connection from st.secrets
-def get_db_connection():
+def get_db_connectionX():
     return mysql.connector.connect(
         host=st.secrets["mysql"]["host"],
         port=st.secrets["mysql"]["port"],
