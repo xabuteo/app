@@ -11,7 +11,7 @@ st.title("📅 Events")
 try:
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM events_v ORDER BY EVENT_START_DATE DESC")
+    cursor.execute("SELECT * FROM events_v ORDER BY event_start_date DESC")
     rows = cursor.fetchall()
     cols = [desc[0] for desc in cursor.description]
     df = pd.DataFrame(rows, columns=cols)
@@ -41,14 +41,14 @@ else:
         with col1:
             title_filter = st.text_input("Search by Title")
         with col2:
-            type_filter = st.selectbox("Event Type", ["All"] + sorted(df["EVENT_TYPE"].dropna().unique()))
+            type_filter = st.selectbox("Event Type", ["All"] + sorted(df["event_type"].dropna().unique()))
         # Determine status options
         if admin_club_ids:
             # Admin user – show all statuses
-            status_options = sorted(df["EVENT_STATUS"].dropna().unique())
+            status_options = sorted(df["event_status"].dropna().unique())
         else:
             # Not admin – exclude 'Pending' and 'Cancelled'
-            status_options = sorted(df[~df["EVENT_STATUS"].isin(["Pending", "Cancelled"])]["EVENT_STATUS"].dropna().unique())
+            status_options = sorted(df[~df["event_status"].isin(["Pending", "Cancelled"])]["event_status"].dropna().unique())
         
         with col3:
             status_filter = st.selectbox("Event Status", ["All"] + status_options)
@@ -57,25 +57,25 @@ else:
             
             # For non-admins, exclude Pending and Cancelled events
             if not is_admin:
-                df_filtered = df_filtered[~df_filtered["EVENT_STATUS"].isin(["Pending", "Cancelled"])]
+                df_filtered = df_filtered[~df_filtered["event_status"].isin(["Pending", "Cancelled"])]
 
         if title_filter:
-            df_filtered = df_filtered[df_filtered["EVENT_TITLE"].str.contains(title_filter, case=False, na=False)]
+            df_filtered = df_filtered[df_filtered["event_title"].str.contains(title_filter, case=False, na=False)]
         if type_filter != "All":
-            df_filtered = df_filtered[df_filtered["EVENT_TYPE"] == type_filter]
+            df_filtered = df_filtered[df_filtered["event_type"] == type_filter]
         if status_filter != "All":
-            df_filtered = df_filtered[df_filtered["EVENT_STATUS"] == status_filter]
+            df_filtered = df_filtered[df_filtered["event_status"] == status_filter]
 
         if df_filtered.empty:
             st.info("No events found.")
         else:
             display_cols = [
-                "ID", "EVENT_TITLE", "EVENT_TYPE", "EVENT_START_DATE", "EVENT_END_DATE",
-                "EVENT_LOCATION", "EVENT_STATUS"
+                "id", "event_title", "event_type", "event_start_date", "event_end_date",
+                "event_location", "event_status"
             ]
             df_display = df_filtered[display_cols].copy()
-            df_display["EVENT_START_DATE"] = pd.to_datetime(df_display["EVENT_START_DATE"]).dt.strftime('%Y-%m-%d')
-            df_display["EVENT_END_DATE"] = pd.to_datetime(df_display["EVENT_END_DATE"]).dt.strftime('%Y-%m-%d')
+            df_display["event_start_date"] = pd.to_datetime(df_display["event_start_date"]).dt.strftime('%Y-%m-%d')
+            df_display["event_end_date"] = pd.to_datetime(df_display["event_end_date"]).dt.strftime('%Y-%m-%d')
             
             selection = st.dataframe(
                 df_display,
