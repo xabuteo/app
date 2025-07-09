@@ -14,7 +14,7 @@ def show():
     try:
         # Get Player ID for logged-in user
         cursor.execute(
-            "SELECT ID FROM REGISTRATIONS WHERE EMAIL = %s", 
+            "SELECT id FROM registrations WHERE email = %s", 
             (st.user.email,)
         )
         player_row = cursor.fetchone()
@@ -25,7 +25,7 @@ def show():
 
         # --- Display PLAYER_CLUB_V view ---
         cursor.execute(
-            "SELECT * FROM PLAYER_CLUB_V WHERE EMAIL = %s", 
+            "SELECT * FROM player_club_v WHERE email = %s", 
             (st.user.email,)
         )
         rows = cursor.fetchall()
@@ -97,8 +97,8 @@ def show_request_club():
                         club_id = club_options[club_name]
                         try:
                             cursor.execute("""
-                                INSERT INTO PLAYER_CLUB 
-                                (PLAYER_ID, CLUB_ID, VALID_FROM, VALID_TO)
+                                INSERT INTO player_club 
+                                (user_id, club_id, valid_from, valid_to)
                                 VALUES (%s, %s, %s, %s)
                             """, (player_id, club_id, valid_from, valid_to))
                             conn.commit()
