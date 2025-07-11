@@ -11,15 +11,7 @@ st.title("📅 Events")
 try:
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT *, 
-        CONCAT(
-                    CASE WHEN event_open    THEN 'Open, '    ELSE '' END,
-                    CASE WHEN event_women   THEN 'Women, '   ELSE '' END,
-                    CASE WHEN event_junior  THEN 'Junior, '  ELSE '' END,
-                    CASE WHEN event_veteran THEN 'Veteran, ' ELSE '' END,
-                    CASE WHEN event_teams   THEN 'Teams, '   ELSE '' END
-                ) AS competitions 
-    FROM events ORDER BY event_start_date DESC")
+    cursor.execute("SELECT *, CONCAT(CASE WHEN event_open    THEN 'Open, '    ELSE '' END, CASE WHEN event_women   THEN 'Women, '   ELSE '' END, CASE WHEN event_junior  THEN 'Junior, '  ELSE '' END, CASE WHEN event_veteran THEN 'Veteran, ' ELSE '' END, CASE WHEN event_teams   THEN 'Teams, '   ELSE '' END) AS competitions FROM events ORDER BY event_start_date DESC")
     rows = cursor.fetchall()
     cols = [desc[0] for desc in cursor.description]
     df = pd.DataFrame(rows, columns=cols)
