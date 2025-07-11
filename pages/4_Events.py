@@ -105,16 +105,26 @@ else:
         st.button("🔙 Back to Event List", on_click=lambda: st.session_state.pop("selected_event_id"))
 
         selected_event = df[df["id"] == selected_event_id].iloc[0].to_dict()
+        test_mode = st.session_state.get("test_mode", False)
         with st.spinner("Loading event details..."):
+            pages_info = [
+                ("DETAILS",  Details),
+                ("REGISTER", Register),
+            ]
+            if test_mode:
+                pages_info += [
+                    ("TABLES", Tables),
+                    ("SCORES", Scores),
+                    ("RESULT", Result),
+                ]
             if is_admin:
-                TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT", "ADMIN"])
-                PAGES = [Details, Register, Tables, Scores, Result, Admin]
-            else:
-                TABS = st.tabs(["DETAILS", "REGISTER", "TABLES", "SCORES", "RESULT"])
-                PAGES = [Details, Register, Tables, Scores, Result]                
-            for tab, page_module in zip(TABS, PAGES):
+                pages_info.append(("ADMIN", Admin))
+            tabs = st.tabs([label for label, _ in pages_info])
+        
+            for tab, (_, page_module) in zip(tabs, pages_info):
                 with tab:
                     page_module.page(selected_event)
+
 
 if st.session_state.get("test_mode"):
     from sidebar_utils import render_sidebar_widgets
