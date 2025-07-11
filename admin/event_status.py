@@ -24,11 +24,11 @@ def update_status(event_id, user_email, new_status):
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            UPDATE EVENTS
-            SET EVENT_STATUS = %s,
-                UPDATE_TIMESTAMP = CURRENT_TIMESTAMP,
-                UPDATE_BY = %s
-            WHERE ID = %s
+            UPDATE events
+            SET event_status = %s,
+                update_timestamp = CURRENT_TIMESTAMP,
+                update_by = %s
+            WHERE id = %s
         """, (new_status, user_email, event_id))
         conn.commit()
         st.success(f"✅ Event status updated to '{new_status}'.")
