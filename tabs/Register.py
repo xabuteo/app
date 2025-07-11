@@ -74,7 +74,7 @@ def page(selected_event):
                 "Teams": event_teams
             }
 
-            st.markdown("### 🏆 Eligible Competitions")
+            st.markdown("#### 🏆 Eligible Competitions")
             selected_competitions = [
                 comp for comp, eligible in competitions.items()
                 if eligible and st.checkbox(f"{comp} Competition")
@@ -159,7 +159,7 @@ def page(selected_event):
             competitions = df["competition_type"].unique()
             for comp in competitions:
                 comp_df = df[df["competition_type"] == comp][["user_id", "email", "first_name", "last_name", "club_name"]]
-                st.markdown(f"### 🏆 {comp} Competition ({len(comp_df)} registered)")
+                st.markdown(f"#### 🏆 {comp} Competition ({len(comp_df)} registered)")
                 st.dataframe(comp_df, use_container_width=True)
         
                 # Add CSV download
@@ -171,23 +171,24 @@ def page(selected_event):
                     mime="text/csv"
                 )
 
-            # ✅ Populate test competitors button
-            comp_to_copy = st.selectbox("Select competition to copy from test event (1001)", competitions)
-            if st.button("🧪 Populate Test Competitors"):
-                try:
-                    conn = get_db_connection()
-                    cursor = conn.cursor()
-                    cursor.execute(f"""
-                        INSERT INTO event_registration(user_id, club_id, event_id, competition_type)
-                        SELECT user_id, club_id, %s, %s
-                        FROM event_registration
-                        WHERE event_id = 1001 AND competition_type = %s
-                    """, (event_id, comp_to_copy, comp_to_copy))
-                    conn.commit()
-                    st.success(f"✅ Test competitors for '{comp_to_copy}' added to event {event_id}.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Failed to populate test competitors: {e}")
-                finally:
-                    cursor.close()
-                    conn.close()
+            if st.session_state.get("test_mode"):
+                # ✅ Populate test competitors button
+                comp_to_copy = st.selectbox("Select competition to copy from test event (1001)", competitions)
+                if st.button("🧪 Populate Test Competitors"):
+                    try:
+                        conn = get_db_connection()
+                        cursor = conn.cursor()
+                        cursor.execute(f"""
+                            INSERT INTO event_registration(user_id, club_id, event_id, competition_type)
+                            SELECT user_id, club_id, %s, %s
+                            FROM event_registration
+                            WHERE event_id = 1001 AND competition_type = %s
+                        """, (event_id, comp_to_copy, comp_to_copy))
+                        conn.commit()
+                        st.success(f"✅ Test competitors for '{comp_to_copy}' added to event {event_id}.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to populate test competitors: {e}")
+                    finally:
+                        cursor.close()
+                        conn.close()
