@@ -46,33 +46,33 @@ else:
         last_name = ""
 
     # Insert into Snowflake (if new)
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            """
-            MERGE INTO registrations AS tgt
-            USING (
-                SELECT 
-                    %s AS email,
-                    %s AS auth0_id,
-                    %s AS first_name,
-                    %s AS last_name,
-                    CURRENT_TIMESTAMP() AS date_registered,
-                    CURRENT_TIMESTAMP() AS updated_at,
-                    %s AS updated_by
-            ) AS src
-            ON tgt.email = src.email
-            WHEN NOT MATCHED THEN
-                INSERT (email, auth0_id, first_name, last_name, date_registered, updated_at, updated_by)
-                VALUES (src.email, src.auth0_id, src.first_name, src.last_name, src.date_registered, src.updated_at, src.updated_by)
-            """,
-            (email, auth_id, first_name, last_name, email),
-        )
-        conn.commit()
-    finally:
-        cursor.close()
-        conn.close()
+#    conn = get_db_connection()
+#    cursor = conn.cursor()
+#    try:
+#        cursor.execute(
+#            """
+#            MERGE INTO registrations AS tgt
+#            USING (
+#                SELECT 
+#                    %s AS email,
+#                    %s AS auth0_id,
+#                    %s AS first_name,
+#                    %s AS last_name,
+#                    CURRENT_TIMESTAMP() AS date_registered,
+#                    CURRENT_TIMESTAMP() AS updated_at,
+#                    %s AS updated_by
+#            ) AS src
+#            ON tgt.email = src.email
+#            WHEN NOT MATCHED THEN
+#                INSERT (email, auth0_id, first_name, last_name, date_registered, updated_at, updated_by)
+#                VALUES (src.email, src.auth0_id, src.first_name, src.last_name, src.date_registered, src.updated_at, src.updated_by)
+#            """,
+#            (email, auth_id, first_name, last_name, email),
+#        )
+#        conn.commit()
+#    finally:
+#        cursor.close()
+#        conn.close()
 
 
     st.success(f"Welcome, {st.user.email}!")
