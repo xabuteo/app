@@ -11,7 +11,7 @@ st.title("📅 Events")
 try:
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM events_v ORDER BY event_start_date DESC")
+    cursor.execute("SELECT * FROM events ORDER BY event_start_date DESC")
     rows = cursor.fetchall()
     cols = [desc[0] for desc in cursor.description]
     df = pd.DataFrame(rows, columns=cols)
