@@ -5,9 +5,9 @@ def page(selected_event):
     st.subheader("Event Admin")
 
     # Extract key info
-    event_id = selected_event.get("ID")
-    event_status_value = selected_event.get("EVENT_STATUS")
-    user_email = selected_event.get("UPDATE_BY", "admin@xabuteo.com")
+    event_id = selected_event.get("id")
+    event_status_value = selected_event.get("event_status")
+    user_email = selected_event.get("update_by", "admin@xabuteo.com")
 
     # Run sections
     event_status.render(event_id, event_status_value, user_email)
