@@ -1,19 +1,27 @@
 import streamlit as st
 import pandas as pd
 from utils import get_db_connection, get_userid
+from datetime import datetime, date, timedelta
 
 def page(selected_event):
-    event_status = selected_event.get("event_status", "")
+    today = date.today() 
+    temp_status = selected_event.get("event_status", "")
     event_id = selected_event.get("id")
     user_id = get_userid()
+    reg_open = selected_event.get("reg_open_date", "")
+    reg_close = selected_event.get("reg_close_date", "")
 
+    event_status = (
+        "Open"   if temp_status == "Approved" and reg_open <= today <= reg_close else
+        "Closed" if temp_status == "Approved" and today >  reg_close            else
+        event_status
+    )
+    
     with st.expander(f"📋 Event Registration Form — Status: {event_status}", expanded=(event_status == "Open")):
         st.subheader(selected_event.get("event_title", "Untitled Event"))
         eventtype = selected_event.get("event_type", "")
         st.markdown(f"**{eventtype}**")
 
-        reg_open = selected_event.get("reg_open_date", "")
-        reg_close = selected_event.get("reg_close_date", "")
         st.markdown(f"**Registration Dates:** {reg_open} to {reg_close}")
 
         if event_status == "Open":
