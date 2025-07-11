@@ -3,28 +3,28 @@ import pandas as pd
 from utils import get_db_connection, get_userid
 
 def page(selected_event):
-    event_status = selected_event.get("EVENT_STATUS", "")
-    event_id = selected_event.get("ID")
+    event_status = selected_event.get("event_status", "")
+    event_id = selected_event.get("id")
     user_id = get_userid()
 
     with st.expander(f"📋 Event Registration Form — Status: {event_status}", expanded=(event_status == "Open")):
-        st.subheader(selected_event.get("EVENT_TITLE", "Untitled Event"))
-        eventtype = selected_event.get("EVENT_TYPE", "")
+        st.subheader(selected_event.get("event_title", "Untitled Event"))
+        eventtype = selected_event.get("event_type", "")
         st.markdown(f"**{eventtype}**")
 
-        reg_open = selected_event.get("REG_OPEN_DATE", "")
-        reg_close = selected_event.get("REG_CLOSE_DATE", "")
+        reg_open = selected_event.get("reg_open_date", "")
+        reg_close = selected_event.get("reg_close_date", "")
         st.markdown(f"**Registration Dates:** {reg_open} to {reg_close}")
 
         if event_status == "Open":
             # Competition flags from event setup
-            event_open = selected_event.get("EVENT_OPEN", False)
-            event_women = selected_event.get("EVENT_WOMEN", False)
-            event_junior = selected_event.get("EVENT_JUNIOR", False)
-            event_veteran = selected_event.get("EVENT_VETERAN", False)
-            event_teams = selected_event.get("EVENT_TEAMS", False)
+            event_open = selected_event.get("event_open", False)
+            event_women = selected_event.get("event_women", False)
+            event_junior = selected_event.get("event_junior", False)
+            event_veteran = selected_event.get("event_veteran", False)
+            event_teams = selected_event.get("event_teams", False)
 
-            event_start_date = pd.to_datetime(selected_event.get("EVENT_START_DATE")).date()
+            event_start_date = pd.to_datetime(selected_event.get("event_start_date")).date()
 
             # Fetch player info
             try:
@@ -131,8 +131,8 @@ def page(selected_event):
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT user_id, email, first_name, last_name, club_name, competition_type
-                FROM EVENT_REGISTRATION_V
-                WHERE EVENT_ID = %s
+                FROM event_registration_v
+                WHERE event_id = %s
                 ORDER BY competition_type, last_name, first_name
             """, (event_id,))
             rows = cursor.fetchall()
@@ -148,9 +148,9 @@ def page(selected_event):
         if df.empty:
             st.info("No registrations yet.")
         else:
-            competitions = df["COMPETITION_TYPE"].unique()
+            competitions = df["competition_type"].unique()
             for comp in competitions:
-                comp_df = df[df["COMPETITION_TYPE"] == comp][["USER_ID", "EMAIL", "FIRST_NAME", "LAST_NAME", "CLUB_NAME"]]
+                comp_df = df[df["competition_type"] == comp][["user_id", "email", "first_name", "last_name", "club_name"]]
                 st.markdown(f"### 🏆 {comp} Competition ({len(comp_df)} registered)")
                 st.dataframe(comp_df, use_container_width=True)
         
@@ -170,9 +170,9 @@ def page(selected_event):
                     conn = get_db_connection()
                     cursor = conn.cursor()
                     cursor.execute(f"""
-                        INSERT INTO EVENT_REGISTRATION(user_id, club_id, event_id, competition_type)
+                        INSERT INTO event_registration(user_id, club_id, event_id, competition_type)
                         SELECT user_id, club_id, %s, %s
-                        FROM EVENT_REGISTRATION
+                        FROM event_registration
                         WHERE event_id = 1001 AND competition_type = %s
                     """, (event_id, comp_to_copy, comp_to_copy))
                     conn.commit()
