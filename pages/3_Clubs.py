@@ -31,7 +31,7 @@ def show():
         if not player:
             st.error("❌ Could not find player ID.")
             return
-        player_id = player[0]
+        user_id = player[0]
 
         # -------------------------------------------------- club view
         rows, cols = fetch_all(
@@ -60,14 +60,14 @@ def show():
 
         # extra pages in test‑mode
         if st.session_state.get("test_mode"):
-            show_request_club(cursor, conn, player_id)
+            show_request_club(cursor, conn, user_id)
             show_admin(cursor, conn)
 
     from sidebar_utils import render_sidebar_widgets
     render_sidebar_widgets()
 
 # -------------------------------------------------- REQUEST NEW CLUB
-def show_request_club(cursor, conn, player_id):
+def show_request_club(cursor, conn, user_id):
     st.markdown("---")
     with st.expander("➕ Request New Club"):
         assoc_rows, _ = fetch_all(cursor,
@@ -106,9 +106,9 @@ def show_request_club(cursor, conn, player_id):
         if st.button("Submit Club Request"):
             try:
                 cursor.execute("""
-                    INSERT INTO player_club (player_id, club_id, valid_from, valid_to)
+                    INSERT INTO player_club (user_id, club_id, valid_from, valid_to)
                     VALUES (%s, %s, %s, %s)
-                """, (player_id, club_map[club_name], valid_from, valid_to))
+                """, (user_id, club_map[club_name], valid_from, valid_to))
                 conn.commit()
                 st.success("✅ Club request submitted successfully.")
                 st.rerun()
@@ -129,7 +129,7 @@ def show_admin(cursor, conn):
                TRIM(CONCAT_WS(' ', r.first_name, r.last_name)) AS player_name,
                c.club_name, pc.valid_from, pc.valid_to, pc.player_status
         FROM   player_club pc
-        JOIN   registrations r ON pc.player_id = r.id
+        JOIN   registrations r ON pc.user_id = r.id
         JOIN   clubs         c ON pc.club_id   = c.id
         WHERE  pc.player_status = 'Pending'
         AND    pc.club_id IN ({placeholders})
