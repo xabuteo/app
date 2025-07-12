@@ -3,16 +3,16 @@ import pandas as pd
 from utils import get_db_connection, get_userid
 
 def page(selected_event):
-    event_id = selected_event.get("ID")
+    event_id = selected_event.get("id")
 
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
             SELECT *
-            FROM EVENT_RESULT_V
-            WHERE EVENT_ID = %s
-            ORDER BY event_id, competition_type, round_no DESC, FINAL
+            FROM event_result_v
+            WHERE event_id = %s
+            ORDER BY event_id, competition_type, round_no DESC, final
         """, (event_id,))
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
@@ -28,15 +28,15 @@ def page(selected_event):
         st.info("ℹ️ Result has not been finalised.")
         return
 
-    competitions = sorted(df["COMPETITION_TYPE"].dropna().unique(), key=lambda x: (x != "Open", x))
+    competitions = sorted(df["competition_type"].dropna().unique(), key=lambda x: (x != "Open", x))
 
     for comp in competitions:
-        comp_df = df[df["COMPETITION_TYPE"] == comp][["PLAYER", "FINAL_RESULT"]]
+        comp_df = df[df["competition_type"] == comp][["player", "final_result"]]
         with st.expander(f"🏆 {comp} Competition", expanded=(comp == "Open")):
 
             def highlight_winner(row):
                 style = [''] * len(row)
-                if row["FINAL_RESULT"] == "Winner":
+                if row["final_result"] == "Winner":
                     style[1] = 'background-color: #cce4ff'
                 return style
 
