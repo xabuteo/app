@@ -3,16 +3,16 @@ import pandas as pd
 from utils import get_db_connection, get_userid
 
 def page(selected_event):
-    event_id = selected_event.get("ID")
+    event_id = selected_event.get("id")
 
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
             SELECT *
-            FROM EVENT_TABLE_V
-            WHERE EVENT_ID = %s
-            AND ROUND_TYPE = 'Group'
+            FROM event_table_v
+            WHERE event_id = %s
+            AND round_type = 'Group'
             ORDER BY competition_type, group_no, rank
         """, (event_id,))
         rows = cursor.fetchall()
@@ -29,15 +29,15 @@ def page(selected_event):
         st.info("ℹ️ No groups or matches have been assigned yet.")
         return
 
-    competitions = sorted(df["COMPETITION_TYPE"].dropna().unique(), key=lambda x: (x != "Open", x))
+    competitions = sorted(df["competition_type"].dropna().unique(), key=lambda x: (x != "Open", x))
     for comp in competitions:
-        comp_df = df[df["COMPETITION_TYPE"] == comp]
+        comp_df = df[df["competition_type"] == comp]
         with st.expander(f"🏆 {comp} Competition", expanded=(comp == "Open")):
-            groups = comp_df["GROUP_NO"].dropna().unique()
+            groups = comp_df["group_no"].dropna().unique()
             groups.sort()
             for group in groups:
-                group_df = comp_df[comp_df["GROUP_NO"] == group][[
-                    "RANK", "PLAYER", "PLAYED", "WON", "DRAWN", "LOST", "GF", "GA", "GD", "PTS"
+                group_df = comp_df[comp_df["group_no"] == group][[
+                    "rank", "player", "played", "won", "drawn", "lost", "gf", "ga", "gd", "pts"
                 ]]
                 st.markdown(f"#### Group {group}")
                 st.dataframe(group_df, use_container_width=True, hide_index=True)
