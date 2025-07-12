@@ -52,7 +52,7 @@ def show():
             df = df[expected]
 
             today = date.today()
-            df['highlight'] = (
+            df = (
                 df['valid_from'].notna()
                 & df['valid_to'].notna()
                 & (df['valid_from'] <= today)
@@ -60,14 +60,7 @@ def show():
             )
             df = df.sort_values('valid_from', ascending=False)
 
-            styled = (
-                df.drop(columns='highlight')
-                  .style
-                  .apply(lambda row:
-                         ['font-weight: bold' if row['highlight'] else ''
-                          for _ in row], axis=1)
-            )
-            st.dataframe(styled, use_container_width=True, hide_index=True)
+            st.dataframe(df, use_container_width=True, hide_index=True)
 
         # extra pages in test‑mode
         if st.session_state.get("test_mode"):
