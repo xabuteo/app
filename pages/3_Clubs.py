@@ -34,32 +34,28 @@ def show():
         player_id = player[0]
 
         # -------------------------------------------------- club view
-        rows, cols = fetch_all(cursor,
+        rows, cols = fetch_all(
+            cursor,
             "SELECT * FROM player_club_v WHERE email = %s",
             (st.user.email,)
         )
+        
         expected = ['club_code', 'club_name', 'player_status',
                     'valid_from', 'valid_to']
         if not all(c in cols for c in expected):
             st.warning("⚠️ View is missing required columns.")
             st.info("Columns found: " + ", ".join(cols))
             return
-
+        
         df = pd.DataFrame(rows, columns=cols)
         if df.empty:
             st.info("ℹ️ You are not currently associated with any clubs.")
         else:
-            df = df[expected]
-
-            today = date.today()
             df = (
-                df['valid_from'].notna()
-                & df['valid_to'].notna()
-                & (df['valid_from'] <= today)
-                & (today <= df['valid_to'])
+                df[expected]
+                .sort_values('valid_from', ascending=False)
+                .reset_index(drop=True)
             )
-            df = df.sort_values('valid_from', ascending=False)
-
             st.dataframe(df, use_container_width=True, hide_index=True)
 
         # extra pages in test‑mode
