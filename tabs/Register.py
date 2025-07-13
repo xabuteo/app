@@ -13,8 +13,8 @@ def page(selected_event):
 
     event_status = (
         "Open"   if temp_status == "Approved" and reg_open <= today <= reg_close else
-        "Closed" if temp_status == "Approved" and today >  reg_close            else
-        event_status
+        "Closed" if temp_status == "Approved" and today > reg_close else
+        temp_status
     )
     
     with st.expander(f"📋 Event Registration Form — Status: {event_status}", expanded=(event_status == "Open")):
