@@ -99,12 +99,10 @@ def add_new_event() -> None:
 
                     if not title:
                         errors.append("• Title is required")
-                    if start_date > end_date:
+                    if start_date >= end_date:
                         errors.append("• Start Date must not be after End Date")
-                    if reg_open_date > reg_close_date:
+                    if reg_open_date >= reg_close_date:
                         errors.append("• Registration Open must be on/before Registration Close")
-                    if reg_close_date >= start_date:
-                        errors.append("• Registration must close **before** the event starts")
                     if not host_club_id:
                         errors.append("• Please select a host club")
 
