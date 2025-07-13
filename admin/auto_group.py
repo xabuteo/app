@@ -39,7 +39,7 @@ def render(event_id, user_email):
             cursor.execute("""
                 SELECT id, user_id, event_id, first_name, last_name, email,
                        club_name, club_code, seed_no, group_no
-                FROM EVENT_REGISTRATION_V
+                FROM event_registration_v
                 WHERE event_id = %s AND competition_type = %s
                 ORDER BY last_name, first_name
             """, (event_id, selected_comp))
@@ -62,10 +62,10 @@ def render(event_id, user_email):
         if st.button("🎲 Auto-Assign Competitors to Groups"):
             try:
                 df_copy = df.copy()
-                df_copy["SEED_NO"] = pd.to_numeric(df_copy["SEED_NO"], errors="coerce").fillna(0).astype(int)
+                df_copy["seed_no"] = pd.to_numeric(df_copy["seed_no"], errors="coerce").fillna(0).astype(int)
 
-                seeded = df_copy[df_copy["SEED_NO"] > 0].sort_values("SEED_NO")
-                unseeded = df_copy[df_copy["SEED_NO"] == 0].sample(frac=1)
+                seeded = df_copy[df_copy["seed_no"] > 0].sort_values("seed_no")
+                unseeded = df_copy[df_copy["seed_no"] == 0].sample(frac=1)
 
                 group_labels = list(string.ascii_uppercase[:num_groups])
                 groups = {label: [] for label in group_labels}
@@ -85,10 +85,10 @@ def render(event_id, user_email):
                 final_rows = []
                 for label in group_labels:
                     for row in groups[label]:
-                        row["GROUP_NO"] = label
+                        row["group_no"] = label
                         final_rows.append(row)
 
-                final_df = pd.DataFrame(final_rows).sort_values(["GROUP_NO", "SEED_NO", "LAST_NAME"])
+                final_df = pd.DataFrame(final_rows).sort_values(["group_no", "seed_no", "last_name"])
                 st.session_state.final_group_df = final_df
 
                 # Save to DB immediately
@@ -96,17 +96,17 @@ def render(event_id, user_email):
                 cursor = conn.cursor()
                 for _, row in final_df.iterrows():
                     cursor.execute("""
-                        UPDATE EVENT_REGISTRATION
-                        SET GROUP_NO = %s,
-                            UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
+                        UPDATE event_registration
+                        SET group_no = %s,
+                            updated_timestamp = CURRENT_TIMESTAMP
                         WHERE id = %s
                     """, (
-                        row["GROUP_NO"],
-                        row["ID"]
+                        row["group_no"],
+                        row["id"]
                     ))
                 conn.commit()
                 st.success(f"✅ {len(final_df)} participants assigned and saved to DB.")
-                st.dataframe(final_df[["FIRST_NAME", "LAST_NAME", "SEED_NO", "GROUP_NO"]], use_container_width=True)
+                st.dataframe(final_df[["first_name", "last_name", "seed_no", "group_no"]], use_container_width=True)
 
             except Exception as e:
                 st.error(f"❌ Grouping or DB update error: {e}")
