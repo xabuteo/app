@@ -173,7 +173,7 @@ def page(selected_event):
 
             if st.session_state.get("test_mode"):
                 # ✅ Populate test competitors button
-                comp_to_copy = st.selectbox("Select competition to copy from test event (1001)", competitions)
+                comp_to_copy = st.selectbox("Select competition to copy from test event", competitions)
                 if st.button("🧪 Populate Test Competitors"):
                     try:
                         conn = get_db_connection()
@@ -182,7 +182,7 @@ def page(selected_event):
                             INSERT INTO event_registration(user_id, club_id, event_id, competition_type)
                             SELECT user_id, club_id, %s, %s
                             FROM event_registration
-                            WHERE event_id = 1001 AND competition_type = %s
+                            WHERE event_id = -1 AND competition_type = %s
                         """, (event_id, comp_to_copy, comp_to_copy))
                         conn.commit()
                         st.success(f"✅ Test competitors for '{comp_to_copy}' added to event {event_id}.")
