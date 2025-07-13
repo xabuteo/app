@@ -64,23 +64,31 @@ def render(event_id: int) -> None:
             return
 
         # ── editable table ----------------------------------------------------
-        hidden_cols = ["id", "user_id", "event_id"]
+        # Keep full copy
+        df_full = df.copy()
+        
+        # Drop id/user_id/event_id from display
+        df_display = df.drop(columns=["id", "user_id", "event_id"])
+        
         editable_cols = ["group_no", "seed_no"]
         
         edited_df = st.data_editor(
-            df_original,
+            df_display,
             column_config={
-                # editable columns
                 "group_no": st.column_config.TextColumn("Group No"),
                 "seed_no":  st.column_config.NumberColumn("Seed No", min_value=0, step=1, format="%d"),
-                # hide the PK / FK columns
-                **{col: st.column_config.Column(hidden=True) for col in hidden_cols},
             },
-            disabled=[c for c in df_original.columns if c not in editable_cols],
+            disabled=[col for col in df_display.columns if col not in editable_cols],
             use_container_width=True,
             hide_index=True,
-            key="seed_group_editor",
+            key="seed_group_editor"
         )
+        
+        # When saving, reattach hidden columns:
+        edited_df["id"] = df_full["id"]
+        edited_df["user_id"] = df_full["user_id"]
+        edited_df["event_id"] = df_full["event_id"]
+        
         # ── save button & diff detection --------------------------------------
         if st.button("💾 Save Seeding / Grouping Changes"):
             # pandas aligns by index, so compare directly
