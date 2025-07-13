@@ -36,7 +36,7 @@ def render(event_id):
 
             cursor.execute("""
                 SELECT group_no, seed_no, first_name, last_name, club_code, id, user_id, event_id
-                FROM EVENT_REGISTRATION_V
+                FROM event_registration_v
                 WHERE event_id = %s AND competition_type = %s
                 ORDER BY last_name, first_name
             """, (event_id, selected_comp))
@@ -84,8 +84,8 @@ def render(event_id):
                 df_reset = df.reset_index(drop=True)
 
                 changed_rows = updated_data_reset.loc[
-                    (updated_data_reset["SEED_NO"] != df_reset["SEED_NO"]) |
-                    (updated_data_reset["GROUP_NO"] != df_reset["GROUP_NO"])
+                    (updated_data_reset["seed_no"] != df_reset["seed_no"]) |
+                    (updated_data_reset["group_no"] != df_reset["group_no"])
                 ]
 
                 if changed_rows.empty:
@@ -95,17 +95,17 @@ def render(event_id):
                     cursor = conn.cursor()
                     for _, row in changed_rows.iterrows():
                         try:
-                            seed_no = int(row["SEED_NO"])
+                            seed_no = int(row["seed_no"])
                         except (ValueError, TypeError):
                             seed_no = 0
-                        group_no = str(row["GROUP_NO"]) if row["GROUP_NO"] is not None else ''
-                        record_id = row["ID"]
+                        group_no = str(row["group_no"]) if row["group_no"] is not None else ''
+                        record_id = row["id"]
                         cursor.execute("""
-                            UPDATE EVENT_REGISTRATION
-                            SET SEED_NO = %s,
-                                GROUP_NO = %s,
-                                UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                            WHERE ID = %s
+                            UPDATE event_registration
+                            SET seed_no = %s,
+                                group_no = %s,
+                                updated_timestamp = CURRENT_TIMESTAMP
+                            WHERE id = %s
                         """, (
                             seed_no,
                             group_no,
