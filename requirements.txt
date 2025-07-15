@@ -4,4 +4,3 @@ streamlit-auth0
 Authlib
 snowflake-connector-python
 mysql-connector-python
-streamlit-extras
