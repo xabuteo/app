@@ -10,10 +10,10 @@ def generate_knockout_placeholders(num_groups):
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT ROUND_TYPE, GROUP_NO, P1_ID, P2_ID
-            FROM KNOCKOUT_MATCHES
-            WHERE %s BETWEEN MIN_GROUP AND MAX_GROUP
-            ORDER BY ID
+            SELECT round_type, group_no, p1_id, p2_id
+            FROM knockout_matches
+            WHERE %s BETWEEN min_group AND max_group
+            ORDER BY id
         """, (num_groups,))
         rows = cursor.fetchall()
         return [(row[0], row[1], row[2], row[3]) for row in rows]
@@ -29,31 +29,31 @@ def update_knockout_placeholders(event_id):
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            UPDATE EVENT_MATCHES
-            SET PLAYER_1_ID = ek.PLAYER_ID,
-                PLAYER_1_CLUB_ID = ek.CLUB_ID,
-                STATUS = case when PLAYER_2_ID > 0 then 'Scheduled' else STATUS end,
-                UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-            FROM EVENT_KO_ROUND_V ek
-            WHERE EVENT_MATCHES.EVENT_ID = %s
-              AND EVENT_MATCHES.EVENT_ID = ek.EVENT_ID
-              AND EVENT_MATCHES.STATUS <> 'Final'
-              AND EVENT_MATCHES.COMPETITION_TYPE = ek.COMPETITION_TYPE
-              AND EVENT_MATCHES.PLAYER_1_ID = ek.PLACEHOLDER_ID;
+            UPDATE event_matches
+            SET player_1_id = ek.player_id,
+                player_1_club_id = ek.club_id,
+                status = case when player_2_id > 0 then 'Scheduled' else status end,
+                updated_timestamp = CURRENT_TIMESTAMP
+            FROM event_ko_round_v ek
+            WHERE event_matches.event_id = %s
+              AND event_matches.event_id = ek.event_id
+              AND event_matches.status <> 'Final'
+              AND event_matches.competition_type = ek.competition_type
+              AND event_matches.player_1_id = ek.placeholder_id;
         """, (event_id,))
 
         cursor.execute("""
-            UPDATE EVENT_MATCHES
-            SET PLAYER_2_ID = ek.PLAYER_ID,
-                PLAYER_2_CLUB_ID = ek.CLUB_ID,
-                STATUS = case when PLAYER_1_ID > 0 then 'Scheduled' else STATUS end,
-                UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-            FROM EVENT_KO_ROUND_V ek
-            WHERE EVENT_MATCHES.EVENT_ID = %s
-              AND EVENT_MATCHES.EVENT_ID = ek.EVENT_ID
-              AND EVENT_MATCHES.STATUS <> 'Final'
-              AND EVENT_MATCHES.COMPETITION_TYPE = ek.COMPETITION_TYPE
-              AND EVENT_MATCHES.PLAYER_2_ID = ek.PLACEHOLDER_ID;
+            UPDATE event_matches
+            SET player_2_id = ek.player_id,
+                player_2_club_id = ek.club_id,
+                status = case when player_1_id > 0 then 'Scheduled' else status end,
+                updated_timestamp = CURRENT_TIMESTAMP
+            FROM event_ko_round_v ek
+            WHERE event_matches.event_id = %s
+              AND event_matches.event_id = ek.event_id
+              AND event_matches.status <> 'Final'
+              AND event_matches.competition_type = ek.competition_type
+              AND event_matches.player_2_id = ek.placeholder_id;
         """, (event_id,))
 
         conn.commit()
@@ -73,7 +73,7 @@ def render_match_table(event_id, selected_comp):
         cursor.execute("""
             SELECT id, competition_type, round_no, group_no,
                    player1, player1_goals, player2_goals, player2
-            FROM EVENT_MATCHES_V
+            FROM event_matches_v
             WHERE event_id = %s AND competition_type = %s
             ORDER BY round_no, group_no
         """, (event_id, selected_comp))
@@ -93,8 +93,8 @@ def render_match_table(event_id, selected_comp):
     st.markdown("### 📋 Match Results")
     gb = GridOptionsBuilder.from_dataframe(df_matches)
     gb.configure_default_column(editable=False)
-    gb.configure_column("PLAYER1_GOALS", editable=True)
-    gb.configure_column("PLAYER2_GOALS", editable=True)
+    gb.configure_column("player1_goals", editable=True)
+    gb.configure_column("player2_goals", editable=True)
     grid_options = gb.build()
 
     grid_response = AgGrid(
@@ -121,7 +121,7 @@ def render_match_generation(event_id):
 
             selected_comp = st.radio("🏆 Select Competition", competitions, key="match_gen_competition")
 
-            cursor.execute("SELECT COUNT(*) FROM EVENT_MATCHES WHERE event_id = %s AND competition_type = %s", (event_id, selected_comp))
+            cursor.execute("SELECT COUNT(*) FROM event_matches WHERE event_id = %s AND competition_type = %s", (event_id, selected_comp))
             match_count = cursor.fetchone()[0]
         except Exception as e:
             st.error(f"❌ Could not check match state: {e}")
@@ -135,7 +135,7 @@ def render_match_generation(event_id):
                 try:
                     conn = get_db_connection()
                     cursor = conn.cursor()
-                    cursor.execute("DELETE FROM EVENT_MATCHES WHERE event_id = %s AND competition_type = %s", (event_id, selected_comp))
+                    cursor.execute("DELETE FROM event_matches WHERE event_id = %s AND competition_type = %s", (event_id, selected_comp))
                     conn.commit()
                     st.success("✅ Old matches deleted. You can now generate new ones.")
                     match_count = 0
@@ -175,17 +175,17 @@ def render_match_generation(event_id):
                 letter_iter = iter(string.ascii_uppercase)
 
                 comp = selected_comp
-                comp_df = df[df["COMPETITION_TYPE"] == comp]
-                comp_groups = sorted(comp_df["GROUP_NO"].unique())
+                comp_df = df[df["competition_type"] == comp]
+                comp_groups = sorted(comp_df["group_no"].unique())
                 group_map = {group: next(letter_iter) for group in comp_groups}
                 group_letters[comp] = group_map
 
                 for group in comp_groups:
-                    group_df = comp_df[comp_df["GROUP_NO"] == group]
+                    group_df = comp_df[comp_df["group_no"] == group]
                     players = group_df.to_dict("records")
 
                     if len(players) % 2 != 0:
-                        players.append({"ID": None, "USER_ID": -1, "CLUB_ID": None, "GROUP_NO": group, "COMPETITION_TYPE": comp})
+                        players.append({"id": None, "user_id": -1, "club_id": None, "group_no": group, "competition_type": comp})
 
                     n = len(players)
                     rounds = n - 1
