@@ -104,7 +104,7 @@ def render_match_table(event_id: int, comp: str):
 
 # ─────────────────────────────────────────────────────────────────────────────
 def render_match_generation(event_id: int):
-    with st.expander("🎾 match generation & scoring"):
+    with st.expander("🎾 Match Generation & Scoring"):
         # ---------------------------------------------------------------- comp picker
         with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
             cur.execute(
@@ -114,7 +114,7 @@ def render_match_generation(event_id: int):
             competitions = [r[0] for r in cur.fetchall()]
 
         if not competitions:
-            st.info("ℹ️ no competitions in this event.")
+            st.info("ℹ️ No competitions in this event.")
             return
 
         comp = st.radio("🏆 select competition", competitions, key="match_gen_comp")
@@ -128,7 +128,7 @@ def render_match_generation(event_id: int):
             match_count = cur.fetchone()[0]
 
         # allow deletion / regeneration
-        if match_count > 0 and st.button("🔁 re‑generate (delete old)"):
+        if match_count > 0 and st.button("🔁 Re‑Generate (delete old)"):
             with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
                 cur.execute(
                     "delete from event_matches where event_id = %s and competition_type = %s",
@@ -157,7 +157,7 @@ def render_match_generation(event_id: int):
             return
 
         # ---------------------------------------------------------------- generate button
-        if match_count == 0 and st.button("⚙️ generate round‑robin matches"):
+        if match_count == 0 and st.button("⚙️ Generate Round‑Robin Matches"):
             try:
                 matches_to_insert = []
                 # === round‑robin builder (unchanged logic, but lower‑case keys) ===
@@ -267,7 +267,7 @@ def render_match_generation(event_id: int):
             st.session_state["match_df"] = edited_df
 
         # ---------------------------------------------------------------- save scores
-        if edited_df is not None and st.button("💾 save scores"):
+        if edited_df is not None and st.button("💾 Save Scores"):
             changed = edited_df.copy()
             orig = fetch_matches_df(event_id, comp)
             mask = (
@@ -303,7 +303,7 @@ def render_match_generation(event_id: int):
                     st.error(f"❌ DB update failed: {exc}")
 
         # ---------------------------------------------------------------- simulate
-        if edited_df is not None and st.button("🎲 simulate scores"):
+        if edited_df is not None and st.button("🎲 Simulate Scores"):
             try:
                 with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
                     cur.execute(
