@@ -1,335 +1,334 @@
 import streamlit as st
 import pandas as pd
-from utils import get_db_connection
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import string
 import random
+from contextlib import closing
+from utils import get_db_connection
 
-def generate_knockout_placeholders(num_groups):
-    conn = get_db_connection()
-    cursor = conn.cursor()
+# ─────────────────────────────────────────────────────────────────────────────
+def generate_knockout_placeholders(num_groups: int):
+    """Return (round_type, group_no, p1_id, p2_id) rows for the given group count."""
+    with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
+        cur.execute(
+            """
+            select round_type, group_no, p1_id, p2_id
+            from knockout_matches
+            where %s between min_group and max_group
+            order by id
+            """,
+            (num_groups,),
+        )
+        return cur.fetchall()            # already tuples
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+def update_knockout_placeholders(event_id: int) -> bool:
+    """Replace placeholder IDs with real winners once scores are final."""
+    sql_1 = """
+        update event_matches em
+        join event_ko_round_v ek
+          on em.event_id = ek.event_id
+         and em.competition_type = ek.competition_type
+         and em.player_1_id = ek.placeholder_id
+        set em.player_1_id = ek.player_id,
+            em.player_1_club_id = ek.club_id,
+            em.status = case when em.player_2_id > 0 then 'scheduled' else em.status end,
+            em.updated_timestamp = current_timestamp
+        where em.event_id = %s
+          and em.status <> 'final'
+    """
+    sql_2 = sql_1.replace("player_1_", "player_2_")  # same join, swap side
+
     try:
-        cursor.execute("""
-            SELECT round_type, group_no, p1_id, p2_id
-            FROM knockout_matches
-            WHERE %s BETWEEN min_group AND max_group
-            ORDER BY id
-        """, (num_groups,))
-        rows = cursor.fetchall()
-        return [(row[0], row[1], row[2], row[3]) for row in rows]
-    except Exception as e:
-        st.error(f"Error loading knockout rules: {e}")
-        return []
-    finally:
-        cursor.close()
-        conn.close()
-        
-def update_knockout_placeholders(event_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-            UPDATE event_matches
-            SET player_1_id = ek.player_id,
-                player_1_club_id = ek.club_id,
-                status = case when player_2_id > 0 then 'Scheduled' else status end,
-                updated_timestamp = CURRENT_TIMESTAMP
-            FROM event_ko_round_v ek
-            WHERE event_matches.event_id = %s
-              AND event_matches.event_id = ek.event_id
-              AND event_matches.status <> 'Final'
-              AND event_matches.competition_type = ek.competition_type
-              AND event_matches.player_1_id = ek.placeholder_id;
-        """, (event_id,))
-
-        cursor.execute("""
-            UPDATE event_matches
-            SET player_2_id = ek.player_id,
-                player_2_club_id = ek.club_id,
-                status = case when player_1_id > 0 then 'Scheduled' else status end,
-                updated_timestamp = CURRENT_TIMESTAMP
-            FROM event_ko_round_v ek
-            WHERE event_matches.event_id = %s
-              AND event_matches.event_id = ek.event_id
-              AND event_matches.status <> 'Final'
-              AND event_matches.competition_type = ek.competition_type
-              AND event_matches.player_2_id = ek.placeholder_id;
-        """, (event_id,))
-
-        conn.commit()
-        st.success("✅ Knockout matches updated with actual player IDs and set to Scheduled")
+        with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
+            cur.execute(sql_1, (event_id,))
+            cur.execute(sql_2, (event_id,))
+            conn.commit()
+        st.success("✅ knockout placeholders filled where possible.")
         return True
-    except Exception as e:
-        st.error(f"❌ Failed to update knockout matches: {e}")
+    except Exception as exc:
+        st.error(f"❌ failed to replace knockout placeholders: {exc}")
         return False
-    finally:
-        cursor.close()
-        conn.close()
 
-def render_match_table(event_id, selected_comp):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT id, competition_type, round_no, group_no,
+
+# ─────────────────────────────────────────────────────────────────────────────
+def fetch_matches_df(event_id: int, comp: str) -> pd.DataFrame:
+    with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
+        cur.execute(
+            """
+            select id, competition_type, round_no, group_no,
                    player1, player1_goals, player2_goals, player2
-            FROM event_matches_v
-            WHERE event_id = %s AND competition_type = %s
-            ORDER BY round_no, group_no
-        """, (event_id, selected_comp))
-        matches = cursor.fetchall()
-        cols = [desc[0].upper() for desc in cursor.description]
-        df_matches = pd.DataFrame(matches, columns=cols)
-    except Exception as e:
-        st.error(f"❌ Failed to load matches: {e}")
+            from event_matches_v
+            where event_id = %s and competition_type = %s
+            order by round_no, group_no
+            """,
+            (event_id, comp),
+        )
+        rows = cur.fetchall()
+        cols = [d[0] for d in cur.description]          # already lower‑case in view
+        return pd.DataFrame(rows, columns=cols)
+
+
+def render_match_table(event_id: int, comp: str):
+    df_full = fetch_matches_df(event_id, comp)
+    if df_full.empty:
         return None
-    finally:
-        cursor.close()
-        conn.close()
 
-    if df_matches.empty:
-        return None
+    # hide the DB id from users but keep for updates
+    df_display = df_full.drop(columns=["id", "competition_type"])
 
-    st.markdown("### 📋 Match Results")
-    gb = GridOptionsBuilder.from_dataframe(df_matches)
-    gb.configure_default_column(editable=False)
-    gb.configure_column("player1_goals", editable=True)
-    gb.configure_column("player2_goals", editable=True)
-    grid_options = gb.build()
-
-    grid_response = AgGrid(
-        df_matches,
-        gridOptions=grid_options,
-        update_mode=GridUpdateMode.VALUE_CHANGED,
-        fit_columns_on_grid_load=False,
-        enable_enterprise_modules=False,
-        theme="alpine"
+    edited = st.data_editor(
+        df_display,
+        column_config={
+            "player1_goals": st.column_config.NumberColumn(
+                label="P1 goals", min_value=0, step=1, format="%d"
+            ),
+            "player2_goals": st.column_config.NumberColumn(
+                label="P2 goals", min_value=0, step=1, format="%d"
+            ),
+        },
+        disabled=[
+            c
+            for c in df_display.columns
+            if c not in ("player1_goals", "player2_goals")
+        ],
+        use_container_width=True,
+        hide_index=True,
+        key=f"match_editor_{event_id}_{comp}",
     )
 
-    return pd.DataFrame(grid_response["data"])
+    # bring back the ID so caller can update DB
+    edited["id"] = df_full["id"]
+    return edited
 
-def render_match_generation(event_id):
-    with st.expander("🎾 Match Generation & Scoring"):
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT DISTINCT competition_type FROM event_registration WHERE event_id = %s", (event_id,))
-            competitions = [row[0] for row in cursor.fetchall()]
-            if not competitions:
-                st.info("ℹ️ No competitions found for this event.")
-                return
 
-            selected_comp = st.radio("🏆 Select Competition", competitions, key="match_gen_competition")
+# ─────────────────────────────────────────────────────────────────────────────
+def render_match_generation(event_id: int):
+    with st.expander("🎾 match generation & scoring"):
+        # ---------------------------------------------------------------- comp picker
+        with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
+            cur.execute(
+                "select distinct competition_type from event_registration where event_id = %s",
+                (event_id,),
+            )
+            competitions = [r[0] for r in cur.fetchall()]
 
-            cursor.execute("SELECT COUNT(*) FROM event_matches WHERE event_id = %s AND competition_type = %s", (event_id, selected_comp))
-            match_count = cursor.fetchone()[0]
-        except Exception as e:
-            st.error(f"❌ Could not check match state: {e}")
-            return
-        finally:
-            cursor.close()
-            conn.close()
-
-        if match_count > 0:
-            if st.button("🔁 Re-Generate Matches (This will delete all existing!)"):
-                try:
-                    conn = get_db_connection()
-                    cursor = conn.cursor()
-                    cursor.execute("DELETE FROM event_matches WHERE event_id = %s AND competition_type = %s", (event_id, selected_comp))
-                    conn.commit()
-                    st.success("✅ Old matches deleted. You can now generate new ones.")
-                    match_count = 0
-                except Exception as e:
-                    st.error(f"❌ Failed to delete old matches: {e}")
-                    return
-                finally:
-                    cursor.close()
-                    conn.close()
-
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, user_id, club_id, group_no, competition_type
-                FROM event_registration
-                WHERE event_id = %s AND group_no IS NOT NULL AND competition_type = %s
-            """, (event_id, selected_comp))
-            rows = cursor.fetchall()
-            cols = [desc[0].upper() for desc in cursor.description]
-            df = pd.DataFrame(rows, columns=cols)
-        except Exception as e:
-            st.error(f"❌ Failed to load registration data: {e}")
-            return
-        finally:
-            cursor.close()
-            conn.close()
-
-        if df.empty:
-            st.info("ℹ️ No groupings found for this competition.")
+        if not competitions:
+            st.info("ℹ️ no competitions in this event.")
             return
 
-        if match_count == 0 and st.button("⚙️ Generate Round-Robin Matches"):
+        comp = st.radio("🏆 select competition", competitions, key="match_gen_comp")
+
+        # ---------------------------------------------------------------- any matches yet?
+        with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
+            cur.execute(
+                "select count(*) from event_matches where event_id = %s and competition_type = %s",
+                (event_id, comp),
+            )
+            match_count = cur.fetchone()[0]
+
+        # allow deletion / regeneration
+        if match_count > 0 and st.button("🔁 re‑generate (delete old)"):
+            with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
+                cur.execute(
+                    "delete from event_matches where event_id = %s and competition_type = %s",
+                    (event_id, comp),
+                )
+                conn.commit()
+            st.success("old matches deleted.")
+            match_count = 0
+
+        # ---------------------------------------------------------------- need group data
+        with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
+            cur.execute(
+                """
+                select id, user_id, club_id, group_no
+                from event_registration
+                where event_id = %s and group_no is not null and competition_type = %s
+                """,
+                (event_id, comp),
+            )
+            rows = cur.fetchall()
+            cols = [d[0] for d in cur.description]
+            reg_df = pd.DataFrame(rows, columns=cols)
+
+        if reg_df.empty:
+            st.info("ℹ️ no groupings yet.")
+            return
+
+        # ---------------------------------------------------------------- generate button
+        if match_count == 0 and st.button("⚙️ generate round‑robin matches"):
             try:
-                match_rows = []
-                group_letters = {}
-                letter_iter = iter(string.ascii_uppercase)
+                matches_to_insert = []
+                # === round‑robin builder (unchanged logic, but lower‑case keys) ===
+                groups = sorted(reg_df["group_no"].unique())
+                max_round = 0
 
-                comp = selected_comp
-                comp_df = df[df["competition_type"] == comp]
-                comp_groups = sorted(comp_df["group_no"].unique())
-                group_map = {group: next(letter_iter) for group in comp_groups}
-                group_letters[comp] = group_map
-
-                for group in comp_groups:
-                    group_df = comp_df[comp_df["group_no"] == group]
-                    players = group_df.to_dict("records")
-
-                    if len(players) % 2 != 0:
-                        players.append({"id": None, "user_id": -1, "club_id": None, "group_no": group, "competition_type": comp})
+                for g in groups:
+                    players = (
+                        reg_df[reg_df["group_no"] == g]
+                        .sort_values("id")
+                        .to_dict("records")
+                    )
+                    if len(players) % 2:
+                        players.append(
+                            dict(id=None, user_id=-1, club_id=None, group_no=g)
+                        )
 
                     n = len(players)
                     rounds = n - 1
+                    max_round = max(max_round, rounds)
                     half = n // 2
                     rotation = players[:]
 
-                    for round_no in range(1, rounds + 1):
+                    for r in range(1, rounds + 1):
                         for i in range(half):
-                            p1 = rotation[i]
-                            p2 = rotation[n - 1 - i]
-                            match_rows.append({
-                                "EVENT_ID": event_id,
-                                "COMPETITION_TYPE": comp,
-                                "GROUP_NO": group,
-                                "ROUND_NO": str(round_no),
-                                "PLAYER1_ID": p1["USER_ID"],
-                                "PLAYER1_CLUB_ID": p1["CLUB_ID"],
-                                "PLAYER2_ID": p2["USER_ID"],
-                                "PLAYER2_CLUB_ID": p2["CLUB_ID"],
-                                "STATUS": "Scheduled",
-                                "ROUND_TYPE": "Group"
-                            })
+                            p1, p2 = rotation[i], rotation[n - 1 - i]
+                            matches_to_insert.append(
+                                dict(
+                                    event_id=event_id,
+                                    competition_type=comp,
+                                    group_no=g,
+                                    round_type="group",
+                                    round_no=r,
+                                    player_1_id=p1["user_id"],
+                                    player_1_club_id=p1["club_id"],
+                                    player_2_id=p2["user_id"],
+                                    player_2_club_id=p2["club_id"],
+                                    status="scheduled",
+                                )
+                            )
                         rotation = [rotation[0]] + [rotation[-1]] + rotation[1:-1]
 
-                max_round_no = rounds
-                knockout_order = [
-                    "Barrage",
-                    "Round of 64",
-                    "Round of 32",
-                    "Round of 16",
-                    "Quarter-final",
-                    "Semi-final",
-                    "Final"
+                # === knockout placeholders ====================================
+                ko_placeholders = generate_knockout_placeholders(len(groups))
+                round_order = [
+                    "barrage",
+                    "round of 64",
+                    "round of 32",
+                    "round of 16",
+                    "quarter‑final",
+                    "semi‑final",
+                    "final",
                 ]
-                round_order_map = {rt: i for i, rt in enumerate(knockout_order)}
+                order_map = {rt: i for i, rt in enumerate(round_order)}
+                ko_placeholders.sort(key=lambda x: order_map.get(x[0], 999))
 
-                knockout_placeholders = generate_knockout_placeholders(len(comp_groups))
-                knockout_placeholders.sort(key=lambda x: round_order_map.get(x[0], 999))
-
+                ko_round_no = max_round
                 ko_round_map = {}
-                ko_counter = max_round_no
-                for round_type, group_no, p1_id, p2_id in knockout_placeholders:
-                    if round_type not in ko_round_map:
-                        ko_counter += 1
-                        ko_round_map[round_type] = str(ko_counter)
+                for rt, group_no, p1_id, p2_id in ko_placeholders:
+                    if rt not in ko_round_map:
+                        ko_round_no += 1
+                        ko_round_map[rt] = ko_round_no
+                    matches_to_insert.append(
+                        dict(
+                            event_id=event_id,
+                            competition_type=comp,
+                            group_no=group_no,
+                            round_type=rt,
+                            round_no=ko_round_map[rt],
+                            player_1_id=p1_id,
+                            player_1_club_id=None,
+                            player_2_id=p2_id,
+                            player_2_club_id=None,
+                            status="pending",
+                        )
+                    )
 
-                    match_rows.append({
-                        "EVENT_ID": event_id,
-                        "COMPETITION_TYPE": comp,
-                        "GROUP_NO": group_no,
-                        "ROUND_TYPE": round_type,
-                        "ROUND_NO": ko_round_map[round_type],
-                        "PLAYER1_ID": p1_id,
-                        "PLAYER1_CLUB_ID": None,
-                        "PLAYER2_ID": p2_id,
-                        "PLAYER2_CLUB_ID": None,
-                        "STATUS": "Pending"
-                    })
+                # === bulk insert =============================================
+                with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
+                    for row in matches_to_insert:
+                        cur.execute(
+                            """
+                            insert into event_matches (
+                                event_id, competition_type, group_no,
+                                round_type, round_no,
+                                player_1_id, player_1_club_id,
+                                player_2_id, player_2_club_id,
+                                status
+                            )
+                            values (%(event_id)s, %(competition_type)s, %(group_no)s,
+                                    %(round_type)s, %(round_no)s,
+                                    %(player_1_id)s, %(player_1_club_id)s,
+                                    %(player_2_id)s, %(player_2_club_id)s,
+                                    %(status)s)
+                            """,
+                            row,
+                        )
+                    conn.commit()
 
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                for row in match_rows:
-                    cursor.execute("""
-                        INSERT INTO EVENT_MATCHES (
-                            EVENT_ID, COMPETITION_TYPE, GROUP_NO, ROUND_TYPE, ROUND_NO,
-                            PLAYER_1_ID, PLAYER_1_CLUB_ID, PLAYER_2_ID, PLAYER_2_CLUB_ID,
-                            STATUS
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (
-                        row["EVENT_ID"], row["COMPETITION_TYPE"], row["GROUP_NO"], row["ROUND_TYPE"], row["ROUND_NO"],
-                        row["PLAYER1_ID"], row["PLAYER1_CLUB_ID"],
-                        row["PLAYER2_ID"], row["PLAYER2_CLUB_ID"],
-                        row["STATUS"]
-                    ))
-                conn.commit()
-                st.success(f"✅ {len(match_rows)} matches generated including knockouts.")
-            except Exception as e:
-                st.error(f"❌ Failed to generate matches: {e}")
-            finally:
-                cursor.close()
-                conn.close()
+                st.success(f"✅ inserted {len(matches_to_insert)} matches.")
+            except Exception as exc:
+                st.error(f"❌ failed to insert matches: {exc}")
 
-        updated_df = render_match_table(event_id, selected_comp)
-        if updated_df is not None:
-            st.session_state["match_df"] = updated_df
+        # ---------------------------------------------------------------- scoring table
+        edited_df = render_match_table(event_id, comp)
+        if edited_df is not None:
+            st.session_state["match_df"] = edited_df
 
-        if updated_df is not None and st.button("💾 Save Scores"):
+        # ---------------------------------------------------------------- save scores
+        if edited_df is not None and st.button("💾 save scores"):
+            changed = edited_df.copy()
+            orig = fetch_matches_df(event_id, comp)
+            mask = (
+                (changed["player1_goals"] != orig["player1_goals"])
+                | (changed["player2_goals"] != orig["player2_goals"])
+            )
+            changed = changed[mask]
+            if changed.empty:
+                st.warning("no changes to save.")
+            else:
+                try:
+                    with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
+                        for _, row in changed.iterrows():
+                            if pd.isna(row["player1_goals"]) or pd.isna(row["player2_goals"]):
+                                continue
+                            cur.execute(
+                                """
+                                update event_matches
+                                   set p1_goals = %s,
+                                       p2_goals = %s,
+                                       status = 'final',
+                                       updated_timestamp = current_timestamp
+                                 where id = %s
+                                """,
+                                (int(row["player1_goals"]), int(row["player2_goals"]), int(row["id"])),
+                            )
+                        conn.commit()
+                    st.success("✅ scores saved; matches now 'final'.")
+                    update_knockout_placeholders(event_id)
+                    st.session_state["match_df"] = None
+                    st.experimental_rerun()
+                except Exception as exc:
+                    st.error(f"❌ DB update failed: {exc}")
+
+        # ---------------------------------------------------------------- simulate
+        if edited_df is not None and st.button("🎲 simulate scores"):
             try:
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                for _, row in updated_df.iterrows():
-                    if pd.isna(row["PLAYER1_GOALS"]) or pd.isna(row["PLAYER2_GOALS"]):
-                        continue
-                    cursor.execute("""
-                        UPDATE EVENT_MATCHES
-                        SET P1_GOALS = %s,
-                            P2_GOALS = %s,
-                            STATUS = 'Final',
-                            UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                        WHERE ID = %s
-                    """, (
-                        int(row["PLAYER1_GOALS"]),
-                        int(row["PLAYER2_GOALS"]),
-                        int(row["ID"])
-                    ))
-                conn.commit()
-                st.success("✅ Scores updated and matches marked as 'Final'.")
+                with closing(get_db_connection()) as conn, closing(conn.cursor()) as cur:
+                    cur.execute(
+                        """
+                        select id from event_matches
+                        where event_id = %s and competition_type = %s and status = 'scheduled'
+                        """,
+                        (event_id, comp),
+                    )
+                    ids = [r[0] for r in cur.fetchall()]
+                    for mid in ids:
+                        p1, p2 = random.randint(0, 5), random.randint(0, 5)
+                        cur.execute(
+                            """
+                            update event_matches
+                               set p1_goals = %s, p2_goals = %s,
+                                   status = 'final',
+                                   updated_timestamp = current_timestamp
+                             where id = %s
+                            """,
+                            (p1, p2, mid),
+                        )
+                    conn.commit()
+                st.success(f"✅ simulated {len(ids)} matches.")
                 update_knockout_placeholders(event_id)
-                st.session_state["match_df"] = None
-                st.rerun()
-            except Exception as e:
-                st.error(f"❌ Failed to save scores: {e}")
-            finally:
-                cursor.close()
-                conn.close()
-
-        if updated_df is not None and st.button("🎲 Simulate Scores"):
-            try:
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT ID FROM EVENT_MATCHES
-                    WHERE EVENT_ID = %s AND STATUS = 'Scheduled' AND COMPETITION_TYPE = %s
-                """, (event_id, selected_comp))
-                match_ids = [row[0] for row in cursor.fetchall()]
-
-                for match_id in match_ids:
-                    p1_score = random.randint(0, 5)
-                    p2_score = random.randint(0, 5)
-                    cursor.execute("""
-                        UPDATE EVENT_MATCHES
-                        SET P1_GOALS = %s,
-                            P2_GOALS = %s,
-                            STATUS = 'Final',
-                            UPDATED_TIMESTAMP = CURRENT_TIMESTAMP
-                        WHERE ID = %s
-                    """, (p1_score, p2_score, match_id))
-
-                conn.commit()
-                st.success(f"✅ Simulated scores for {len(match_ids)} matches.")
-                update_knockout_placeholders(event_id)
-                st.rerun()
-            except Exception as e:
-                st.error(f"❌ Failed to simulate scores: {e}")
-            finally:
-                cursor.close()
-                conn.close()
+                st.experimental_rerun()
+            except Exception as exc:
+                st.error(f"❌ simulation failed: {exc}")
