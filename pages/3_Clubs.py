@@ -62,9 +62,8 @@ def show():
         if st.session_state.get("test_mode"):
             show_request_club(cursor, conn, user_id)
             show_admin(cursor, conn)
-
-    from sidebar_utils import render_sidebar_widgets
-    render_sidebar_widgets()
+            from sidebar_utils import render_sidebar_widgets
+            render_sidebar_widgets()
 
 # -------------------------------------------------- REQUEST NEW CLUB
 def show_request_club(cursor, conn, user_id):
