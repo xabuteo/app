@@ -111,7 +111,6 @@ else:
         conn.close()
 
     st.success(f"Welcome, {st.user.email}!")
-    st.json(st.user.to_dict())
 
     if st.button(
         "✨ Log out",
@@ -124,3 +123,4 @@ else:
 if st.session_state.get("test_mode"):
     from sidebar_utils import render_sidebar_widgets
     render_sidebar_widgets()
+    st.json(st.user.to_dict())
