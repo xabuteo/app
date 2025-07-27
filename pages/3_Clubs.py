@@ -165,6 +165,38 @@ def show_admin(cursor, conn):
                     st.warning("Rejected.")
                     st.rerun()
 
+        # --- Show current club members per club
+        st.markdown("### 👥 Club Members")
+    
+        rows, cols = fetch_all(cursor, f"""
+            SELECT
+                id, first_name, last_name, email, date_of_birth, gender,
+                player_status, valid_from, valid_to, club_code, club_name
+            FROM player_club_v
+            WHERE club_code IN ({placeholders})
+            ORDER BY club_name, last_name, first_name
+        """, tuple(club_ids))
+    
+        if not rows:
+            st.info("ℹ️ No members found in your clubs.")
+            return
+    
+        df_all = pd.DataFrame(rows, columns=cols)
+        grouped = df_all.groupby("club_name")
+    
+        for club_name, club_df in grouped:
+            with st.expander(f"🏟️ {club_name} ({len(club_df)} players)", expanded=False):
+                club_df_disp = (
+                    club_df[
+                        ['first_name', 'last_name', 'email', 'date_of_birth',
+                         'gender', 'player_status', 'valid_from', 'valid_to']
+                    ]
+                    .sort_values("last_name")
+                    .reset_index(drop=True)
+                )
+                st.dataframe(club_df_disp, use_container_width=True, hide_index=True)
+
+
 # ------------------------------------------------------------------ ENTRY
 if __name__ == "__main__":
     show()
