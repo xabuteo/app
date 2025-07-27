@@ -124,6 +124,8 @@ def show_admin(cursor, conn):
         return
 
     placeholders = ", ".join(["%s"] * len(club_ids))
+    
+    # --- Approvals Section ---
     rows, cols = fetch_all(cursor, f"""
         SELECT pc.id,
                TRIM(CONCAT_WS(' ', r.first_name, r.last_name)) AS player_name,
@@ -136,67 +138,64 @@ def show_admin(cursor, conn):
         ORDER  BY pc.valid_from DESC
     """, tuple(club_ids))
 
-    if not rows:
+    if rows:
+        st.markdown("### ✅ Pending Approvals")
+        for rec in map(lambda r: dict(zip(cols, r)), rows):
+            with st.container(border=True):
+                st.markdown(
+                    f"""
+                    **👤 Player:** {rec['player_name']}  
+                    **🏟️ Club:** {rec['club_name']}  
+                    **📅 Valid:** {rec['valid_from']} → {rec['valid_to']}  
+                    **🕒 Status:** {rec['player_status']}
+                    """
+                )
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    if st.button("✅ Approve", key=f"app_{rec['id']}"):
+                        cursor.execute("UPDATE player_club SET player_status = 'Approved' WHERE id = %s", (rec['id'],))
+                        conn.commit()
+                        st.success("Approved.")
+                        st.rerun()
+                with col_b:
+                    if st.button("❌ Reject", key=f"rej_{rec['id']}"):
+                        cursor.execute("UPDATE player_club SET player_status = 'Rejected' WHERE id = %s", (rec['id'],))
+                        conn.commit()
+                        st.warning("Rejected.")
+                        st.rerun()
+    else:
         st.info("✅ No pending club requests for your clubs.")
+
+    # --- Club Members Section (ALWAYS SHOWN) ---
+    st.markdown("### 👥 Club Members")
+
+    rows, cols = fetch_all(cursor, f"""
+        SELECT
+            id, first_name, last_name, email, date_of_birth, gender,
+            player_status, valid_from, valid_to, club_code, club_name
+        FROM player_club_v
+        WHERE club_code IN ({placeholders})
+        ORDER BY club_name, last_name, first_name
+    """, tuple(club_ids))
+
+    if not rows:
+        st.info("ℹ️ No members found in your clubs.")
         return
 
-    for rec in map(lambda r: dict(zip(cols, r)), rows):
-        with st.container(border=True):
-            st.markdown(
-                f"""
-                **👤 Player:** {rec['player_name']}  
-                **🏟️ Club:** {rec['club_name']}  
-                **📅 Valid:** {rec['valid_from']} → {rec['valid_to']}  
-                **🕒 Status:** {rec['player_status']}
-                """
+    df_all = pd.DataFrame(rows, columns=cols)
+    grouped = df_all.groupby("club_name")
+
+    for club_name, club_df in grouped:
+        with st.expander(f"🏟️ {club_name} ({len(club_df)} players)", expanded=False):
+            club_df_disp = (
+                club_df[
+                    ['first_name', 'last_name', 'email', 'date_of_birth',
+                     'gender', 'player_status', 'valid_from', 'valid_to']
+                ]
+                .sort_values("last_name")
+                .reset_index(drop=True)
             )
-            col_a, col_b = st.columns(2)
-            with col_a:
-                if st.button("✅ Approve", key=f"app_{rec['id']}"):
-                    cursor.execute("UPDATE player_club SET player_status = 'Approved' WHERE id = %s",
-                                   (rec['id'],))
-                    conn.commit()
-                    st.success("Approved.")
-                    st.rerun()
-            with col_b:
-                if st.button("❌ Reject", key=f"rej_{rec['id']}"):
-                    cursor.execute("UPDATE player_club SET player_status = 'Rejected' WHERE id = %s",
-                                   (rec['id'],))
-                    conn.commit()
-                    st.warning("Rejected.")
-                    st.rerun()
-
-        # --- Show current club members per club
-        st.markdown("### 👥 Club Members")
-    
-        rows, cols = fetch_all(cursor, f"""
-            SELECT
-                id, first_name, last_name, email, date_of_birth, gender,
-                player_status, valid_from, valid_to, club_code, club_name
-            FROM player_club_v
-            WHERE club_code IN ({placeholders})
-            ORDER BY club_name, last_name, first_name
-        """, tuple(club_ids))
-    
-        if not rows:
-            st.info("ℹ️ No members found in your clubs.")
-            return
-    
-        df_all = pd.DataFrame(rows, columns=cols)
-        grouped = df_all.groupby("club_name")
-    
-        for club_name, club_df in grouped:
-            with st.expander(f"🏟️ {club_name} ({len(club_df)} players)", expanded=False):
-                club_df_disp = (
-                    club_df[
-                        ['first_name', 'last_name', 'email', 'date_of_birth',
-                         'gender', 'player_status', 'valid_from', 'valid_to']
-                    ]
-                    .sort_values("last_name")
-                    .reset_index(drop=True)
-                )
-                st.dataframe(club_df_disp, use_container_width=True, hide_index=True)
-
+            st.dataframe(club_df_disp, use_container_width=True, hide_index=True)
 
 # ------------------------------------------------------------------ ENTRY
 if __name__ == "__main__":
