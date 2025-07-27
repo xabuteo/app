@@ -172,7 +172,7 @@ def show_admin(cursor, conn):
     rows, cols = fetch_all(cursor, f"""
         SELECT
             id, first_name, last_name, email, date_of_birth, gender,
-            player_status, valid_from, valid_to, club_code, club_name
+            player_status, valid_from, valid_to, club_code, club_name, club_admin
         FROM player_club_v
         WHERE club_id IN ({placeholders})
         ORDER BY club_name, last_name, first_name
@@ -190,7 +190,7 @@ def show_admin(cursor, conn):
             club_df_disp = (
                 club_df[
                     ['first_name', 'last_name', 'email', 'date_of_birth',
-                     'gender', 'player_status', 'valid_from', 'valid_to']
+                     'gender', 'player_status', 'valid_from', 'valid_to', 'club_admin']
                 ]
                 .sort_values("last_name")
                 .reset_index(drop=True)
