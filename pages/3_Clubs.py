@@ -174,7 +174,7 @@ def show_admin(cursor, conn):
             id, first_name, last_name, email, date_of_birth, gender,
             player_status, valid_from, valid_to, club_code, club_name
         FROM player_club_v
-        WHERE club_code IN ({placeholders})
+        WHERE club_id IN ({placeholders})
         ORDER BY club_name, last_name, first_name
     """, tuple(club_ids))
 
